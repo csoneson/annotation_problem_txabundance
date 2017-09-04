@@ -51,7 +51,14 @@ tophits <- abundances %>% dplyr::filter(MaxNumReads > 2000) %>%
   dplyr::filter(Ntx > 1) %>% 
   dplyr::filter(abs(RelCountcDNA - RelCountCDS) > 0.9)
 
-write.table(tophits, file = gsub("rds$", "txt", outrds), row.names = FALSE,
+write.table(tophits, file = gsub("\\.rds$", "_topgenes.txt", outrds), row.names = FALSE,
+            col.names = TRUE, quote = FALSE, sep = "\t")
+
+(geneids <- unique(gsub("\\.[0-9]+$", "", tophits$gene)))
+
+write.table(abundances %>% dplyr::filter(gene %in% geneids) %>%
+              dplyr::arrange(gene), 
+            file = gsub("\\.rds$", "_topgenes_alltx.txt", outrds), row.names = FALSE,
             col.names = TRUE, quote = FALSE, sep = "\t")
 
 ## Plot coverage of top hits

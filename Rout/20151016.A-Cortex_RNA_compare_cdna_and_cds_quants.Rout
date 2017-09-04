@@ -1,0 +1,319 @@
+
+R version 3.4.0 (2017-04-21) -- "You Stupid Darkness"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> args <- (commandArgs(trailingOnly = TRUE))
+> for (i in 1:length(args)) {
++   eval(parse(text = args[[i]]))
++ }
+> 
+> print(cdnaquant)
+[1] "salmon/cDNA/20151016.A-Cortex_RNA/quant.sf"
+> print(cdsquant)
+[1] "salmon/cds/20151016.A-Cortex_RNA/quant.sf"
+> print(gtffile)
+[1] "/home/Shared/data/annotation/Human/Ensembl_GRCh38.90/gtf/Homo_sapiens.GRCh38.90.gtf"
+> print(tx2gene)
+[1] "reference/Homo_sapiens.GRCh38.90_tx2gene.rds"
+> print(bwfile)
+[1] "STARbigwig/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bw"
+> print(outrds)
+[1] "output/20151016.A-Cortex_RNA_cdna_vs_cds.rds"
+> 
+> suppressPackageStartupMessages(library(dplyr))
+> suppressPackageStartupMessages(library(rtracklayer))
+> suppressPackageStartupMessages(library(Gviz))
+> source("Rscripts/plot_tracks.R")
+> options(ucscChromosomeNames = FALSE)
+> 
+> ## Read cDNA quantifications
+> cdna <- read.delim(cdnaquant, header = TRUE, as.is = TRUE)
+> 
+> ## Read CDS quantifications
+> cds <- read.delim(cdsquant, header = TRUE, as.is = TRUE)
+> 
+> ## Read tx2gene
+> tx2gene <- readRDS(tx2gene)
+> 
+> ## Add gene assignment
+> cdna$gene <- tx2gene$gene[match(cdna$Name, tx2gene$tx)]
+> cds$gene <- tx2gene$gene[match(cds$Name, tx2gene$tx)]
+> 
+> ## Calculate relative abundances
+> cdna <- cdna %>% dplyr::group_by(gene) %>% 
++   dplyr::mutate(RelCount = NumReads/sum(NumReads))
+> cds <- cds %>% dplyr::group_by(gene) %>% 
++   dplyr::mutate(RelCount = NumReads/sum(NumReads))
+> 
+> ## Find shared transcripts
+> cdna <- cdna %>% dplyr::select(Name, gene, NumReads, RelCount) %>%
++   dplyr::rename(NumReadscDNA = NumReads, RelCountcDNA = RelCount)
+> cds <- cds %>% dplyr::select(Name, gene, NumReads, RelCount) %>%
++   dplyr::rename(NumReadsCDS = NumReads, RelCountCDS = RelCount)
+> 
+> abundances <- dplyr::full_join(cdna, cds) %>% 
++   dplyr::mutate(MaxNumReads = pmax(NumReadscDNA, NumReadsCDS)) %>%
++   dplyr::group_by(gene) %>% 
++   dplyr::mutate(Ntx = length(gene)) %>%
++   dplyr::ungroup()
+Joining, by = c("Name", "gene")
+> 
+> tophits <- abundances %>% dplyr::filter(MaxNumReads > 2000) %>% 
++   dplyr::filter(Ntx > 1) %>% 
++   dplyr::filter(abs(RelCountcDNA - RelCountCDS) > 0.9)
+> 
+> write.table(tophits, file = gsub("rds$", "txt", outrds), row.names = FALSE,
++             col.names = TRUE, quote = FALSE, sep = "\t")
+> 
+> ## Plot coverage of top hits
+> (geneids <- unique(gsub("\\.[0-9]+$", "", tophits$gene)))
+  [1] "ENSG00000188766" "ENSG00000053254" "ENSG00000165516" "ENSG00000151322"
+  [5] "ENSG00000169764" "ENSG00000170456" "ENSG00000119314" "ENSG00000149177"
+  [9] "ENSG00000277086" "ENSG00000149485" "ENSG00000089335" "ENSG00000022355"
+ [13] "ENSG00000174437" "ENSG00000116205" "ENSG00000082153" "ENSG00000090554"
+ [17] "ENSG00000112419" "ENSG00000134987" "ENSG00000108852" "ENSG00000160117"
+ [21] "ENSG00000081026" "ENSG00000179981" "ENSG00000197734" "ENSG00000160013"
+ [25] "ENSG00000145012" "ENSG00000135414" "ENSG00000114544" "ENSG00000187605"
+ [29] "ENSG00000100764" "ENSG00000198728" "ENSG00000149639" "ENSG00000139132"
+ [33] "ENSG00000186566" "ENSG00000185591" "ENSG00000187398" "ENSG00000180044"
+ [37] "ENSG00000177463" "ENSG00000157540" "ENSG00000182768" "ENSG00000276734"
+ [41] "ENSG00000168385" "ENSG00000068120" "ENSG00000118058" "ENSG00000168309"
+ [45] "ENSG00000180901" "ENSG00000141338" "ENSG00000134532" "ENSG00000185825"
+ [49] "ENSG00000116678" "ENSG00000103512" "ENSG00000154723" "ENSG00000227460"
+ [53] "ENSG00000125834" "ENSG00000179454" "ENSG00000048540" "ENSG00000103811"
+ [57] "ENSG00000198663" "ENSG00000282318" "ENSG00000183023" "ENSG00000162704"
+ [61] "ENSG00000021300" "ENSG00000181722" "ENSG00000276155" "ENSG00000174444"
+ [65] "ENSG00000125354" "ENSG00000008282" "ENSG00000141068" "ENSG00000170624"
+ [69] "ENSG00000114805" "ENSG00000008283" "ENSG00000183258" "ENSG00000079308"
+ [73] "ENSG00000138685" "ENSG00000108774" "ENSG00000074706" "ENSG00000224740"
+ [77] "ENSG00000104341" "ENSG00000003147" "ENSG00000103415" "ENSG00000188467"
+ [81] "ENSG00000163001" "ENSG00000162599" "ENSG00000136541" "ENSG00000171130"
+ [85] "ENSG00000146574" "ENSG00000138185" "ENSG00000143195" "ENSG00000110880"
+ [89] "ENSG00000007237" "ENSG00000178878" "ENSG00000102226" "ENSG00000112679"
+ [93] "ENSG00000022277" "ENSG00000105409" "ENSG00000166073" "ENSG00000277586"
+ [97] "ENSG00000277424" "ENSG00000088247" "ENSG00000181222" "ENSG00000232804"
+[101] "ENSG00000272391" "ENSG00000196369" "ENSG00000166402" "ENSG00000151067"
+[105] "ENSG00000186416" "ENSG00000074211" "ENSG00000133134" "ENSG00000177225"
+[109] "ENSG00000181061"
+> 
+> genemodels_exon <- create_genemodels(gtffile, seltype = "exon")
+> genemodels_cds <- create_genemodels(gtffile, seltype = "CDS")
+> 
+> pdf(gsub("rds$", "pdf", outrds), width = 12, height = 8)
+> for (gid in geneids) {
++   message(gid)
++   tryCatch({
++     plot_tracks(mygene = gid, genemodels = genemodels_exon, 
++                 genemodels2 = genemodels_cds, 
++                 gtf_file = NULL, rnaseq_datafiles = structure(bwfile, names = "s1"), 
++                 rnaseq_condition = structure("g1", names = "s1"), show_chr = NULL, 
++                 min_coord = NULL, max_coord = NULL, 
++                 pdf_filename = NULL, pdf_width = 7, pdf_height = 7)
++   }, error = function(e) message(e))
++ }
+ENSG00000188766
+ENSG00000053254
+ENSG00000165516
+ENSG00000151322
+ENSG00000169764
+ENSG00000170456
+ENSG00000119314
+ENSG00000149177
+ENSG00000277086
+solving row 1: range cannot be determined from the supplied arguments (too many NAs)ENSG00000149485
+ENSG00000089335
+ENSG00000022355
+ENSG00000174437
+ENSG00000116205
+ENSG00000082153
+ENSG00000090554
+ENSG00000112419
+ENSG00000134987
+ENSG00000108852
+ENSG00000160117
+ENSG00000081026
+ENSG00000179981
+ENSG00000197734
+ENSG00000160013
+ENSG00000145012
+ENSG00000135414
+ENSG00000114544
+ENSG00000187605
+ENSG00000100764
+ENSG00000198728
+ENSG00000149639
+ENSG00000139132
+ENSG00000186566
+ENSG00000185591
+ENSG00000187398
+ENSG00000180044
+ENSG00000177463
+ENSG00000157540
+ENSG00000182768
+ENSG00000276734
+solving row 1: range cannot be determined from the supplied arguments (too many NAs)ENSG00000168385
+ENSG00000068120
+ENSG00000118058
+ENSG00000168309
+ENSG00000180901
+ENSG00000141338
+ENSG00000134532
+ENSG00000185825
+ENSG00000116678
+ENSG00000103512
+ENSG00000154723
+ENSG00000227460
+solving row 1: range cannot be determined from the supplied arguments (too many NAs)ENSG00000125834
+ENSG00000179454
+ENSG00000048540
+ENSG00000103811
+ENSG00000198663
+ENSG00000282318
+solving row 1: range cannot be determined from the supplied arguments (too many NAs)ENSG00000183023
+ENSG00000162704
+ENSG00000021300
+ENSG00000181722
+ENSG00000276155
+solving row 1: range cannot be determined from the supplied arguments (too many NAs)ENSG00000174444
+ENSG00000125354
+ENSG00000008282
+ENSG00000141068
+ENSG00000170624
+ENSG00000114805
+ENSG00000008283
+ENSG00000183258
+ENSG00000079308
+ENSG00000138685
+ENSG00000108774
+ENSG00000074706
+ENSG00000224740
+solving row 1: range cannot be determined from the supplied arguments (too many NAs)ENSG00000104341
+ENSG00000003147
+ENSG00000103415
+ENSG00000188467
+ENSG00000163001
+ENSG00000162599
+ENSG00000136541
+ENSG00000171130
+ENSG00000146574
+ENSG00000138185
+ENSG00000143195
+ENSG00000110880
+ENSG00000007237
+ENSG00000178878
+ENSG00000102226
+ENSG00000112679
+ENSG00000022277
+ENSG00000105409
+ENSG00000166073
+ENSG00000277586
+ENSG00000277424
+solving row 1: range cannot be determined from the supplied arguments (too many NAs)ENSG00000088247
+ENSG00000181222
+ENSG00000232804
+solving row 1: range cannot be determined from the supplied arguments (too many NAs)ENSG00000272391
+ENSG00000196369
+ENSG00000166402
+ENSG00000151067
+ENSG00000186416
+ENSG00000074211
+ENSG00000133134
+ENSG00000177225
+ENSG00000181061
+There were 50 or more warnings (use warnings() to see the first 50)
+> dev.off()
+null device 
+          1 
+> 
+> saveRDS(list(abundances = abundances, tophits = tophits), file = outrds)
+> 
+> sessionInfo()
+R version 3.4.0 (2017-04-21)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 14.04.5 LTS
+
+Matrix products: default
+BLAS: /usr/local/R/R-3.4.0/lib/libRblas.so
+LAPACK: /usr/local/R/R-3.4.0/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=en_CA.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=en_CA.UTF-8        LC_COLLATE=en_CA.UTF-8    
+ [5] LC_MONETARY=en_CA.UTF-8    LC_MESSAGES=en_CA.UTF-8   
+ [7] LC_PAPER=en_CA.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=en_CA.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+ [1] grid      parallel  stats4    stats     graphics  grDevices utils    
+ [8] datasets  methods   base     
+
+other attached packages:
+[1] bindrcpp_0.2         Gviz_1.20.0          rtracklayer_1.36.3  
+[4] GenomicRanges_1.28.3 GenomeInfoDb_1.12.2  IRanges_2.10.2      
+[7] S4Vectors_0.14.3     BiocGenerics_0.22.0  dplyr_0.7.2         
+
+loaded via a namespace (and not attached):
+ [1] httr_1.2.1                    Biobase_2.36.2               
+ [3] AnnotationHub_2.8.2           bit64_0.9-7                  
+ [5] splines_3.4.0                 shiny_1.0.3                  
+ [7] Formula_1.2-1                 assertthat_0.2.0             
+ [9] interactiveDisplayBase_1.14.0 latticeExtra_0.6-28          
+[11] blob_1.1.0                    BSgenome_1.44.0              
+[13] GenomeInfoDbData_0.99.0       Rsamtools_1.28.0             
+[15] yaml_2.1.14                   RSQLite_2.0                  
+[17] backports_1.1.0               lattice_0.20-35              
+[19] biovizBase_1.24.0             glue_1.1.1                   
+[21] digest_0.6.12                 RColorBrewer_1.1-2           
+[23] XVector_0.16.0                checkmate_1.8.2              
+[25] colorspace_1.3-2              httpuv_1.3.3                 
+[27] htmltools_0.3.6               Matrix_1.2-10                
+[29] plyr_1.8.4                    XML_3.98-1.9                 
+[31] pkgconfig_2.0.1               biomaRt_2.32.1               
+[33] zlibbioc_1.22.0               xtable_1.8-2                 
+[35] scales_0.4.1                  BiocParallel_1.10.1          
+[37] htmlTable_1.9                 tibble_1.3.3                 
+[39] AnnotationFilter_1.0.0        ggplot2_2.2.1                
+[41] GenomicFeatures_1.28.3        SummarizedExperiment_1.6.3   
+[43] nnet_7.3-12                   lazyeval_0.2.0               
+[45] mime_0.5                      survival_2.41-3              
+[47] magrittr_1.5                  memoise_1.1.0                
+[49] foreign_0.8-69                BiocInstaller_1.26.0         
+[51] tools_3.4.0                   data.table_1.10.4            
+[53] matrixStats_0.52.2            stringr_1.2.0                
+[55] munsell_0.4.3                 cluster_2.0.6                
+[57] DelayedArray_0.2.7            ensembldb_2.0.3              
+[59] AnnotationDbi_1.38.1          Biostrings_2.44.1            
+[61] compiler_3.4.0                rlang_0.1.2                  
+[63] RCurl_1.95-4.8                dichromat_2.0-0              
+[65] VariantAnnotation_1.22.2      htmlwidgets_0.9              
+[67] bitops_1.0-6                  base64enc_0.1-3              
+[69] gtable_0.2.0                  curl_2.6                     
+[71] DBI_0.7                       R6_2.2.2                     
+[73] GenomicAlignments_1.12.1      gridExtra_2.2.1              
+[75] knitr_1.16                    bit_1.1-12                   
+[77] bindr_0.1                     Hmisc_4.0-3                  
+[79] ProtGenerics_1.8.0            stringi_1.1.5                
+[81] Rcpp_0.12.12                  rpart_4.1-11                 
+[83] acepack_1.4.1                
+> date()
+[1] "Mon Sep  4 15:53:26 2017"
+> 
+> proc.time()
+   user  system elapsed 
+612.084   8.653 622.130 

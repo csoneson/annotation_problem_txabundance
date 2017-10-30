@@ -54,9 +54,7 @@ tophits <- abundances %>% dplyr::filter(MaxNumReads > 2000) %>%
 write.table(tophits, file = gsub("\\.rds$", "_topgenes.txt", outrds), row.names = FALSE,
             col.names = TRUE, quote = FALSE, sep = "\t")
 
-(geneids <- unique(gsub("\\.[0-9]+$", "", tophits$gene)))
-
-write.table(abundances %>% dplyr::filter(gene %in% geneids) %>%
+write.table(abundances %>% dplyr::filter(gene %in% unique(tophits$gene)) %>%
               dplyr::arrange(gene), 
             file = gsub("\\.rds$", "_topgenes_alltx.txt", outrds), row.names = FALSE,
             col.names = TRUE, quote = FALSE, sep = "\t")

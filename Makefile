@@ -14,6 +14,10 @@ bedtools := /usr/local/bin/bedtools
 fastqdir := /home/Shared/data/seq/roche_pacbio_targeted_cdna/Illumina_RNA_seq
 fastqname := 20151016.A-Cortex_RNA
 
+plotgene := ENSG00000198888 ENSG00000198712 ENSG00000162783 ENSG00000116120 ENSG00000174684 \
+ENSG00000151067 ENSG00000100764 ENSG00000198728 ENSG00000185591 ENSG00000125354 \
+ENSG00000158258 ENSG00000196814 ENSG00000153823
+
 .PHONY: all
 
 all: $(refdir)/cDNA/Homo_sapiens.GRCh38.cdna.all_sidx_v0.8.2/hash.bin \
@@ -22,7 +26,8 @@ salmon/cDNA/$(fastqname)/quant.sf salmon/cds/$(fastqname)/quant.sf \
 reference/Homo_sapiens.GRCh38.90_tx2gene.rds \
 output/$(fastqname)_cdna_vs_cds.rds $(STARindex)/SA \
 STARbigwig/$(fastqname)_Aligned.sortedByCoord.out.bw \
-STAR/$(fastqname)/$(fastqname)_Aligned.sortedByCoord.out.bam.bai
+STAR/$(fastqname)/$(fastqname)_Aligned.sortedByCoord.out.bam.bai \
+$(foreach G,$(plotgene),alpine_out/$(G).rds)
 
 tmp: STAR/$(fastqname)/$(fastqname)_Aligned.sortedByCoord.out.bam
 
@@ -98,5 +103,20 @@ STAR/$(fastqname)/$(fastqname)_Aligned.sortedByCoord.out.bam
 	
 	rm -f STARbigwig/$(fastqname)_Aligned.sortedByCoord.out.bedGraph
 
+## ==================================================================================== ##
+##                                   alpine                                             ##
+## ==================================================================================== ##
+## Fit bias model
+alpine/alpine_fitbiasmodel.rds: $(gtf) STAR/$(fastqname)/$(fastqname)_Aligned.sortedByCoord.out.bam \
+Rscripts/alpine_fitbiasmodel.R
+	$(R) "--args gtf='$(gtf)' bam='$(word 2,$^)' outdir='alpine'" Rscripts/alpine_fitbiasmodel.R Rout/alpine_fitbiasmodel.Rout
 
-
+## Predict coverage and compare to observed junction coverage
+define alpinepredrule
+alpine_out/$(1).rds: alpine/alpine_fitbiasmodel.rds STAR/$$(fastqname)/$$(fastqname)_Aligned.sortedByCoord.out.bam \
+salmon/cDNA/$(fastqname)/quant.sf Rscripts/alpine_compare_coverage.R \
+STARbigwig/$(fastqname)_Aligned.sortedByCoord.out.bw
+	mkdir -p $$(@D)
+	$(R) "--args gene='$(1)' bam='$$(word 2,$$^)' bw='$$(word 5,$$^)' gtf='$$(gtf)' quantsf='$$(word 3,$$^)' junctioncov='STAR/$$(fastqname)/$$(fastqname)_SJ.out.tab' biasmodels='$$(word 1,$$^)' outrds='$$@'" Rscripts/alpine_compare_coverage.R Rout/alpine_compare_coverage_$(1).Rout
+endef
+$(foreach G,$(plotgene),$(eval $(call alpinepredrule,$(G))))

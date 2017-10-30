@@ -1,0 +1,402 @@
+
+R version 3.4.0 (2017-04-21) -- "You Stupid Darkness"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> args <- (commandArgs(trailingOnly = TRUE))
+> for (i in 1:length(args)) {
++   eval(parse(text = args[[i]]))
++ }
+> 
+> print(gtf)
+[1] "/home/Shared/data/annotation/Human/Ensembl_GRCh38.90/gtf/Homo_sapiens.GRCh38.90.gtf"
+> print(bam)  ## used to extract "medium to highly expressed genes" to fit the bias model
+[1] "STAR/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bam"
+> print(outdir)
+[1] "alpine"
+> 
+> suppressPackageStartupMessages(library(ensembldb))
+> suppressPackageStartupMessages(library(alpine))
+> suppressPackageStartupMessages(library(Rsamtools))
+> suppressPackageStartupMessages(library(GenomicAlignments))
+> suppressPackageStartupMessages(library(BSgenome.Hsapiens.NCBI.GRCh38))
+> suppressPackageStartupMessages(library(dplyr))
+> 
+> ## Construct ensembldb object from gtf file
+> ensDbFromGtf(gtf, path = outdir)
+Importing GTF file ... OK
+Processing metadata ... OK
+Processing genes ... 
+ Attribute availability:
+  o gene_id ... OK
+  o gene_name ... OK
+  o entrezid ... Nope
+  o gene_biotype ... OK
+OK
+Processing transcripts ... 
+ Attribute availability:
+  o transcript_id ... OK
+  o gene_id ... OK
+  o transcript_biotype ... OK
+OK
+Processing exons ... OK
+Processing chromosomes ... Fetch seqlengths from ensembl ... Error in new_handle() : An unknown option was passed in to libcurl
+In addition: Warning message:
+In ensDbFromGRanges(GTF, outfile = outfile, path = path, organism = organism,  :
+   I'm missing column(s): 'entrezid'. The corresponding database column(s) will be empty!
+Error in new_handle() : An unknown option was passed in to libcurl
+Error in new_handle() : An unknown option was passed in to libcurl
+Error in new_handle() : An unknown option was passed in to libcurl
+Error in new_handle() : An unknown option was passed in to libcurl
+FAIL
+OK
+Generating index ... OK
+  -------------
+Verifying validity of the information in the database:
+Checking transcripts ... OK
+Checking exons ... OK
+[1] "alpine/Homo_sapiens.GRCh38.90.sqlite"
+There were 13 warnings (use warnings() to see them)
+> 
+> ## Get list of transcripts
+> (txdb <- EnsDb(paste0(outdir, "/", gsub("gtf", "sqlite", basename(gtf)))))
+EnsDb for Ensembl:
+|Backend: SQLite
+|Db type: EnsDb
+|Type of Gene ID: Ensembl Gene ID
+|Supporting package: ensembldb
+|Db created by: ensembldb package from Bioconductor
+|script_version: 0.0.1
+|Creation time: Mon Oct 30 09:12:11 2017
+|ensembl_version: 90
+|ensembl_host: unknown
+|Organism: Homo_sapiens
+|genome_build: GRCh38
+|DBSCHEMAVERSION: 1.0
+|source_file: Homo_sapiens.GRCh38.90.gtf
+| No. of genes: 58302.
+| No. of transcripts: 200310.
+> (txdf <- transcripts(txdb, return.type = "DataFrame"))  ## data frame format
+DataFrame with 200310 rows and 8 columns
+                 tx_id           tx_biotype tx_seq_start tx_seq_end
+           <character>          <character>    <integer>  <integer>
+1      ENST00000387314              Mt_tRNA          577        647
+2      ENST00000389680              Mt_rRNA          648       1601
+3      ENST00000387342              Mt_tRNA         1602       1670
+4      ENST00000387347              Mt_rRNA         1671       3229
+5      ENST00000612848       protein_coding         2585      11802
+...                ...                  ...          ...        ...
+200306 ENST00000355360       protein_coding    248906196  248919946
+200307 ENST00000329291       protein_coding    248906243  248918573
+200308 ENST00000462488 processed_transcript    248906372  248917401
+200309 ENST00000363625                snRNA    248912690  248912795
+200310 ENST00000430973 processed_pseudogene    248936581  248937043
+       tx_cds_seq_start tx_cds_seq_end         gene_id         tx_name
+              <integer>      <integer>     <character>     <character>
+1                    NA             NA ENSG00000210049 ENST00000387314
+2                    NA             NA ENSG00000211459 ENST00000389680
+3                    NA             NA ENSG00000210077 ENST00000387342
+4                    NA             NA ENSG00000210082 ENST00000387347
+5                  2676          11615 ENSG00000276345 ENST00000612848
+...                 ...            ...             ...             ...
+200306        248917338      248918363 ENSG00000185220 ENST00000355360
+200307        248913863      248918363 ENSG00000185220 ENST00000329291
+200308               NA             NA ENSG00000185220 ENST00000462488
+200309               NA             NA ENSG00000200495 ENST00000363625
+200310               NA             NA ENSG00000233084 ENST00000430973
+> (txps <- transcripts(txdb))  ## GRanges format
+GRanges object with 200310 ranges and 6 metadata columns:
+                  seqnames               ranges strand |           tx_id
+                     <Rle>            <IRanges>  <Rle> |     <character>
+  ENST00000456328        1       [11869, 14409]      + | ENST00000456328
+  ENST00000450305        1       [12010, 13670]      + | ENST00000450305
+  ENST00000488147        1       [14404, 29570]      - | ENST00000488147
+  ENST00000619216        1       [17369, 17436]      - | ENST00000619216
+  ENST00000473358        1       [29554, 31097]      + | ENST00000473358
+              ...      ...                  ...    ... .             ...
+  ENST00000420810        Y [26549425, 26549743]      + | ENST00000420810
+  ENST00000456738        Y [26586642, 26591601]      - | ENST00000456738
+  ENST00000435945        Y [26594851, 26634652]      - | ENST00000435945
+  ENST00000435741        Y [26626520, 26627159]      - | ENST00000435741
+  ENST00000431853        Y [56855244, 56855488]      + | ENST00000431853
+                                          tx_biotype tx_cds_seq_start
+                                         <character>        <integer>
+  ENST00000456328               processed_transcript             <NA>
+  ENST00000450305 transcribed_unprocessed_pseudogene             <NA>
+  ENST00000488147             unprocessed_pseudogene             <NA>
+  ENST00000619216                              miRNA             <NA>
+  ENST00000473358                            lincRNA             <NA>
+              ...                                ...              ...
+  ENST00000420810               processed_pseudogene             <NA>
+  ENST00000456738             unprocessed_pseudogene             <NA>
+  ENST00000435945             unprocessed_pseudogene             <NA>
+  ENST00000435741               processed_pseudogene             <NA>
+  ENST00000431853               processed_pseudogene             <NA>
+                  tx_cds_seq_end         gene_id         tx_name
+                       <integer>     <character>     <character>
+  ENST00000456328           <NA> ENSG00000223972 ENST00000456328
+  ENST00000450305           <NA> ENSG00000223972 ENST00000450305
+  ENST00000488147           <NA> ENSG00000227232 ENST00000488147
+  ENST00000619216           <NA> ENSG00000278267 ENST00000619216
+  ENST00000473358           <NA> ENSG00000243485 ENST00000473358
+              ...            ...             ...             ...
+  ENST00000420810           <NA> ENSG00000224240 ENST00000420810
+  ENST00000456738           <NA> ENSG00000227629 ENST00000456738
+  ENST00000435945           <NA> ENSG00000237917 ENST00000435945
+  ENST00000435741           <NA> ENSG00000231514 ENST00000435741
+  ENST00000431853           <NA> ENSG00000235857 ENST00000431853
+  -------
+  seqinfo: 47 sequences from GRCh38 genome; no seqlengths
+> 
+> ## Select genes with a single isoform
+> tab <- table(txdf$gene_id)
+> one.iso.genes <- names(tab)[tab == 1]
+> length(one.iso.genes)
+[1] 36139
+> length(tab)
+[1] 58302
+> 
+> ## Get list of exons by transcript
+> (ebt0 <- exonsBy(txdb, by = "tx"))
+GRangesList object of length 200310:
+$ENST00000000233 
+GRanges object with 6 ranges and 2 metadata columns:
+      seqnames                 ranges strand |         exon_id exon_rank
+         <Rle>              <IRanges>  <Rle> |     <character> <integer>
+  [1]        7 [127588345, 127588565]      + | ENSE00001872691         1
+  [2]        7 [127589083, 127589163]      + | ENSE00003494180         2
+  [3]        7 [127589485, 127589594]      + | ENSE00003504066         3
+  [4]        7 [127590066, 127590137]      + | ENSE00003678978         4
+  [5]        7 [127590963, 127591088]      + | ENSE00003676786         5
+  [6]        7 [127591213, 127591705]      + | ENSE00000882271         6
+
+$ENST00000000412 
+GRanges object with 7 ranges and 2 metadata columns:
+      seqnames             ranges strand |         exon_id exon_rank
+  [1]       12 [8949488, 8949955]      - | ENSE00002286327         1
+  [2]       12 [8946229, 8946405]      - | ENSE00003523177         2
+  [3]       12 [8945418, 8945584]      - | ENSE00003631241         3
+  [4]       12 [8943801, 8943910]      - | ENSE00003492441         4
+  [5]       12 [8943405, 8943535]      - | ENSE00000717490         5
+  [6]       12 [8942416, 8942542]      - | ENSE00003610229         6
+  [7]       12 [8940365, 8941940]      - | ENSE00002254457         7
+
+$ENST00000000442 
+GRanges object with 7 ranges and 2 metadata columns:
+      seqnames               ranges strand |         exon_id exon_rank
+  [1]       11 [64305578, 64305736]      + | ENSE00001884684         1
+  [2]       11 [64307168, 64307504]      + | ENSE00001195360         2
+  [3]       11 [64313951, 64314067]      + | ENSE00003589560         3
+  [4]       11 [64314239, 64314367]      + | ENSE00003471121         4
+  [5]       11 [64314741, 64314911]      + | ENSE00001195335         5
+  [6]       11 [64315001, 64315270]      + | ENSE00000727249         6
+  [7]       11 [64315707, 64316738]      + | ENSE00001271942         7
+
+...
+<200307 more elements>
+-------
+seqinfo: 47 sequences from GRCh38 genome; no seqlengths
+> 
+> ## Get transcript names for genes with a single isoform
+> one.iso.txs <- txdf$tx_id[txdf$gene_id %in% one.iso.genes]
+> 
+> ## Extract these transcripts for use in fitting bias model
+> ebt.fit <- ebt0[one.iso.txs]
+> ebt.fit <- keepStandardChromosomes(ebt.fit, pruning.mode = "coarse")
+> 
+> ## Filter small genes and long genes
+> min.bp <- 600
+> max.bp <- 7000
+> gene.lengths <- sum(width(ebt.fit))
+> summary(gene.lengths)
+    Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+     8.0    261.2    496.0    822.5    916.0 205012.0 
+> 
+> ebt.fit <- ebt.fit[gene.lengths > min.bp & gene.lengths < max.bp]
+> length(ebt.fit)
+[1] 14180
+> 
+> ## Sample 500 genes to use for the fitting of the bias model
+> set.seed(1)
+> ebt.fit <- ebt.fit[sample(length(ebt.fit), 500)]
+> 
+> ## Read bam file
+> bam.files <- bam
+> names(bam.files) <- "1"
+> 
+> ## Subset to medium-to-high expressed genes
+> txps.fit <- sort(txps[names(ebt.fit)])
+> cts <- countBam(BamFile(bam.files), param = ScanBamParam(which = txps.fit))
+> mcols(txps.fit)$cts <- cts$records
+> txps.fit <- txps.fit[names(ebt.fit)]
+> sum(txps.fit$cts > 500 & txps.fit$cts < 10000)
+[1] 77
+> ebt.fit <- ebt.fit[txps.fit$cts > 500 & txps.fit$cts < 10000]
+> length(ebt.fit)
+[1] 77
+> 
+> ## Get fragment width and read length
+> w <- getFragmentWidths(bam.files, ebt.fit[[1]])
+Warning message:
+In .make_GAlignmentPairs_from_GAlignments(gal, strandMode = strandMode,  :
+    9 alignments with ambiguous pairing were dumped.
+    Use 'getDumpedAlignments()' to retrieve them from the dump environment.
+> quantile(w, c(.025, .975))
+   2.5%   97.5% 
+ 97.025 385.850 
+> getReadLength(bam.files)
+  1 
+126 
+> 
+> readlength <- 126
+> minsize <- 100
+> maxsize <- 300
+> 
+> ## Names of genes to retain
+> gene.names <- names(ebt.fit)
+> names(gene.names) <- gene.names
+> 
+> ## Build fragment types for selected genes
+> system.time({
++   fragtypes <- lapply(gene.names, function(gene.name) {
++     buildFragtypes(exons = ebt.fit[[gene.name]],
++                    genome = Hsapiens,
++                    readlength = readlength,
++                    minsize = minsize,
++                    maxsize = maxsize,
++                    gc.str = FALSE)
++   })
++ })
+   user  system elapsed 
+165.311  17.148 183.440 
+> object.size(fragtypes)/1e6
+2506.3 bytes
+> 
+> ## Define models to fit
+> models <- list(
++   "all" = list(
++     formula = "count ~ ns(gc,knots=gc.knots,Boundary.knots=gc.bk) + 
++     ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) + gene",
++     offset = c("fraglen", "vlmm")
++   )
++ )
+> 
+> ## Fit bias model
+> system.time({
++   fitpar <- lapply(bam.files, function(bf) {
++     fitBiasModels(genes = ebt.fit,
++                   bam.file = bf,
++                   fragtypes = fragtypes,
++                   genome = Hsapiens,
++                   models = models,
++                   readlength = readlength,
++                   minsize = minsize,
++                   maxsize = maxsize)
++   })
++ })
+   user  system elapsed 
+189.486  17.588 208.103 
+> 
+> ## Diagnostic plots
+> pdf(paste0(outdir, "/alpine_fitbiasmodel_plots.pdf"))
+> plotFragLen(fitpar)
+> plotGC(fitpar, model = "all")
+> dev.off()
+null device 
+          1 
+> 
+> ## Save bias model
+> saveRDS(list(fitpar = fitpar, ebt0 = ebt0, txps = txps), 
++         file = paste0(outdir, "/alpine_fitbiasmodel.rds"))
+> 
+> date()
+[1] "Mon Oct 30 09:20:53 2017"
+> sessionInfo()
+R version 3.4.0 (2017-04-21)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 14.04.5 LTS
+
+Matrix products: default
+BLAS: /usr/local/R/R-3.4.0/lib/libRblas.so
+LAPACK: /usr/local/R/R-3.4.0/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=en_CA.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=en_CA.UTF-8        LC_COLLATE=en_CA.UTF-8    
+ [5] LC_MONETARY=en_CA.UTF-8    LC_MESSAGES=en_CA.UTF-8   
+ [7] LC_PAPER=en_CA.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=en_CA.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] stats4    parallel  stats     graphics  grDevices utils     datasets 
+[8] methods   base     
+
+other attached packages:
+ [1] dplyr_0.7.4                           
+ [2] BSgenome.Hsapiens.NCBI.GRCh38_1.3.1000
+ [3] BSgenome_1.44.2                       
+ [4] rtracklayer_1.36.4                    
+ [5] GenomicAlignments_1.12.2              
+ [6] SummarizedExperiment_1.6.5            
+ [7] DelayedArray_0.2.7                    
+ [8] matrixStats_0.52.2                    
+ [9] Rsamtools_1.28.0                      
+[10] Biostrings_2.44.2                     
+[11] XVector_0.16.0                        
+[12] alpine_1.2.0                          
+[13] ensembldb_2.0.4                       
+[14] AnnotationFilter_1.0.0                
+[15] GenomicFeatures_1.28.5                
+[16] AnnotationDbi_1.38.2                  
+[17] Biobase_2.36.2                        
+[18] GenomicRanges_1.28.5                  
+[19] GenomeInfoDb_1.12.2                   
+[20] IRanges_2.10.3                        
+[21] S4Vectors_0.14.5                      
+[22] BiocGenerics_0.22.0                   
+
+loaded via a namespace (and not attached):
+ [1] splines_3.4.0                 lattice_0.20-35              
+ [3] htmltools_0.3.6               yaml_2.1.14                  
+ [5] interactiveDisplayBase_1.14.0 blob_1.1.0                   
+ [7] XML_3.98-1.9                  RBGL_1.52.0                  
+ [9] rlang_0.1.2                   glue_1.1.1                   
+[11] DBI_0.7                       BiocParallel_1.10.1          
+[13] bit64_0.9-7                   bindrcpp_0.2                 
+[15] speedglm_0.3-2                bindr_0.1                    
+[17] GenomeInfoDbData_0.99.0       stringr_1.2.0                
+[19] zlibbioc_1.22.0               ProtGenerics_1.8.0           
+[21] memoise_1.1.0                 biomaRt_2.32.1               
+[23] httpuv_1.3.5                  BiocInstaller_1.26.1         
+[25] curl_2.8.1                    Rcpp_0.12.13                 
+[27] xtable_1.8-2                  graph_1.54.0                 
+[29] mime_0.5                      bit_1.1-12                   
+[31] AnnotationHub_2.8.2           digest_0.6.12                
+[33] stringi_1.1.5                 shiny_1.0.5                  
+[35] grid_3.4.0                    tools_3.4.0                  
+[37] bitops_1.0-6                  magrittr_1.5                 
+[39] lazyeval_0.2.0                RCurl_1.95-4.8               
+[41] tibble_1.3.4                  RSQLite_2.0                  
+[43] pkgconfig_2.0.1               MASS_7.3-47                  
+[45] Matrix_1.2-11                 assertthat_0.2.0             
+[47] httr_1.3.1                    R6_2.2.2                     
+[49] compiler_3.4.0               
+> 
+> proc.time()
+   user  system elapsed 
+520.619  62.703 591.535 

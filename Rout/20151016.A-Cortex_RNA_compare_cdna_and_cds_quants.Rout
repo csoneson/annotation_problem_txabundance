@@ -77,7 +77,12 @@ Joining, by = c("Name", "gene")
 +   dplyr::filter(Ntx > 1) %>% 
 +   dplyr::filter(abs(RelCountcDNA - RelCountCDS) > 0.9)
 > 
-> write.table(tophits, file = gsub("rds$", "txt", outrds), row.names = FALSE,
+> write.table(tophits, file = gsub("\\.rds$", "_topgenes.txt", outrds), row.names = FALSE,
++             col.names = TRUE, quote = FALSE, sep = "\t")
+> 
+> write.table(abundances %>% dplyr::filter(gene %in% unique(tophits$gene)) %>%
++               dplyr::arrange(gene), 
++             file = gsub("\\.rds$", "_topgenes_alltx.txt", outrds), row.names = FALSE,
 +             col.names = TRUE, quote = FALSE, sep = "\t")
 > 
 > ## Plot coverage of top hits
@@ -312,8 +317,8 @@ loaded via a namespace (and not attached):
 [81] Rcpp_0.12.12                  rpart_4.1-11                 
 [83] acepack_1.4.1                
 > date()
-[1] "Mon Sep  4 15:53:26 2017"
+[1] "Mon Sep  4 20:35:21 2017"
 > 
 > proc.time()
    user  system elapsed 
-612.084   8.653 622.130 
+601.277   5.631 608.236 

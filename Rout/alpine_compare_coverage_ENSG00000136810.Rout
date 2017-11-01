@@ -23,7 +23,7 @@ Type 'q()' to quit R.
 + }
 > 
 > print(gene)
-[1] "ENSG00000174684"
+[1] "ENSG00000136810"
 > print(bam)
 [1] "STAR/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bam"
 > print(bw)
@@ -35,7 +35,7 @@ Type 'q()' to quit R.
 > print(biasmodels)
 [1] "alpine/alpine_fitbiasmodel.rds"
 > print(outrds)
-[1] "alpine_out/ENSG00000174684.rds"
+[1] "alpine_out/ENSG00000136810.rds"
 > 
 > suppressPackageStartupMessages(library(dplyr))
 > suppressPackageStartupMessages(library(alpine))
@@ -89,7 +89,9 @@ Type 'q()' to quit R.
 +   }, error = function(e) NULL)
 +   pc
 + })
-ENST00000311181
+ENST00000374515
+ENST00000374517
+ENST00000487892
 > 
 > junctionlist <- lapply(txlist, function(tx) {
 +   txmod <- sort(ebt0[[tx]])
@@ -162,10 +164,18 @@ null device
 +   file = gsub("rds$", "txt", outrds),
 +   quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t")
 > print(as.data.frame(jl))
-  junctionid seqnames    start      end width strand coverage uniqreads mmreads
-1         J1       11 66346241 66346489   249      - 1639.253       911       0
-  scaledcoverage
-1            911
+  junctionid seqnames     start       end width strand   coverage uniqreads
+1         J1        9 110244220 110244777   558      - 2546.61997      2885
+2         J2        9 110244844 110250819  5976      - 2873.35538      2998
+3         J3        9 110244844 110251357  6514      -   10.39523        13
+4         J4        9 110250880 110251357   478      - 2960.28202      2629
+5         J5        9 110251463 110256411  4949      - 1687.29357      2318
+  mmreads scaledcoverage
+1      38     2739.94323
+2      35     3091.48232
+3       0       11.18437
+4       0     3185.00787
+5       1     1815.38221
 > 
 > saveRDS(NULL, outrds)
 > sessionInfo()
@@ -256,9 +266,9 @@ loaded via a namespace (and not attached):
 [75] memoise_1.1.0                 cluster_2.0.6                
 [77] interactiveDisplayBase_1.14.0
 > date()
-[1] "Wed Nov  1 20:52:20 2017"
+[1] "Wed Nov  1 20:52:16 2017"
 > 
 > 
 > proc.time()
    user  system elapsed 
-105.719   4.611 111.383 
+103.027   3.886 107.935 

@@ -14,11 +14,16 @@ bedtools := /usr/local/bin/bedtools
 fastqdir := /home/Shared/data/seq/roche_pacbio_targeted_cdna/Illumina_RNA_seq
 fastqname := 20151016.A-Cortex_RNA
 
-plotgene := ENSG00000198888 ENSG00000198712 ENSG00000162783 ENSG00000116120 ENSG00000174684 \
+plotgene := ENSG00000116120 ENSG00000174684 \
 ENSG00000151067 ENSG00000100764 ENSG00000198728 ENSG00000185591 ENSG00000125354 \
 ENSG00000158258 ENSG00000196814 ENSG00000153823 \
 ENSG00000000003 ENSG00000000419 ENSG00000001497 ENSG00000004478 ENSG00000004779 \
-ENSG00000005100 ENSG00000001630 ENSG00000280831 ENSG00000281709 ENSG00000284487
+ENSG00000005100 ENSG00000001630 ENSG00000182141 ENSG00000214013 ENSG00000136810 \
+ENSG00000186868 ENSG00000065183 \
+ENSG00000171161 ENSG00000073060 ENSG00000185658 ENSG00000121671 ENSG00000181163 \
+ENSG00000122733 ENSG00000120697 ENSG00000137992 ENSG00000188191 ENSG00000184271 \
+ENSG00000129245 ENSG00000172057 ENSG00000214022 ENSG00000134532 ENSG00000166340 \
+ENSG00000130717 ENSG00000119698 ENSG00000170100 ENSG00000105325 ENSG00000166224
 
 .PHONY: all
 
@@ -108,17 +113,27 @@ STAR/$(fastqname)/$(fastqname)_Aligned.sortedByCoord.out.bam
 ## ==================================================================================== ##
 ##                                   alpine                                             ##
 ## ==================================================================================== ##
+## Summarize gene characteristics
+alpine/gene_characteristics.rds: $(gtf) salmon/cDNA/$(fastqname)/quant.sf \
+reference/Homo_sapiens.GRCh38.90_tx2gene.rds Rscripts/summarize_gene_characteristics.R
+	$(R) "--args quantsf='$(word 2,$^)' gtf='$(word 1,$^)' tx2gene='$(word 3,$^)' outrds='$@'" Rscripts/summarize_gene_characteristics.R Rout/summarize_geene_characteristics.Rout
+
 ## Fit bias model
 alpine/alpine_fitbiasmodel.rds: $(gtf) STAR/$(fastqname)/$(fastqname)_Aligned.sortedByCoord.out.bam \
 Rscripts/alpine_fitbiasmodel.R
 	$(R) "--args gtf='$(gtf)' bam='$(word 2,$^)' outdir='alpine'" Rscripts/alpine_fitbiasmodel.R Rout/alpine_fitbiasmodel.Rout
 
+## Prepare reference files
+alpine/alpine_genemodels.rds: $(gtf) STAR/$(fastqname)/$(fastqname)_Aligned.sortedByCoord.out.bam \
+salmon/cDNA/$(fastqname)/quant.sf Rscripts/alpine_prepare_for_comparison.R
+	$(R) "--args gtf='$(gtf)' junctioncov='STAR/$(fastqname)/$(fastqname)_SJ.out.tab' quantsf='$(word 3,$^)' outrds='$@'" Rscripts/alpine_prepare_for_comparison.R Rout/alpine_prepare_for_comparison.Rout
+
 ## Predict coverage and compare to observed junction coverage
 define alpinepredrule
 alpine_out/$(1).rds: alpine/alpine_fitbiasmodel.rds STAR/$$(fastqname)/$$(fastqname)_Aligned.sortedByCoord.out.bam \
-salmon/cDNA/$(fastqname)/quant.sf Rscripts/alpine_compare_coverage.R \
+salmon/cDNA/$(fastqname)/quant.sf alpine/alpine_genemodels.rds Rscripts/alpine_compare_coverage.R \
 STARbigwig/$(fastqname)_Aligned.sortedByCoord.out.bw
 	mkdir -p $$(@D)
-	$(R) "--args gene='$(1)' bam='$$(word 2,$$^)' bw='$$(word 5,$$^)' gtf='$$(gtf)' quantsf='$$(word 3,$$^)' junctioncov='STAR/$$(fastqname)/$$(fastqname)_SJ.out.tab' biasmodels='$$(word 1,$$^)' outrds='$$@'" Rscripts/alpine_compare_coverage.R Rout/alpine_compare_coverage_$(1).Rout
+	$(R) "--args gene='$(1)' bam='$$(word 2,$$^)' bw='$$(word 6,$$^)' genemodels='$$(word 4,$$^)' quantsf='$$(word 3,$$^)' biasmodels='$$(word 1,$$^)' outrds='$$@'" Rscripts/alpine_compare_coverage.R Rout/alpine_compare_coverage_$(1).Rout
 endef
 $(foreach G,$(plotgene),$(eval $(call alpinepredrule,$(G))))

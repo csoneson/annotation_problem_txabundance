@@ -28,12 +28,10 @@ Type 'q()' to quit R.
 [1] "STAR/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bam"
 > print(bw)
 [1] "STARbigwig/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bw"
-> print(gtf)
-[1] "/home/Shared/data/annotation/Human/Ensembl_GRCh38.90/gtf/Homo_sapiens.GRCh38.90.gtf"
+> print(genemodels)
+[1] "alpine/alpine_genemodels.rds"
 > print(quantsf)
 [1] "salmon/cDNA/20151016.A-Cortex_RNA/quant.sf"
-> print(junctioncov)
-[1] "STAR/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_SJ.out.tab"
 > print(biasmodels)
 [1] "alpine/alpine_fitbiasmodel.rds"
 > print(outrds)
@@ -51,10 +49,9 @@ Type 'q()' to quit R.
 > 
 > source("Rscripts/plot_tracks.R")
 > 
-> ## Create gene models for Gviz visualization
-> options(ucscChromosomeNames = FALSE)
-> genemodels_exon <- create_genemodels(gtf, seltype = "exon")
-> genemodels_cds <- create_genemodels(gtf, seltype = "CDS")
+> ## Read gene models for plot (pregenerated from gtf to save time)
+> genemodels <- readRDS(genemodels)
+> quantsf <- genemodels$quantsf
 > 
 > ## Read bias model parameters and gene models
 > biasmodels <- readRDS(biasmodels)
@@ -74,40 +71,22 @@ Type 'q()' to quit R.
 > bam.files <- bam
 > names(bam.files) <- "1"
 > 
-> ## Read Salmon quantifications
-> quantsf <- read.delim(quantsf, header = TRUE, as.is = TRUE)
-> quantsf$Name <- gsub("\\.[0-9]+", "", quantsf$Name)
-> 
-> ## Get number of reads overlapping each transcript in the gene model
-> # generange <- range(unlist(ebt0[txlist]))
-> # strand(generange) <- "*"
-> # ga <- alpine:::readGAlignAlpine(bam.files, generange)
-> # ga <- keepSeqlevels(ga, as.character(seqnames(unlist(ebt0[txlist]))[1]))
-> # fco <- findCompatibleOverlaps(ga, GRangesList(ebt0[txlist]))
-> # tmp <- subjectHits(fco)
-> # tmp <- names(ebt0[txlist])[tmp]
-> # nreads <- table(tmp)
-> # if (length(setdiff(names(ebt0[txlist]), names(nreads))) > 0) {
-> #   for (i in setdiff(names(ebt0[txlist]), names(nreads))) {
-> #     nreads[i] <- 0
-> #   }
-> # }
-> 
 > ## Predict coverage for each transcript
 > pred.cov <- lapply(txlist, function(tx) {
 +   message(tx)
 +   ## Get transcript model
 +   txmod <- ebt0[[tx]]
 +   
-+   pc <- predictCoverage(gene = txmod,
-+                         bam.files = bam.files,
-+                         fitpar = fitpar,
-+                         genome = Hsapiens,
-+                         model.names = "all")
-+   # if (nreads[tx] != 0)
-+   ## Scale predicted coverage to agree with Salmon's estimated count
-+   # pc$`1`$pred.cov$all <- pc$`1`$pred.cov$all/as.numeric(nreads[tx]) * quantsf$NumReads[quantsf$Name == tx]
-+   pc$`1`$pred.cov$all <- pc$`1`$pred.cov$all/sum(pc$`1`$pred.cov$all) * quantsf$NumReads[quantsf$Name == tx] * avefraglength
++   pc <- tryCatch({
++     m <- predictCoverage(gene = txmod,
++                          bam.files = bam.files,
++                          fitpar = fitpar,
++                          genome = Hsapiens,
++                          model.names = "all")
++     ## Scale predicted coverage to agree with Salmon's estimated count
++     m$`1`$pred.cov$all <- m$`1`$pred.cov$all/sum(m$`1`$pred.cov$all) * quantsf$NumReads[quantsf$Name == tx] * avefraglength
++     m
++   }, error = function(e) NULL)
 +   pc
 + })
 ENST00000360156
@@ -121,7 +100,7 @@ ENST00000467310
 ENST00000481072
 > 
 > junctionlist <- lapply(txlist, function(tx) {
-+   txmod <- ebt0[[tx]]
++   txmod <- sort(ebt0[[tx]])
 +   junctions <- GenomicRanges::setdiff(range(txmod), txmod)
 +   if (all(strand(txmod) == "+")) {
 +     junctionpos <- cumsum(width(txmod))
@@ -141,21 +120,13 @@ ENST00000481072
 > 
 > jl <- do.call(rbind, lapply(junctionlist, as.data.frame)) %>% 
 +   dplyr::group_by(seqnames, start, end, width, strand) %>%
-+   dplyr::summarize(coverage = sum(coverage)) %>% ungroup()
++   dplyr::summarize(coverage = sum(coverage, na.rm = TRUE)) %>% ungroup() %>%
++   dplyr::mutate(coverage = replace(coverage, is.na(coverage), 0))
 > 
-> ## Read junction coverages
-> jcov <- read.delim(junctioncov, 
-+                    header = FALSE, as.is = TRUE)
-> colnames(jcov) <- c("seqnames", "start", "end", "strand", "motif", "annot", 
-+                     "uniqreads", "mmreads", "maxoverhang")
-> jcov <- jcov %>% dplyr::mutate(strand = replace(strand, strand == 1, "+")) %>%
-+   dplyr::mutate(strand = replace(strand, strand == 2, "-")) %>%
-+   dplyr::select(-motif, -annot, -maxoverhang)
-> 
-> jl <- dplyr::left_join(jl, jcov) %>%
+> jl <- dplyr::left_join(jl, genemodels$jcov) %>%
 +   dplyr::mutate(uniqreads = replace(uniqreads, is.na(uniqreads), 0),
 +                 mmreads = replace(mmreads, is.na(mmreads), 0)) %>%
-+   dplyr::mutate(scaledcoverage = coverage/sum(coverage) * sum(uniqreads)) %>%
++   dplyr::mutate(scaledcoverage = coverage/sum(coverage, na.rm = TRUE) * sum(uniqreads, na.rm = TRUE)) %>%
 +   dplyr::mutate(junctionid = paste0("J", seq_len(length(scaledcoverage)))) %>%
 +   dplyr::select(junctionid, everything())
 Joining, by = c("seqnames", "start", "end", "strand")
@@ -165,8 +136,8 @@ Warning messages:
 > 
 > pdf(gsub("rds$", "pdf", outrds), width = 12, height = 10)
 > tryCatch({
-+   plot_tracks(mygene = gene, genemodels = genemodels_exon, 
-+               genemodels2 = genemodels_cds, 
++   plot_tracks(mygene = gene, genemodels = genemodels$genemodels_exon, 
++               genemodels2 = genemodels$genemodels_cds, 
 +               gtf_file = NULL, rnaseq_datafiles = structure(bw, names = "s1"), 
 +               rnaseq_condition = structure("g1", names = "s1"), show_chr = NULL, 
 +               min_coord = NULL, max_coord = NULL, 
@@ -183,7 +154,8 @@ Warning messages:
 > print(ggplot(jl, aes(x = scaledcoverage, y = uniqreads, label = junctionid)) + 
 +         geom_point(size = 4) + geom_label_repel() + 
 +         geom_abline(intercept = 0, slope = 1) + 
-+         ggtitle(paste0("score = ", round(sum(abs(jl$uniqreads - jl$scaledcoverage))/sum(jl$uniqreads), 2))) + 
++         ggtitle(paste0("score = ", round(sum(abs(jl$uniqreads - jl$scaledcoverage), 
++                                                  na.rm = TRUE)/sum(jl$uniqreads, na.rm = TRUE), 2))) + 
 +         xlab("Scaled predicted coverage") + ylab("Number of uniquely mapped reads"))
 > dev.off()
 null device 
@@ -194,48 +166,50 @@ null device
 +   dplyr::mutate(ranking = order(order(difference))) %>%
 +     dplyr::mutate(coverage = round(coverage, 2),
 +                   scaledcoverage = round(scaledcoverage, 2),
-+                   difference = round(difference, 2)), file = gsub("rds$", "txt", outrds),
++                   difference = round(difference, 2)), 
++   file = gsub("rds$", "txt", outrds),
 +   quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t")
 > print(as.data.frame(jl))
-   junctionid seqnames     start       end width strand    coverage uniqreads
-1          J1        X 119616743 119618712  1970      -   0.5362883         0
-2          J2        X 119616743 119625334  8592      - 303.3164854         0
-3          J3        X 119616743 119629317 12575      -   5.7472026       256
-4          J4        X 119618787 119625334  6548      -   0.4953090         1
-5          J5        X 119618787 119629317 10531      -   3.7305172         8
-6          J6        X 119620052 119625334  5283      -   6.4201983        11
-7          J7        X 119620052 119629317  9266      -   4.2456810         4
-8          J8        X 119625380 119629317  3938      - 369.3099061        12
-9          J9        X 119625397 119629317  3921      -   5.1820092         1
-10        J10        X 119629509 119633359  3851      - 342.0417837       379
-11        J11        X 119629509 119640691 11183      -   0.3728795         0
-12        J12        X 119633493 119637026  3534      - 432.7856382       249
-13        J13        X 119637196 119640691  3496      - 359.1401765       155
-14        J14        X 119640789 119649936  9148      - 383.6090019       253
-15        J15        X 119650099 119652853  2755      - 455.5202740       328
-16        J16        X 119653041 119663481 10441      - 313.3151951       267
-17        J17        X 119663678 119675553 11876      - 245.2100918       125
-18        J18        X 119675669 119693075 17407      - 257.2810246        44
+   junctionid seqnames     start       end width strand     coverage uniqreads
+1          J1        X 119616743 119618712  1970      -   0.05274558         0
+2          J2        X 119616743 119625334  8592      - 325.87237299         0
+3          J3        X 119616743 119629317 12575      -   0.87840518       256
+4          J4        X 119618787 119625334  6548      -   0.18908627         1
+5          J5        X 119618787 119629317 10531      -   5.20382557         8
+6          J6        X 119620052 119625334  5283      -  14.02458977        11
+7          J7        X 119620052 119629317  9266      -   7.93719558         4
+8          J8        X 119625380 119629317  3938      - 400.70469451        12
+9          J9        X 119625397 119629317  3921      -  10.09974784         1
+10        J10        X 119629509 119633359  3851      - 469.33970238       379
+11        J11        X 119629509 119640691 11183      -   0.56422788         0
+12        J12        X 119633493 119637026  3534      - 297.45768260       249
+13        J13        X 119637196 119640691  3496      - 264.14627400       155
+14        J14        X 119640789 119649936  9148      - 293.50965410       253
+15        J15        X 119650099 119652853  2755      - 296.21547284       328
+16        J16        X 119653041 119663481 10441      - 311.56027434       267
+17        J17        X 119663678 119675553 11876      - 159.02532115       125
+18        J18        X 119675669 119693075 17407      -  64.41000055        44
    mmreads scaledcoverage
-1        0      0.3217798
-2        0    181.9937348
-3        1      3.4483944
-4        0      0.2971917
-5        0      2.2383576
-6        0      3.8522003
-7        0      2.5474624
-8        0    221.5906235
-9        0      3.1092712
-10       0    205.2294045
-11       0      0.2237324
-12       0    259.6768671
-13       0    215.4886568
-14       0    230.1702622
-15       0    273.3179366
-16       1    187.9930874
-17       0    147.1291623
-18       0    154.3718750
+1        0      0.0377916
+2        0    233.4838129
+3        1      0.6293672
+4        0      0.1354781
+5        0      3.7284813
+6        0     10.0484575
+7        0      5.6869095
+8        0    287.1003119
+9        0      7.2363533
+10       0    336.2765068
+11       0      0.4042628
+12       0    213.1250136
+13       0    189.2577718
+14       0    210.2962965
+15       0    212.2349845
+16       1    223.2293586
+17       0    113.9398163
+18       0     46.1490257
 > 
+> saveRDS(NULL, outrds)
 > sessionInfo()
 R version 3.4.0 (2017-04-21)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -324,9 +298,9 @@ loaded via a namespace (and not attached):
 [75] memoise_1.1.0                 cluster_2.0.6                
 [77] interactiveDisplayBase_1.14.0
 > date()
-[1] "Wed Nov  1 14:55:02 2017"
+[1] "Wed Nov  1 20:55:23 2017"
 > 
 > 
 > proc.time()
    user  system elapsed 
-378.964  28.070 408.808 
+280.594  11.472 294.261 

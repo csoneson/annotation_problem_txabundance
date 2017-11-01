@@ -28,12 +28,10 @@ Type 'q()' to quit R.
 [1] "STAR/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bam"
 > print(bw)
 [1] "STARbigwig/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bw"
-> print(gtf)
-[1] "/home/Shared/data/annotation/Human/Ensembl_GRCh38.90/gtf/Homo_sapiens.GRCh38.90.gtf"
+> print(genemodels)
+[1] "alpine/alpine_genemodels.rds"
 > print(quantsf)
 [1] "salmon/cDNA/20151016.A-Cortex_RNA/quant.sf"
-> print(junctioncov)
-[1] "STAR/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_SJ.out.tab"
 > print(biasmodels)
 [1] "alpine/alpine_fitbiasmodel.rds"
 > print(outrds)
@@ -51,10 +49,9 @@ Type 'q()' to quit R.
 > 
 > source("Rscripts/plot_tracks.R")
 > 
-> ## Create gene models for Gviz visualization
-> options(ucscChromosomeNames = FALSE)
-> genemodels_exon <- create_genemodels(gtf, seltype = "exon")
-> genemodels_cds <- create_genemodels(gtf, seltype = "CDS")
+> ## Read gene models for plot (pregenerated from gtf to save time)
+> genemodels <- readRDS(genemodels)
+> quantsf <- genemodels$quantsf
 > 
 > ## Read bias model parameters and gene models
 > biasmodels <- readRDS(biasmodels)
@@ -74,44 +71,227 @@ Type 'q()' to quit R.
 > bam.files <- bam
 > names(bam.files) <- "1"
 > 
-> ## Read Salmon quantifications
-> quantsf <- read.delim(quantsf, header = TRUE, as.is = TRUE)
-> quantsf$Name <- gsub("\\.[0-9]+", "", quantsf$Name)
-> 
-> ## Get number of reads overlapping each transcript in the gene model
-> # generange <- range(unlist(ebt0[txlist]))
-> # strand(generange) <- "*"
-> # ga <- alpine:::readGAlignAlpine(bam.files, generange)
-> # ga <- keepSeqlevels(ga, as.character(seqnames(unlist(ebt0[txlist]))[1]))
-> # fco <- findCompatibleOverlaps(ga, GRangesList(ebt0[txlist]))
-> # tmp <- subjectHits(fco)
-> # tmp <- names(ebt0[txlist])[tmp]
-> # nreads <- table(tmp)
-> # if (length(setdiff(names(ebt0[txlist]), names(nreads))) > 0) {
-> #   for (i in setdiff(names(ebt0[txlist]), names(nreads))) {
-> #     nreads[i] <- 0
-> #   }
-> # }
-> 
 > ## Predict coverage for each transcript
 > pred.cov <- lapply(txlist, function(tx) {
 +   message(tx)
 +   ## Get transcript model
 +   txmod <- ebt0[[tx]]
 +   
-+   pc <- predictCoverage(gene = txmod,
-+                         bam.files = bam.files,
-+                         fitpar = fitpar,
-+                         genome = Hsapiens,
-+                         model.names = "all")
-+   # if (nreads[tx] != 0)
-+   ## Scale predicted coverage to agree with Salmon's estimated count
-+   # pc$`1`$pred.cov$all <- pc$`1`$pred.cov$all/as.numeric(nreads[tx]) * quantsf$NumReads[quantsf$Name == tx]
-+   pc$`1`$pred.cov$all <- pc$`1`$pred.cov$all/sum(pc$`1`$pred.cov$all) * quantsf$NumReads[quantsf$Name == tx] * avefraglength
++   pc <- tryCatch({
++     m <- predictCoverage(gene = txmod,
++                          bam.files = bam.files,
++                          fitpar = fitpar,
++                          genome = Hsapiens,
++                          model.names = "all")
++     ## Scale predicted coverage to agree with Salmon's estimated count
++     m$`1`$pred.cov$all <- m$`1`$pred.cov$all/sum(m$`1`$pred.cov$all) * quantsf$NumReads[quantsf$Name == tx] * avefraglength
++     m
++   }, error = function(e) NULL)
 +   pc
 + })
 ENST00000001008
 ENST00000543769
 ENST00000630279
-Error: sum(width(exons)) >= maxsize is not TRUE
-Execution halted
+ENST00000540260
+ENST00000538622
+ENST00000543037
+ENST00000539181
+ENST00000544366
+> 
+> junctionlist <- lapply(txlist, function(tx) {
++   txmod <- sort(ebt0[[tx]])
++   junctions <- GenomicRanges::setdiff(range(txmod), txmod)
++   if (all(strand(txmod) == "+")) {
++     junctionpos <- cumsum(width(txmod))
++     junctionpos <- junctionpos[-length(junctionpos)]
++     junctioncov <- as.numeric(pred.cov[[tx]]$"1"$pred.cov$all)[junctionpos]
++   } else if (all(strand(txmod) == "-")) {
++     junctionpos <- cumsum(width(rev(txmod)))
++     junctionpos <- junctionpos[-length(junctionpos)]
++     junctioncov <- as.numeric(pred.cov[[tx]]$"1"$pred.cov$all)[junctionpos]
++     junctioncov <- rev(junctioncov)
++   } else {
++     stop("Unknown or mixed strand")
++   }
++   mcols(junctions)$coverage <- junctioncov
++   junctions
++ })
+> 
+> jl <- do.call(rbind, lapply(junctionlist, as.data.frame)) %>% 
++   dplyr::group_by(seqnames, start, end, width, strand) %>%
++   dplyr::summarize(coverage = sum(coverage, na.rm = TRUE)) %>% ungroup() %>%
++   dplyr::mutate(coverage = replace(coverage, is.na(coverage), 0))
+> 
+> jl <- dplyr::left_join(jl, genemodels$jcov) %>%
++   dplyr::mutate(uniqreads = replace(uniqreads, is.na(uniqreads), 0),
++                 mmreads = replace(mmreads, is.na(mmreads), 0)) %>%
++   dplyr::mutate(scaledcoverage = coverage/sum(coverage, na.rm = TRUE) * sum(uniqreads, na.rm = TRUE)) %>%
++   dplyr::mutate(junctionid = paste0("J", seq_len(length(scaledcoverage)))) %>%
++   dplyr::select(junctionid, everything())
+Joining, by = c("seqnames", "start", "end", "strand")
+Warning messages:
+1: Column `seqnames` joining factor and character vector, coercing into character vector 
+2: Column `strand` joining factor and character vector, coercing into character vector 
+> 
+> pdf(gsub("rds$", "pdf", outrds), width = 12, height = 10)
+> tryCatch({
++   plot_tracks(mygene = gene, genemodels = genemodels$genemodels_exon, 
++               genemodels2 = genemodels$genemodels_cds, 
++               gtf_file = NULL, rnaseq_datafiles = structure(bw, names = "s1"), 
++               rnaseq_condition = structure("g1", names = "s1"), show_chr = NULL, 
++               min_coord = NULL, max_coord = NULL, 
++               pdf_filename = NULL, pdf_width = 7, pdf_height = 7)
++ }, error = function(e) message(e))
+> 
+> grid.newpage()
+> grid.table(quantsf %>% dplyr::filter(Name %in% txlist))
+> 
+> grid.newpage()
+> grid.table(jl %>% dplyr::select(junctionid, seqnames, start, end, width, strand, 
++                                 uniqreads, mmreads, scaledcoverage))
+> 
+> print(ggplot(jl, aes(x = scaledcoverage, y = uniqreads, label = junctionid)) + 
++         geom_point(size = 4) + geom_label_repel() + 
++         geom_abline(intercept = 0, slope = 1) + 
++         ggtitle(paste0("score = ", round(sum(abs(jl$uniqreads - jl$scaledcoverage), 
++                                                  na.rm = TRUE)/sum(jl$uniqreads, na.rm = TRUE), 2))) + 
++         xlab("Scaled predicted coverage") + ylab("Number of uniquely mapped reads"))
+> dev.off()
+null device 
+          1 
+> 
+> # print(sort(fit$residuals))
+> write.table(jl %>% dplyr::mutate(difference = uniqreads - scaledcoverage) %>%
++   dplyr::mutate(ranking = order(order(difference))) %>%
++     dplyr::mutate(coverage = round(coverage, 2),
++                   scaledcoverage = round(scaledcoverage, 2),
++                   difference = round(difference, 2)), 
++   file = gsub("rds$", "txt", outrds),
++   quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t")
+> print(as.data.frame(jl))
+   junctionid seqnames   start     end width strand    coverage uniqreads
+1          J1       12 2795245 2796264  1020      +   21.885138         3
+2          J2       12 2795245 2797137  1893      +  194.964331       481
+3          J3       12 2796369 2797137   769      +   56.302235         0
+4          J4       12 2796965 2797137   173      +  140.173594        31
+5          J5       12 2797283 2797728   446      +  676.191917      1046
+6          J6       12 2797872 2798705   834      +  676.250170      1061
+7          J7       12 2798827 2799087   261      +  708.559211       993
+8          J8       12 2799245 2799849   605      + 1260.522195      1444
+9          J9       12 2799941 2800038    98      + 1302.681679      1820
+10        J10       12 2800123 2800391   269      + 1251.507914      1475
+11        J11       12 2800578 2801116   539      +  735.747538       805
+12        J12       12 2801357 2801612   256      +    9.219367         0
+13        J13       12 2801357 2803150  1794      +  552.523906       822
+14        J14       12 2803241 2805167  1927      +    0.000000         0
+   mmreads scaledcoverage
+1        0       28.79256
+2        3      256.49924
+3        0       74.07242
+4        3      184.41538
+5        8      889.61254
+6        3      889.68918
+7        0      932.19565
+8        1     1658.36995
+9        2     1713.83587
+10       1     1646.51057
+11       1      967.96519
+12       0       12.12920
+13       0      726.91226
+14       0        0.00000
+> 
+> saveRDS(NULL, outrds)
+> sessionInfo()
+R version 3.4.0 (2017-04-21)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 14.04.5 LTS
+
+Matrix products: default
+BLAS: /usr/local/R/R-3.4.0/lib/libRblas.so
+LAPACK: /usr/local/R/R-3.4.0/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=en_CA.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=en_CA.UTF-8        LC_COLLATE=en_CA.UTF-8    
+ [5] LC_MONETARY=en_CA.UTF-8    LC_MESSAGES=en_CA.UTF-8   
+ [7] LC_PAPER=en_CA.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=en_CA.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+ [1] grid      stats4    parallel  stats     graphics  grDevices utils    
+ [8] datasets  methods   base     
+
+other attached packages:
+ [1] bindrcpp_0.2                          
+ [2] Gviz_1.20.0                           
+ [3] gridExtra_2.3                         
+ [4] ggrepel_0.7.0                         
+ [5] cowplot_0.8.0                         
+ [6] ggplot2_2.2.1                         
+ [7] BSgenome.Hsapiens.NCBI.GRCh38_1.3.1000
+ [8] BSgenome_1.44.2                       
+ [9] rtracklayer_1.36.4                    
+[10] GenomicAlignments_1.12.2              
+[11] Rsamtools_1.28.0                      
+[12] Biostrings_2.44.2                     
+[13] XVector_0.16.0                        
+[14] SummarizedExperiment_1.6.5            
+[15] DelayedArray_0.2.7                    
+[16] matrixStats_0.52.2                    
+[17] Biobase_2.36.2                        
+[18] GenomicRanges_1.28.5                  
+[19] GenomeInfoDb_1.12.2                   
+[20] IRanges_2.10.3                        
+[21] S4Vectors_0.14.5                      
+[22] BiocGenerics_0.22.0                   
+[23] alpine_1.2.0                          
+[24] dplyr_0.7.4                           
+
+loaded via a namespace (and not attached):
+ [1] ProtGenerics_1.8.0            bitops_1.0-6                 
+ [3] bit64_0.9-7                   RColorBrewer_1.1-2           
+ [5] httr_1.3.1                    tools_3.4.0                  
+ [7] backports_1.1.1               R6_2.2.2                     
+ [9] rpart_4.1-11                  Hmisc_4.0-3                  
+[11] DBI_0.7                       lazyeval_0.2.0               
+[13] colorspace_1.3-2              nnet_7.3-12                  
+[15] curl_2.8.1                    bit_1.1-12                   
+[17] compiler_3.4.0                graph_1.54.0                 
+[19] htmlTable_1.9                 labeling_0.3                 
+[21] scales_0.5.0                  checkmate_1.8.4              
+[23] RBGL_1.52.0                   speedglm_0.3-2               
+[25] stringr_1.2.0                 digest_0.6.12                
+[27] foreign_0.8-69                base64enc_0.1-3              
+[29] dichromat_2.0-0               pkgconfig_2.0.1              
+[31] htmltools_0.3.6               ensembldb_2.0.4              
+[33] htmlwidgets_0.9               rlang_0.1.2                  
+[35] RSQLite_2.0                   BiocInstaller_1.26.1         
+[37] shiny_1.0.5                   bindr_0.1                    
+[39] BiocParallel_1.10.1           acepack_1.4.1                
+[41] VariantAnnotation_1.22.3      RCurl_1.95-4.8               
+[43] magrittr_1.5                  GenomeInfoDbData_0.99.0      
+[45] Formula_1.2-2                 Matrix_1.2-11                
+[47] Rcpp_0.12.13                  munsell_0.4.3                
+[49] stringi_1.1.5                 yaml_2.1.14                  
+[51] MASS_7.3-47                   zlibbioc_1.22.0              
+[53] plyr_1.8.4                    AnnotationHub_2.8.2          
+[55] blob_1.1.0                    lattice_0.20-35              
+[57] splines_3.4.0                 GenomicFeatures_1.28.5       
+[59] knitr_1.17                    biomaRt_2.32.1               
+[61] XML_3.98-1.9                  glue_1.1.1                   
+[63] biovizBase_1.24.0             latticeExtra_0.6-28          
+[65] data.table_1.10.4             httpuv_1.3.5                 
+[67] gtable_0.2.0                  assertthat_0.2.0             
+[69] mime_0.5                      xtable_1.8-2                 
+[71] AnnotationFilter_1.0.0        survival_2.41-3              
+[73] tibble_1.3.4                  AnnotationDbi_1.38.2         
+[75] memoise_1.1.0                 cluster_2.0.6                
+[77] interactiveDisplayBase_1.14.0
+> date()
+[1] "Wed Nov  1 20:53:11 2017"
+> 
+> 
+> proc.time()
+   user  system elapsed 
+154.148   6.820 162.689 

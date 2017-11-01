@@ -6,9 +6,8 @@ for (i in 1:length(args)) {
 print(gene)
 print(bam)
 print(bw)
-print(gtf)
+print(genemodels)
 print(quantsf)
-print(junctioncov)
 print(biasmodels)
 print(outrds)
 
@@ -24,10 +23,9 @@ suppressPackageStartupMessages(library(gridExtra))
 
 source("Rscripts/plot_tracks.R")
 
-## Create gene models for Gviz visualization
-options(ucscChromosomeNames = FALSE)
-genemodels_exon <- create_genemodels(gtf, seltype = "exon")
-genemodels_cds <- create_genemodels(gtf, seltype = "CDS")
+## Read gene models for plot (pregenerated from gtf to save time)
+genemodels <- readRDS(genemodels)
+quantsf <- genemodels$quantsf
 
 ## Read bias model parameters and gene models
 biasmodels <- readRDS(biasmodels)
@@ -47,45 +45,27 @@ names(txlist) <- txlist
 bam.files <- bam
 names(bam.files) <- "1"
 
-## Read Salmon quantifications
-quantsf <- read.delim(quantsf, header = TRUE, as.is = TRUE)
-quantsf$Name <- gsub("\\.[0-9]+", "", quantsf$Name)
-
-## Get number of reads overlapping each transcript in the gene model
-# generange <- range(unlist(ebt0[txlist]))
-# strand(generange) <- "*"
-# ga <- alpine:::readGAlignAlpine(bam.files, generange)
-# ga <- keepSeqlevels(ga, as.character(seqnames(unlist(ebt0[txlist]))[1]))
-# fco <- findCompatibleOverlaps(ga, GRangesList(ebt0[txlist]))
-# tmp <- subjectHits(fco)
-# tmp <- names(ebt0[txlist])[tmp]
-# nreads <- table(tmp)
-# if (length(setdiff(names(ebt0[txlist]), names(nreads))) > 0) {
-#   for (i in setdiff(names(ebt0[txlist]), names(nreads))) {
-#     nreads[i] <- 0
-#   }
-# }
-
 ## Predict coverage for each transcript
 pred.cov <- lapply(txlist, function(tx) {
   message(tx)
   ## Get transcript model
   txmod <- ebt0[[tx]]
   
-  pc <- predictCoverage(gene = txmod,
-                        bam.files = bam.files,
-                        fitpar = fitpar,
-                        genome = Hsapiens,
-                        model.names = "all")
-  # if (nreads[tx] != 0)
-  ## Scale predicted coverage to agree with Salmon's estimated count
-  # pc$`1`$pred.cov$all <- pc$`1`$pred.cov$all/as.numeric(nreads[tx]) * quantsf$NumReads[quantsf$Name == tx]
-  pc$`1`$pred.cov$all <- pc$`1`$pred.cov$all/sum(pc$`1`$pred.cov$all) * quantsf$NumReads[quantsf$Name == tx] * avefraglength
+  pc <- tryCatch({
+    m <- predictCoverage(gene = txmod,
+                         bam.files = bam.files,
+                         fitpar = fitpar,
+                         genome = Hsapiens,
+                         model.names = "all")
+    ## Scale predicted coverage to agree with Salmon's estimated count
+    m$`1`$pred.cov$all <- m$`1`$pred.cov$all/sum(m$`1`$pred.cov$all) * quantsf$NumReads[quantsf$Name == tx] * avefraglength
+    m
+  }, error = function(e) NULL)
   pc
 })
 
 junctionlist <- lapply(txlist, function(tx) {
-  txmod <- ebt0[[tx]]
+  txmod <- sort(ebt0[[tx]])
   junctions <- GenomicRanges::setdiff(range(txmod), txmod)
   if (all(strand(txmod) == "+")) {
     junctionpos <- cumsum(width(txmod))
@@ -105,28 +85,20 @@ junctionlist <- lapply(txlist, function(tx) {
 
 jl <- do.call(rbind, lapply(junctionlist, as.data.frame)) %>% 
   dplyr::group_by(seqnames, start, end, width, strand) %>%
-  dplyr::summarize(coverage = sum(coverage)) %>% ungroup()
+  dplyr::summarize(coverage = sum(coverage, na.rm = TRUE)) %>% ungroup() %>%
+  dplyr::mutate(coverage = replace(coverage, is.na(coverage), 0))
 
-## Read junction coverages
-jcov <- read.delim(junctioncov, 
-                   header = FALSE, as.is = TRUE)
-colnames(jcov) <- c("seqnames", "start", "end", "strand", "motif", "annot", 
-                    "uniqreads", "mmreads", "maxoverhang")
-jcov <- jcov %>% dplyr::mutate(strand = replace(strand, strand == 1, "+")) %>%
-  dplyr::mutate(strand = replace(strand, strand == 2, "-")) %>%
-  dplyr::select(-motif, -annot, -maxoverhang)
-
-jl <- dplyr::left_join(jl, jcov) %>%
+jl <- dplyr::left_join(jl, genemodels$jcov) %>%
   dplyr::mutate(uniqreads = replace(uniqreads, is.na(uniqreads), 0),
                 mmreads = replace(mmreads, is.na(mmreads), 0)) %>%
-  dplyr::mutate(scaledcoverage = coverage/sum(coverage) * sum(uniqreads)) %>%
+  dplyr::mutate(scaledcoverage = coverage/sum(coverage, na.rm = TRUE) * sum(uniqreads, na.rm = TRUE)) %>%
   dplyr::mutate(junctionid = paste0("J", seq_len(length(scaledcoverage)))) %>%
   dplyr::select(junctionid, everything())
 
 pdf(gsub("rds$", "pdf", outrds), width = 12, height = 10)
 tryCatch({
-  plot_tracks(mygene = gene, genemodels = genemodels_exon, 
-              genemodels2 = genemodels_cds, 
+  plot_tracks(mygene = gene, genemodels = genemodels$genemodels_exon, 
+              genemodels2 = genemodels$genemodels_cds, 
               gtf_file = NULL, rnaseq_datafiles = structure(bw, names = "s1"), 
               rnaseq_condition = structure("g1", names = "s1"), show_chr = NULL, 
               min_coord = NULL, max_coord = NULL, 
@@ -143,7 +115,8 @@ grid.table(jl %>% dplyr::select(junctionid, seqnames, start, end, width, strand,
 print(ggplot(jl, aes(x = scaledcoverage, y = uniqreads, label = junctionid)) + 
         geom_point(size = 4) + geom_label_repel() + 
         geom_abline(intercept = 0, slope = 1) + 
-        ggtitle(paste0("score = ", round(sum(abs(jl$uniqreads - jl$scaledcoverage))/sum(jl$uniqreads), 2))) + 
+        ggtitle(paste0("score = ", round(sum(abs(jl$uniqreads - jl$scaledcoverage), 
+                                                 na.rm = TRUE)/sum(jl$uniqreads, na.rm = TRUE), 2))) + 
         xlab("Scaled predicted coverage") + ylab("Number of uniquely mapped reads"))
 dev.off()
 
@@ -152,10 +125,12 @@ write.table(jl %>% dplyr::mutate(difference = uniqreads - scaledcoverage) %>%
   dplyr::mutate(ranking = order(order(difference))) %>%
     dplyr::mutate(coverage = round(coverage, 2),
                   scaledcoverage = round(scaledcoverage, 2),
-                  difference = round(difference, 2)), file = gsub("rds$", "txt", outrds),
+                  difference = round(difference, 2)), 
+  file = gsub("rds$", "txt", outrds),
   quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t")
 print(as.data.frame(jl))
 
+saveRDS(NULL, outrds)
 sessionInfo()
 date()
 

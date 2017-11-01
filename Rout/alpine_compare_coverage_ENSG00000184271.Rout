@@ -23,7 +23,7 @@ Type 'q()' to quit R.
 + }
 > 
 > print(gene)
-[1] "ENSG00000174684"
+[1] "ENSG00000184271"
 > print(bam)
 [1] "STAR/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bam"
 > print(bw)
@@ -35,7 +35,7 @@ Type 'q()' to quit R.
 > print(biasmodels)
 [1] "alpine/alpine_fitbiasmodel.rds"
 > print(outrds)
-[1] "alpine_out/ENSG00000174684.rds"
+[1] "alpine_out/ENSG00000184271.rds"
 > 
 > suppressPackageStartupMessages(library(dplyr))
 > suppressPackageStartupMessages(library(alpine))
@@ -89,7 +89,18 @@ Type 'q()' to quit R.
 +   }, error = function(e) NULL)
 +   pc
 + })
-ENST00000311181
+ENST00000636728
+ENST00000389243
+ENST00000636068
+ENST00000636119
+ENST00000333640
+ENST00000550824
+ENST00000552305
+ENST00000547855
+ENST00000549309
+ENST00000546685
+ENST00000548692
+ENST00000547854
 > 
 > junctionlist <- lapply(txlist, function(tx) {
 +   txmod <- sort(ebt0[[tx]])
@@ -162,10 +173,44 @@ null device
 +   file = gsub("rds$", "txt", outrds),
 +   quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t")
 > print(as.data.frame(jl))
-  junctionid seqnames    start      end width strand coverage uniqreads mmreads
-1         J1       11 66346241 66346489   249      - 1639.253       911       0
-  scaledcoverage
-1            911
+   junctionid seqnames    start      end width strand    coverage uniqreads
+1          J1       12 51190593 51191595  1003      - 297.7648066       164
+2          J2       12 51191765 51192329   565      - 158.3348899        87
+3          J3       12 51192472 51195969  3498      - 100.3034322        37
+4          J4       12 51196174 51196798   625      - 126.2733006        57
+5          J5       12 51196174 51197769  1596      -   3.7480865         4
+6          J6       12 51196928 51197769   842      -  44.0566359        44
+7          J7       12 51196947 51197769   823      -   0.0000000         3
+8          J8       12 51198024 51198549   526      -  24.5252700        17
+9          J9       12 51198679 51199746  1068      -   0.7386926         0
+10        J10       12 51198687 51199746  1060      -  35.8744558        39
+11        J11       12 51198687 51204172  5486      -  16.6611093         8
+12        J12       12 51198776 51199746   971      -  11.0512122        11
+13        J13       12 51199864 51204172  4309      -   0.7112714         3
+14        J14       12 51199869 51204172  4304      -  45.6623796        31
+15        J15       12 51204369 51206788  2420      -  69.7179425       115
+16        J16       12 51204369 51217641 13273      -   1.8165669         5
+17        J17       12 51206884 51217641 10758      -   5.7054749         7
+18        J18       12 51206948 51207222   275      -  22.9498705         0
+   mmreads scaledcoverage
+1        0    194.8320266
+2        0    103.6009186
+3        0     65.6300562
+4        0     82.6225347
+5        0      2.4524298
+6        0     28.8269247
+7        0      0.0000000
+8        0     16.0472559
+9        0      0.4833378
+10       1     23.4732003
+11       0     10.9016164
+12       0      7.2309756
+13       0      0.4653957
+14       0     29.8775871
+15       0     45.6175066
+16       0      1.1886073
+17       0      3.7331787
+18       0     15.0164482
 > 
 > saveRDS(NULL, outrds)
 > sessionInfo()
@@ -256,9 +301,9 @@ loaded via a namespace (and not attached):
 [75] memoise_1.1.0                 cluster_2.0.6                
 [77] interactiveDisplayBase_1.14.0
 > date()
-[1] "Wed Nov  1 20:52:20 2017"
+[1] "Wed Nov  1 20:58:07 2017"
 > 
 > 
 > proc.time()
    user  system elapsed 
-105.719   4.611 111.383 
+270.267  24.970 297.569 

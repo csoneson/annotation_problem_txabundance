@@ -23,7 +23,7 @@ Type 'q()' to quit R.
 + }
 > 
 > print(gene)
-[1] "ENSG00000162783"
+[1] "ENSG00000004478"
 > print(bam)
 [1] "STAR/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bam"
 > print(bw)
@@ -37,7 +37,7 @@ Type 'q()' to quit R.
 > print(biasmodels)
 [1] "alpine/alpine_fitbiasmodel.rds"
 > print(outrds)
-[1] "alpine_out/ENSG00000162783.rds"
+[1] "alpine_out/ENSG00000004478.rds"
 > 
 > suppressPackageStartupMessages(library(dplyr))
 > suppressPackageStartupMessages(library(alpine))
@@ -110,68 +110,8 @@ Type 'q()' to quit R.
 +   pc$`1`$pred.cov$all <- pc$`1`$pred.cov$all/sum(pc$`1`$pred.cov$all) * quantsf$NumReads[quantsf$Name == tx] * avefraglength
 +   pc
 + })
-ENST00000367577
-> 
-> junctionlist <- lapply(txlist, function(tx) {
-+   txmod <- ebt0[[tx]]
-+   junctions <- GenomicRanges::setdiff(range(txmod), txmod)
-+   if (all(strand(txmod) == "+")) {
-+     junctionpos <- cumsum(width(txmod))
-+     junctionpos <- junctionpos[-length(junctionpos)]
-+     junctioncov <- as.numeric(pred.cov[[tx]]$"1"$pred.cov$all)[junctionpos]
-+   } else if (all(strand(txmod) == "-")) {
-+     junctionpos <- cumsum(width(rev(txmod)))
-+     junctionpos <- junctionpos[-length(junctionpos)]
-+     junctioncov <- as.numeric(pred.cov[[tx]]$"1"$pred.cov$all)[junctionpos]
-+     junctioncov <- rev(junctioncov)
-+   } else {
-+     stop("Unknown or mixed strand")
-+   }
-+   mcols(junctions)$coverage <- junctioncov
-+   junctions
-+ })
-> 
-> jl <- do.call(rbind, lapply(junctionlist, as.data.frame)) %>% 
-+   dplyr::group_by(seqnames, start, end, width, strand) %>%
-+   dplyr::summarize(coverage = sum(coverage)) %>% ungroup()
-> 
-> ## Read junction coverages
-> jcov <- read.delim(junctioncov, 
-+                    header = FALSE, as.is = TRUE)
-> colnames(jcov) <- c("seqnames", "start", "end", "strand", "motif", "annot", 
-+                     "uniqreads", "mmreads", "maxoverhang")
-> jcov <- jcov %>% dplyr::mutate(strand = replace(strand, strand == 1, "+")) %>%
-+   dplyr::mutate(strand = replace(strand, strand == 2, "-")) %>%
-+   dplyr::select(-motif, -annot, -maxoverhang)
-> 
-> jl <- dplyr::left_join(jl, jcov) %>%
-+   dplyr::mutate(uniqreads = replace(uniqreads, is.na(uniqreads), 0),
-+                 mmreads = replace(mmreads, is.na(mmreads), 0)) %>%
-+   dplyr::mutate(scaledcoverage = coverage/sum(coverage) * sum(uniqreads)) %>%
-+   dplyr::mutate(junctionid = paste0("J", seq_len(length(scaledcoverage)))) %>%
-+   dplyr::select(junctionid, everything())
-Joining, by = c("seqnames", "start", "end", "strand")
-Warning messages:
-1: Column `seqnames` joining factor and character vector, coercing into character vector 
-2: Column `strand` joining factor and character vector, coercing into character vector 
-> 
-> pdf(gsub("rds$", "pdf", outrds), width = 12, height = 10)
-> tryCatch({
-+   plot_tracks(mygene = gene, genemodels = genemodels_exon, 
-+               genemodels2 = genemodels_cds, 
-+               gtf_file = NULL, rnaseq_datafiles = structure(bw, names = "s1"), 
-+               rnaseq_condition = structure("g1", names = "s1"), show_chr = NULL, 
-+               min_coord = NULL, max_coord = NULL, 
-+               pdf_filename = NULL, pdf_width = 7, pdf_height = 7)
-+ }, error = function(e) message(e))
-> 
-> grid.newpage()
-> grid.table(quantsf %>% dplyr::filter(Name %in% txlist))
-> 
-> grid.newpage()
-> grid.table(jl %>% dplyr::select(junctionid, seqnames, start, end, width, strand, 
-+                                 uniqreads, mmreads, scaledcoverage))
-Error in data.frame(fg_params, label = as.vector(label_matrix), stringsAsFactors = FALSE) : 
-  arguments imply differing number of rows: 1, 0
-Calls: grid.table ... grid.draw -> tableGrob -> gtable_table -> data.frame
+ENST00000001008
+ENST00000543769
+ENST00000630279
+Error: sum(width(exons)) >= maxsize is not TRUE
 Execution halted

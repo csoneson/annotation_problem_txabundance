@@ -19,6 +19,8 @@ suppressPackageStartupMessages(library(BSgenome.Hsapiens.NCBI.GRCh38))
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(cowplot))
 suppressPackageStartupMessages(library(ggrepel))
+suppressPackageStartupMessages(library(grid))
+suppressPackageStartupMessages(library(gridExtra))
 
 source("Rscripts/plot_tracks.R")
 
@@ -32,6 +34,9 @@ biasmodels <- readRDS(biasmodels)
 fitpar <- biasmodels$fitpar
 ebt0 <- biasmodels$ebt0
 txps <- biasmodels$txps
+
+## Estimate average fragment length
+avefraglength <- sum(fitpar$`1`$fraglen.density$x * fitpar$`1`$fraglen.density$y/sum(fitpar$`1`$fraglen.density$y))
 
 ## Get transcripts for gene of interest
 txlist <- names(subset(txps, gene_id == gene))
@@ -47,19 +52,19 @@ quantsf <- read.delim(quantsf, header = TRUE, as.is = TRUE)
 quantsf$Name <- gsub("\\.[0-9]+", "", quantsf$Name)
 
 ## Get number of reads overlapping each transcript in the gene model
-generange <- range(unlist(ebt0[txlist]))
-strand(generange) <- "*"
-ga <- alpine:::readGAlignAlpine(bam.files, generange)
-ga <- keepSeqlevels(ga, as.character(seqnames(unlist(ebt0[txlist]))[1]))
-fco <- findCompatibleOverlaps(ga, GRangesList(ebt0[txlist]))
-tmp <- subjectHits(fco)
-tmp <- names(ebt0[txlist])[tmp]
-nreads <- table(tmp)
-if (length(setdiff(names(ebt0[txlist]), names(nreads))) > 0) {
-  for (i in setdiff(names(ebt0[txlist]), names(nreads))) {
-    nreads[i] <- 0
-  }
-}
+# generange <- range(unlist(ebt0[txlist]))
+# strand(generange) <- "*"
+# ga <- alpine:::readGAlignAlpine(bam.files, generange)
+# ga <- keepSeqlevels(ga, as.character(seqnames(unlist(ebt0[txlist]))[1]))
+# fco <- findCompatibleOverlaps(ga, GRangesList(ebt0[txlist]))
+# tmp <- subjectHits(fco)
+# tmp <- names(ebt0[txlist])[tmp]
+# nreads <- table(tmp)
+# if (length(setdiff(names(ebt0[txlist]), names(nreads))) > 0) {
+#   for (i in setdiff(names(ebt0[txlist]), names(nreads))) {
+#     nreads[i] <- 0
+#   }
+# }
 
 ## Predict coverage for each transcript
 pred.cov <- lapply(txlist, function(tx) {
@@ -72,23 +77,25 @@ pred.cov <- lapply(txlist, function(tx) {
                         fitpar = fitpar,
                         genome = Hsapiens,
                         model.names = "all")
-  if (nreads[tx] != 0)
-    pc$`1`$pred.cov$all <- pc$`1`$pred.cov$all/as.numeric(nreads[tx]) * quantsf$NumReads[quantsf$Name == tx]
+  # if (nreads[tx] != 0)
+  ## Scale predicted coverage to agree with Salmon's estimated count
+  # pc$`1`$pred.cov$all <- pc$`1`$pred.cov$all/as.numeric(nreads[tx]) * quantsf$NumReads[quantsf$Name == tx]
+  pc$`1`$pred.cov$all <- pc$`1`$pred.cov$all/sum(pc$`1`$pred.cov$all) * quantsf$NumReads[quantsf$Name == tx] * avefraglength
   pc
 })
 
 junctionlist <- lapply(txlist, function(tx) {
   txmod <- ebt0[[tx]]
   junctions <- GenomicRanges::setdiff(range(txmod), txmod)
-  if (all(strand(txmod) == "+") || all(strand(txmod) == "-")) {
+  if (all(strand(txmod) == "+")) {
     junctionpos <- cumsum(width(txmod))
     junctionpos <- junctionpos[-length(junctionpos)]
     junctioncov <- as.numeric(pred.cov[[tx]]$"1"$pred.cov$all)[junctionpos]
-  # } else if (all(strand(txmod) == "-")) {
-  #   junctionpos <- cumsum(width(rev(txmod)))
-  #   junctionpos <- junctionpos[-length(junctionpos)]
-  #   junctioncov <- as.numeric(pred.cov[[tx]]$"1"$pred.cov$all)[junctionpos]
-  #   junctioncov <- rev(junctioncov)
+  } else if (all(strand(txmod) == "-")) {
+    junctionpos <- cumsum(width(rev(txmod)))
+    junctionpos <- junctionpos[-length(junctionpos)]
+    junctioncov <- as.numeric(pred.cov[[tx]]$"1"$pred.cov$all)[junctionpos]
+    junctioncov <- rev(junctioncov)
   } else {
     stop("Unknown or mixed strand")
   }
@@ -125,6 +132,13 @@ tryCatch({
               min_coord = NULL, max_coord = NULL, 
               pdf_filename = NULL, pdf_width = 7, pdf_height = 7)
 }, error = function(e) message(e))
+
+grid.newpage()
+grid.table(quantsf %>% dplyr::filter(Name %in% txlist))
+
+grid.newpage()
+grid.table(jl %>% dplyr::select(junctionid, seqnames, start, end, width, strand, 
+                                uniqreads, mmreads, scaledcoverage))
 
 print(ggplot(jl, aes(x = scaledcoverage, y = uniqreads, label = junctionid)) + 
         geom_point(size = 4) + geom_label_repel() + 

@@ -23,7 +23,7 @@ Type 'q()' to quit R.
 + }
 > 
 > print(gene)
-[1] "ENSG00000153823"
+[1] "ENSG00000004779"
 > print(bam)
 [1] "STAR/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bam"
 > print(bw)
@@ -37,7 +37,7 @@ Type 'q()' to quit R.
 > print(biasmodels)
 [1] "alpine/alpine_fitbiasmodel.rds"
 > print(outrds)
-[1] "alpine_out/ENSG00000153823.rds"
+[1] "alpine_out/ENSG00000004779.rds"
 > 
 > suppressPackageStartupMessages(library(dplyr))
 > suppressPackageStartupMessages(library(alpine))
@@ -110,12 +110,11 @@ Type 'q()' to quit R.
 +   pc$`1`$pred.cov$all <- pc$`1`$pred.cov$all/sum(pc$`1`$pred.cov$all) * quantsf$NumReads[quantsf$Name == tx] * avefraglength
 +   pc
 + })
-ENST00000482518
-ENST00000392054
-ENST00000409462
-ENST00000392055
-ENST00000354069
-ENST00000534952
+ENST00000007516
+ENST00000562133
+ENST00000484769
+ENST00000570319
+ENST00000567761
 > 
 > junctionlist <- lapply(txlist, function(tx) {
 +   txmod <- ebt0[[tx]]
@@ -194,28 +193,24 @@ null device
 +                   difference = round(difference, 2)), file = gsub("rds$", "txt", outrds),
 +   quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t")
 > print(as.data.frame(jl))
-   junctionid seqnames     start       end  width strand   coverage uniqreads
-1          J1        2 228850649 229155817 305169      -   6.081267         0
-2          J2        2 229026109 229155817 129709      - 324.617953       266
-3          J3        2 229026109 229271013 244905      -   8.857257         1
-4          J4        2 229155965 229227956  71992      -   0.000000         0
-5          J5        2 229155965 229231925  75961      -   1.600358         0
-6          J6        2 229155965 229244851  88887      -   3.588341         0
-7          J7        2 229155965 229262682 106718      -  27.182162         8
-8          J8        2 229155965 229271013 115049      - 296.110877       142
-9          J9        2 229228064 229271013  42950      -   0.000000         0
-10        J10        2 229262894 229271013   8120      -  47.086016         3
-   mmreads scaledcoverage
-1        0      3.5715923
-2        1    190.6515461
-3        0      5.2019605
-4        0      0.0000000
-5        0      0.9399074
-6        0      2.1074704
-7        0     15.9643704
-8        0    173.9090395
-9        0      0.0000000
-10       0     27.6541134
+  junctionid seqnames    start      end width strand    coverage uniqreads
+1         J1       16 23581174 23582275  1102      - 2707.005553      2324
+2         J2       16 23582376 23585335  2960      - 2172.271627      2008
+3         J3       16 23585424 23587196  1773      - 1154.807010      1923
+4         J4       16 23585424 23596122 10699      -    1.794158         1
+5         J5       16 23587320 23590885  3566      -    6.397620         6
+6         J6       16 23587320 23595428  8109      -   10.552356         7
+7         J7       16 23587320 23596122  8803      -  211.834332       585
+8         J8       16 23595639 23596122   484      -    3.148701         0
+  mmreads scaledcoverage
+1      13    2960.174613
+2       0    2375.430414
+3       1    1262.808785
+4       0       1.961954
+5       0       6.995949
+6       0      11.539251
+7       0     231.645853
+8       0       3.443180
 > 
 > sessionInfo()
 R version 3.4.0 (2017-04-21)
@@ -305,9 +300,9 @@ loaded via a namespace (and not attached):
 [75] memoise_1.1.0                 cluster_2.0.6                
 [77] interactiveDisplayBase_1.14.0
 > date()
-[1] "Wed Nov  1 14:53:39 2017"
+[1] "Wed Nov  1 14:52:29 2017"
 > 
 > 
 > proc.time()
    user  system elapsed 
-301.613  22.486 325.867 
+241.813  12.869 256.277 

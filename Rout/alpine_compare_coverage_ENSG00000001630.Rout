@@ -23,7 +23,7 @@ Type 'q()' to quit R.
 + }
 > 
 > print(gene)
-[1] "ENSG00000153823"
+[1] "ENSG00000001630"
 > print(bam)
 [1] "STAR/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bam"
 > print(bw)
@@ -37,7 +37,7 @@ Type 'q()' to quit R.
 > print(biasmodels)
 [1] "alpine/alpine_fitbiasmodel.rds"
 > print(outrds)
-[1] "alpine_out/ENSG00000153823.rds"
+[1] "alpine_out/ENSG00000001630.rds"
 > 
 > suppressPackageStartupMessages(library(dplyr))
 > suppressPackageStartupMessages(library(alpine))
@@ -110,12 +110,11 @@ Type 'q()' to quit R.
 +   pc$`1`$pred.cov$all <- pc$`1`$pred.cov$all/sum(pc$`1`$pred.cov$all) * quantsf$NumReads[quantsf$Name == tx] * avefraglength
 +   pc
 + })
-ENST00000482518
-ENST00000392054
-ENST00000409462
-ENST00000392055
-ENST00000354069
-ENST00000534952
+ENST00000003100
+ENST00000450723
+ENST00000422867
+ENST00000482924
+ENST00000435873
 > 
 > junctionlist <- lapply(txlist, function(tx) {
 +   txmod <- ebt0[[tx]]
@@ -182,6 +181,9 @@ Warning messages:
 +         geom_abline(intercept = 0, slope = 1) + 
 +         ggtitle(paste0("score = ", round(sum(abs(jl$uniqreads - jl$scaledcoverage))/sum(jl$uniqreads), 2))) + 
 +         xlab("Scaled predicted coverage") + ylab("Number of uniquely mapped reads"))
+Warning messages:
+1: Removed 12 rows containing missing values (geom_point). 
+2: Removed 12 rows containing missing values (geom_label_repel). 
 > dev.off()
 null device 
           1 
@@ -194,28 +196,32 @@ null device
 +                   difference = round(difference, 2)), file = gsub("rds$", "txt", outrds),
 +   quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t")
 > print(as.data.frame(jl))
-   junctionid seqnames     start       end  width strand   coverage uniqreads
-1          J1        2 228850649 229155817 305169      -   6.081267         0
-2          J2        2 229026109 229155817 129709      - 324.617953       266
-3          J3        2 229026109 229271013 244905      -   8.857257         1
-4          J4        2 229155965 229227956  71992      -   0.000000         0
-5          J5        2 229155965 229231925  75961      -   1.600358         0
-6          J6        2 229155965 229244851  88887      -   3.588341         0
-7          J7        2 229155965 229262682 106718      -  27.182162         8
-8          J8        2 229155965 229271013 115049      - 296.110877       142
-9          J9        2 229228064 229271013  42950      -   0.000000         0
-10        J10        2 229262894 229271013   8120      -  47.086016         3
+   junctionid seqnames    start      end width strand    coverage uniqreads
+1          J1        7 92113844 92117043  3200      -  538.341652       821
+2          J2        7 92117093 92117176    84      -    1.269104        12
+3          J3        7 92117213 92118519  1307      -  568.464466       858
+4          J4        7 92118616 92123119  4504      -  514.585844       729
+5          J5        7 92123316 92123733   418      -  552.502771       664
+6          J6        7 92123854 92126252  2399      -  941.012239       704
+7          J7        7 92126428 92127504  1077      - 1045.297471       712
+8          J8        7 92127632 92128879  1248      -  722.965596       510
+9          J9        7 92129057 92131773  2717      -  587.449566       406
+10        J10        7 92131873 92134172  2300      -  909.376186       145
+11        J11        7 92131873 92134665  2793      -   48.612719        33
+12        J12        7 92131873 92142462 10590      -         NaN         0
    mmreads scaledcoverage
-1        0      3.5715923
-2        1    190.6515461
-3        0      5.2019605
-4        0      0.0000000
-5        0      0.9399074
-6        0      2.1074704
-7        0     15.9643704
-8        0    173.9090395
-9        0      0.0000000
-10       0     27.6541134
+1        0            NaN
+2        0            NaN
+3        1            NaN
+4        2            NaN
+5        4            NaN
+6        4            NaN
+7        1            NaN
+8        0            NaN
+9        0            NaN
+10       0            NaN
+11       0            NaN
+12       0            NaN
 > 
 > sessionInfo()
 R version 3.4.0 (2017-04-21)
@@ -305,9 +311,9 @@ loaded via a namespace (and not attached):
 [75] memoise_1.1.0                 cluster_2.0.6                
 [77] interactiveDisplayBase_1.14.0
 > date()
-[1] "Wed Nov  1 14:53:39 2017"
+[1] "Wed Nov  1 14:52:51 2017"
 > 
 > 
 > proc.time()
    user  system elapsed 
-301.613  22.486 325.867 
+261.839  14.810 278.116 

@@ -46,6 +46,8 @@ Type 'q()' to quit R.
 > suppressPackageStartupMessages(library(ggplot2))
 > suppressPackageStartupMessages(library(cowplot))
 > suppressPackageStartupMessages(library(ggrepel))
+> suppressPackageStartupMessages(library(grid))
+> suppressPackageStartupMessages(library(gridExtra))
 > 
 > source("Rscripts/plot_tracks.R")
 > 
@@ -59,6 +61,9 @@ Type 'q()' to quit R.
 > fitpar <- biasmodels$fitpar
 > ebt0 <- biasmodels$ebt0
 > txps <- biasmodels$txps
+> 
+> ## Estimate average fragment length
+> avefraglength <- sum(fitpar$`1`$fraglen.density$x * fitpar$`1`$fraglen.density$y/sum(fitpar$`1`$fraglen.density$y))
 > 
 > ## Get transcripts for gene of interest
 > txlist <- names(subset(txps, gene_id == gene))
@@ -74,19 +79,19 @@ Type 'q()' to quit R.
 > quantsf$Name <- gsub("\\.[0-9]+", "", quantsf$Name)
 > 
 > ## Get number of reads overlapping each transcript in the gene model
-> generange <- range(unlist(ebt0[txlist]))
-> strand(generange) <- "*"
-> ga <- alpine:::readGAlignAlpine(bam.files, generange)
-> ga <- keepSeqlevels(ga, as.character(seqnames(unlist(ebt0[txlist]))[1]))
-> fco <- findCompatibleOverlaps(ga, GRangesList(ebt0[txlist]))
-> tmp <- subjectHits(fco)
-> tmp <- names(ebt0[txlist])[tmp]
-> nreads <- table(tmp)
-> if (length(setdiff(names(ebt0[txlist]), names(nreads))) > 0) {
-+   for (i in setdiff(names(ebt0[txlist]), names(nreads))) {
-+     nreads[i] <- 0
-+   }
-+ }
+> # generange <- range(unlist(ebt0[txlist]))
+> # strand(generange) <- "*"
+> # ga <- alpine:::readGAlignAlpine(bam.files, generange)
+> # ga <- keepSeqlevels(ga, as.character(seqnames(unlist(ebt0[txlist]))[1]))
+> # fco <- findCompatibleOverlaps(ga, GRangesList(ebt0[txlist]))
+> # tmp <- subjectHits(fco)
+> # tmp <- names(ebt0[txlist])[tmp]
+> # nreads <- table(tmp)
+> # if (length(setdiff(names(ebt0[txlist]), names(nreads))) > 0) {
+> #   for (i in setdiff(names(ebt0[txlist]), names(nreads))) {
+> #     nreads[i] <- 0
+> #   }
+> # }
 > 
 > ## Predict coverage for each transcript
 > pred.cov <- lapply(txlist, function(tx) {
@@ -99,8 +104,10 @@ Type 'q()' to quit R.
 +                         fitpar = fitpar,
 +                         genome = Hsapiens,
 +                         model.names = "all")
-+   if (nreads[tx] != 0)
-+     pc$`1`$pred.cov$all <- pc$`1`$pred.cov$all/as.numeric(nreads[tx]) * quantsf$NumReads[quantsf$Name == tx]
++   # if (nreads[tx] != 0)
++   ## Scale predicted coverage to agree with Salmon's estimated count
++   # pc$`1`$pred.cov$all <- pc$`1`$pred.cov$all/as.numeric(nreads[tx]) * quantsf$NumReads[quantsf$Name == tx]
++   pc$`1`$pred.cov$all <- pc$`1`$pred.cov$all/sum(pc$`1`$pred.cov$all) * quantsf$NumReads[quantsf$Name == tx] * avefraglength
 +   pc
 + })
 ENST00000361198
@@ -161,6 +168,13 @@ Warning messages:
 +               pdf_filename = NULL, pdf_width = 7, pdf_height = 7)
 + }, error = function(e) message(e))
 > 
+> grid.newpage()
+> grid.table(quantsf %>% dplyr::filter(Name %in% txlist))
+> 
+> grid.newpage()
+> grid.table(jl %>% dplyr::select(junctionid, seqnames, start, end, width, strand, 
++                                 uniqreads, mmreads, scaledcoverage))
+> 
 > print(ggplot(jl, aes(x = scaledcoverage, y = uniqreads, label = junctionid)) + 
 +         geom_point(size = 4) + geom_label_repel() + 
 +         geom_abline(intercept = 0, slope = 1) + 
@@ -179,29 +193,29 @@ null device
 +   quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t")
 > print(as.data.frame(jl))
    junctionid seqnames     start       end width strand    coverage uniqreads
-1          J1       10 102108324 102109028   705      - 386.7475006        90
-2          J2       10 102109178 102109383   206      - 332.4527602       137
-3          J3       10 102109508 102109599    92      - 282.9635245       374
-4          J4       10 102109684 102109920   237      - 271.0248927       418
-5          J5       10 102110044 102110528   485      - 231.3417936       235
-6          J6       10 102110702 102110868   167      - 475.1804456       486
-7          J7       10 102110972 102111068    97      - 431.2194500       571
-8          J8       10 102111145 102111255   111      - 470.9432214       529
-9          J9       10 102111301 102111433   133      - 559.2770471       402
-10        J10       10 102111537 102114405  2869      - 536.0984909        21
-11        J11       10 102111537 102120085  8549      -   0.3333263       102
+1          J1       10 102108324 102109028   705      - 418.5075983        90
+2          J2       10 102109178 102109383   206      - 359.7541184       137
+3          J3       10 102109508 102109599    92      - 306.2007785       374
+4          J4       10 102109684 102109920   237      - 293.2817326       418
+5          J5       10 102110044 102110528   485      - 250.3398169       235
+6          J6       10 102110702 102110868   167      - 518.1395227       486
+7          J7       10 102110972 102111068    97      - 467.3702766       571
+8          J8       10 102111145 102111255   111      - 509.6244688       529
+9          J9       10 102111301 102111433   133      - 605.2106387       402
+10        J10       10 102111537 102114405  2869      - 580.1234282        21
+11        J11       10 102111537 102120085  8549      -   0.3693528       102
    mmreads scaledcoverage
-1        0    327.1850062
-2        0    281.2521302
-3        1    239.3846693
-4        0    229.2846911
-5        1    195.7131360
-6        0    401.9985050
-7        0    364.8078868
-8        0    398.4138503
-9        0    473.1434950
-10       0    453.5346390
-11       0      0.2819911
+1        0    326.8284169
+2        0    280.9456016
+3        1    239.1237724
+4        0    229.0348007
+5        1    195.4998341
+6        0    404.6347560
+7        0    364.9871310
+8        0    397.9850283
+9        0    472.6318846
+10       0    453.0403329
+11       0      0.2884416
 > 
 > sessionInfo()
 R version 3.4.0 (2017-04-21)
@@ -227,27 +241,28 @@ attached base packages:
 other attached packages:
  [1] bindrcpp_0.2                          
  [2] Gviz_1.20.0                           
- [3] ggrepel_0.7.0                         
- [4] cowplot_0.8.0                         
- [5] ggplot2_2.2.1                         
- [6] BSgenome.Hsapiens.NCBI.GRCh38_1.3.1000
- [7] BSgenome_1.44.2                       
- [8] rtracklayer_1.36.4                    
- [9] GenomicAlignments_1.12.2              
-[10] Rsamtools_1.28.0                      
-[11] Biostrings_2.44.2                     
-[12] XVector_0.16.0                        
-[13] SummarizedExperiment_1.6.5            
-[14] DelayedArray_0.2.7                    
-[15] matrixStats_0.52.2                    
-[16] Biobase_2.36.2                        
-[17] GenomicRanges_1.28.5                  
-[18] GenomeInfoDb_1.12.2                   
-[19] IRanges_2.10.3                        
-[20] S4Vectors_0.14.5                      
-[21] BiocGenerics_0.22.0                   
-[22] alpine_1.2.0                          
-[23] dplyr_0.7.4                           
+ [3] gridExtra_2.3                         
+ [4] ggrepel_0.7.0                         
+ [5] cowplot_0.8.0                         
+ [6] ggplot2_2.2.1                         
+ [7] BSgenome.Hsapiens.NCBI.GRCh38_1.3.1000
+ [8] BSgenome_1.44.2                       
+ [9] rtracklayer_1.36.4                    
+[10] GenomicAlignments_1.12.2              
+[11] Rsamtools_1.28.0                      
+[12] Biostrings_2.44.2                     
+[13] XVector_0.16.0                        
+[14] SummarizedExperiment_1.6.5            
+[15] DelayedArray_0.2.7                    
+[16] matrixStats_0.52.2                    
+[17] Biobase_2.36.2                        
+[18] GenomicRanges_1.28.5                  
+[19] GenomeInfoDb_1.12.2                   
+[20] IRanges_2.10.3                        
+[21] S4Vectors_0.14.5                      
+[22] BiocGenerics_0.22.0                   
+[23] alpine_1.2.0                          
+[24] dplyr_0.7.4                           
 
 loaded via a namespace (and not attached):
  [1] ProtGenerics_1.8.0            bitops_1.0-6                 
@@ -257,42 +272,42 @@ loaded via a namespace (and not attached):
  [9] rpart_4.1-11                  Hmisc_4.0-3                  
 [11] DBI_0.7                       lazyeval_0.2.0               
 [13] colorspace_1.3-2              nnet_7.3-12                  
-[15] gridExtra_2.3                 curl_2.8.1                   
-[17] bit_1.1-12                    compiler_3.4.0               
-[19] graph_1.54.0                  htmlTable_1.9                
-[21] labeling_0.3                  scales_0.5.0                 
-[23] checkmate_1.8.4               RBGL_1.52.0                  
-[25] speedglm_0.3-2                stringr_1.2.0                
-[27] digest_0.6.12                 foreign_0.8-69               
-[29] base64enc_0.1-3               dichromat_2.0-0              
-[31] pkgconfig_2.0.1               htmltools_0.3.6              
-[33] ensembldb_2.0.4               htmlwidgets_0.9              
-[35] rlang_0.1.2                   RSQLite_2.0                  
-[37] BiocInstaller_1.26.1          shiny_1.0.5                  
-[39] bindr_0.1                     BiocParallel_1.10.1          
-[41] acepack_1.4.1                 VariantAnnotation_1.22.3     
-[43] RCurl_1.95-4.8                magrittr_1.5                 
-[45] GenomeInfoDbData_0.99.0       Formula_1.2-2                
-[47] Matrix_1.2-11                 Rcpp_0.12.13                 
-[49] munsell_0.4.3                 stringi_1.1.5                
-[51] yaml_2.1.14                   MASS_7.3-47                  
-[53] zlibbioc_1.22.0               plyr_1.8.4                   
-[55] AnnotationHub_2.8.2           blob_1.1.0                   
-[57] lattice_0.20-35               splines_3.4.0                
-[59] GenomicFeatures_1.28.5        knitr_1.17                   
-[61] biomaRt_2.32.1                XML_3.98-1.9                 
-[63] glue_1.1.1                    biovizBase_1.24.0            
-[65] latticeExtra_0.6-28           data.table_1.10.4            
-[67] httpuv_1.3.5                  gtable_0.2.0                 
-[69] assertthat_0.2.0              mime_0.5                     
-[71] xtable_1.8-2                  AnnotationFilter_1.0.0       
-[73] survival_2.41-3               tibble_1.3.4                 
-[75] AnnotationDbi_1.38.2          memoise_1.1.0                
-[77] cluster_2.0.6                 interactiveDisplayBase_1.14.0
+[15] curl_2.8.1                    bit_1.1-12                   
+[17] compiler_3.4.0                graph_1.54.0                 
+[19] htmlTable_1.9                 labeling_0.3                 
+[21] scales_0.5.0                  checkmate_1.8.4              
+[23] RBGL_1.52.0                   speedglm_0.3-2               
+[25] stringr_1.2.0                 digest_0.6.12                
+[27] foreign_0.8-69                base64enc_0.1-3              
+[29] dichromat_2.0-0               pkgconfig_2.0.1              
+[31] htmltools_0.3.6               ensembldb_2.0.4              
+[33] htmlwidgets_0.9               rlang_0.1.2                  
+[35] RSQLite_2.0                   BiocInstaller_1.26.1         
+[37] shiny_1.0.5                   bindr_0.1                    
+[39] BiocParallel_1.10.1           acepack_1.4.1                
+[41] VariantAnnotation_1.22.3      RCurl_1.95-4.8               
+[43] magrittr_1.5                  GenomeInfoDbData_0.99.0      
+[45] Formula_1.2-2                 Matrix_1.2-11                
+[47] Rcpp_0.12.13                  munsell_0.4.3                
+[49] stringi_1.1.5                 yaml_2.1.14                  
+[51] MASS_7.3-47                   zlibbioc_1.22.0              
+[53] plyr_1.8.4                    AnnotationHub_2.8.2          
+[55] blob_1.1.0                    lattice_0.20-35              
+[57] splines_3.4.0                 GenomicFeatures_1.28.5       
+[59] knitr_1.17                    biomaRt_2.32.1               
+[61] XML_3.98-1.9                  glue_1.1.1                   
+[63] biovizBase_1.24.0             latticeExtra_0.6-28          
+[65] data.table_1.10.4             httpuv_1.3.5                 
+[67] gtable_0.2.0                  assertthat_0.2.0             
+[69] mime_0.5                      xtable_1.8-2                 
+[71] AnnotationFilter_1.0.0        survival_2.41-3              
+[73] tibble_1.3.4                  AnnotationDbi_1.38.2         
+[75] memoise_1.1.0                 cluster_2.0.6                
+[77] interactiveDisplayBase_1.14.0
 > date()
-[1] "Mon Oct 30 15:44:20 2017"
+[1] "Wed Nov  1 14:52:51 2017"
 > 
 > 
 > proc.time()
    user  system elapsed 
-195.380   8.867 205.125 
+256.657  19.981 278.604 

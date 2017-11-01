@@ -23,7 +23,7 @@ Type 'q()' to quit R.
 + }
 > 
 > print(gene)
-[1] "ENSG00000153823"
+[1] "ENSG00000000419"
 > print(bam)
 [1] "STAR/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bam"
 > print(bw)
@@ -37,7 +37,7 @@ Type 'q()' to quit R.
 > print(biasmodels)
 [1] "alpine/alpine_fitbiasmodel.rds"
 > print(outrds)
-[1] "alpine_out/ENSG00000153823.rds"
+[1] "alpine_out/ENSG00000000419.rds"
 > 
 > suppressPackageStartupMessages(library(dplyr))
 > suppressPackageStartupMessages(library(alpine))
@@ -110,12 +110,12 @@ Type 'q()' to quit R.
 +   pc$`1`$pred.cov$all <- pc$`1`$pred.cov$all/sum(pc$`1`$pred.cov$all) * quantsf$NumReads[quantsf$Name == tx] * avefraglength
 +   pc
 + })
-ENST00000482518
-ENST00000392054
-ENST00000409462
-ENST00000392055
-ENST00000354069
-ENST00000534952
+ENST00000371588
+ENST00000466152
+ENST00000371582
+ENST00000494752
+ENST00000371584
+ENST00000413082
 > 
 > junctionlist <- lapply(txlist, function(tx) {
 +   txmod <- ebt0[[tx]]
@@ -194,28 +194,36 @@ null device
 +                   difference = round(difference, 2)), file = gsub("rds$", "txt", outrds),
 +   quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t")
 > print(as.data.frame(jl))
-   junctionid seqnames     start       end  width strand   coverage uniqreads
-1          J1        2 228850649 229155817 305169      -   6.081267         0
-2          J2        2 229026109 229155817 129709      - 324.617953       266
-3          J3        2 229026109 229271013 244905      -   8.857257         1
-4          J4        2 229155965 229227956  71992      -   0.000000         0
-5          J5        2 229155965 229231925  75961      -   1.600358         0
-6          J6        2 229155965 229244851  88887      -   3.588341         0
-7          J7        2 229155965 229262682 106718      -  27.182162         8
-8          J8        2 229155965 229271013 115049      - 296.110877       142
-9          J9        2 229228064 229271013  42950      -   0.000000         0
-10        J10        2 229262894 229271013   8120      -  47.086016         3
+   junctionid seqnames    start      end width strand   coverage uniqreads
+1          J1       20 50935237 50936147   911      - 417.161362       399
+2          J2       20 50936263 50940864  4602      - 554.652764       419
+3          J3       20 50940934 50941104   171      -  12.162218         8
+4          J4       20 50940934 50941128   195      -  16.741829        15
+5          J5       20 50940934 50942030  1097      - 474.345411       419
+6          J6       20 50940956 50941104   149      -   5.535079         2
+7          J7       20 50940956 50942030  1075      -  33.982359        14
+8          J8       20 50941210 50942030   821      -  33.789545        28
+9          J9       20 50941210 50945736  4527      -   0.000000         0
+10        J10       20 50942127 50945736  3610      - 524.391454       403
+11        J11       20 50945763 50945846    84      - 487.070760       377
+12        J12       20 50945924 50948628  2705      - 422.567081       451
+13        J13       20 50948663 50955185  6523      - 453.967968       429
+14        J14       20 50955286 50958362  3077      - 633.394551       278
    mmreads scaledcoverage
-1        0      3.5715923
-2        1    190.6515461
-3        0      5.2019605
-4        0      0.0000000
-5        0      0.9399074
-6        0      2.1074704
-7        0     15.9643704
-8        0    173.9090395
-9        0      0.0000000
-10       0     27.6541134
+1        0     332.313538
+2        0     441.840110
+3        0       9.688504
+4        0      13.336653
+5        0     377.866735
+6        0       4.409281
+7        0      27.070575
+8        0      26.916978
+9        0       0.000000
+10       0     417.733748
+11       0     388.003833
+12       0     336.619770
+13       0     361.633927
+14       0     504.566346
 > 
 > sessionInfo()
 R version 3.4.0 (2017-04-21)
@@ -305,9 +313,9 @@ loaded via a namespace (and not attached):
 [75] memoise_1.1.0                 cluster_2.0.6                
 [77] interactiveDisplayBase_1.14.0
 > date()
-[1] "Wed Nov  1 14:53:39 2017"
+[1] "Wed Nov  1 14:52:54 2017"
 > 
 > 
 > proc.time()
    user  system elapsed 
-301.613  22.486 325.867 
+259.914  19.347 281.274 

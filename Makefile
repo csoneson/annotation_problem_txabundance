@@ -34,7 +34,7 @@ reference/Homo_sapiens.GRCh38.90_tx2gene.rds \
 output/$(fastqname)_cdna_vs_cds.rds $(STARindex)/SA \
 STARbigwig/$(fastqname)_Aligned.sortedByCoord.out.bw \
 STAR/$(fastqname)/$(fastqname)_Aligned.sortedByCoord.out.bam.bai \
-$(foreach G,$(plotgene),alpine_out/$(G).rds)
+$(foreach G,$(plotgene),alpine_check/$(G).rds)
 
 tmp: STAR/$(fastqname)/$(fastqname)_Aligned.sortedByCoord.out.bam
 
@@ -129,11 +129,13 @@ salmon/cDNA/$(fastqname)/quant.sf Rscripts/alpine_prepare_for_comparison.R
 	$(R) "--args gtf='$(gtf)' junctioncov='STAR/$(fastqname)/$(fastqname)_SJ.out.tab' quantsf='$(word 3,$^)' outrds='$@'" Rscripts/alpine_prepare_for_comparison.R Rout/alpine_prepare_for_comparison.Rout
 
 ## Predict coverage and compare to observed junction coverage
+## "gene" can be either a gene ID or a text file with a list of genes to investigate
 define alpinepredrule
-alpine_out/$(1).rds: alpine/alpine_fitbiasmodel.rds STAR/$$(fastqname)/$$(fastqname)_Aligned.sortedByCoord.out.bam \
-salmon/cDNA/$(fastqname)/quant.sf alpine/alpine_genemodels.rds Rscripts/alpine_compare_coverage.R \
+alpine_check/$(1).rds: alpine/alpine_fitbiasmodel.rds STAR/$$(fastqname)/$$(fastqname)_Aligned.sortedByCoord.out.bam \
+alpine/alpine_genemodels.rds Rscripts/alpine_compare_coverage.R \
 STARbigwig/$(fastqname)_Aligned.sortedByCoord.out.bw
 	mkdir -p $$(@D)
-	$(R) "--args gene='$(1)' bam='$$(word 2,$$^)' bw='$$(word 6,$$^)' genemodels='$$(word 4,$$^)' quantsf='$$(word 3,$$^)' biasmodels='$$(word 1,$$^)' outrds='$$@'" Rscripts/alpine_compare_coverage.R Rout/alpine_compare_coverage_$(1).Rout
+	mkdir -p alpine_out
+	$(R) "--args gene='$(1)' bam='$$(word 2,$$^)' bigwig='$$(word 5,$$^)' ncores=$(2) genemodels='$$(word 3,$$^)' biasmodels='$$(word 1,$$^)' outdir='alpine_out' checkdir='$$(@D)'" Rscripts/alpine_compare_coverage.R Rout/alpine_compare_coverage_$(1).Rout
 endef
-$(foreach G,$(plotgene),$(eval $(call alpinepredrule,$(G))))
+$(foreach G,$(plotgene),$(eval $(call alpinepredrule,$(G),1)))

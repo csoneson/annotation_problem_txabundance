@@ -1,0 +1,363 @@
+
+R version 3.4.0 (2017-04-21) -- "You Stupid Darkness"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> args <- (commandArgs(trailingOnly = TRUE))
+> for (i in 1:length(args)) {
++   eval(parse(text = args[[i]]))
++ }
+> 
+> print(gene)  ## gene of interest, or file listing collection of genes (one per row)
+[1] "ENSG00000172977"
+> print(bam)  ## bam file
+[1] "STAR/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bam"
+> print(bigwig)  ## bigwig file for visualization
+[1] "STARbigwig/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bw"
+> print(genemodels)  ## gene models etc (output of alpine_prepare_for_comparison.R)
+[1] "alpine/alpine_genemodels.rds"
+> print(biasmodels)  ## bias model object (output of alpine_fitbiasmodel.R)
+[1] "alpine/alpine_fitbiasmodel.rds"
+> print(ncores)  ## number of cores for parallel computations
+[1] 1
+> print(outdir)  ## output directory
+[1] "alpine_out"
+> print(checkdir)  ## directory to write (empty) rds files (time stamps)
+[1] "alpine_check"
+> 
+> suppressPackageStartupMessages(library(dplyr))
+> suppressPackageStartupMessages(library(alpine))
+> suppressPackageStartupMessages(library(GenomicAlignments))
+> suppressPackageStartupMessages(library(BSgenome.Hsapiens.NCBI.GRCh38))
+> suppressPackageStartupMessages(library(ggplot2))
+> suppressPackageStartupMessages(library(cowplot))
+> suppressPackageStartupMessages(library(ggrepel))
+> suppressPackageStartupMessages(library(parallel))
+> suppressPackageStartupMessages(library(grid))
+> suppressPackageStartupMessages(library(gridExtra))
+> 
+> source("Rscripts/plot_tracks.R")
+> 
+> calc_prop_p <- function(coverage, uniqreads, tot_coverage, tot_reads) {
++   sapply(seq_along(coverage), function(i) {
++     prop.test(x = c(coverage[i], uniqreads[i]), n = c(tot_coverage[i], tot_reads[i]),
++               alternative = "two.sided")$p.value
++   })
++ }
+> 
+> ## Read gene models for Gviz plot (pregenerated from gtf to save time) and
+> ## Salmon quantifications
+> genemodels <- readRDS(genemodels)
+> 
+> ## Read bias model parameters and exon-by-transcript objects
+> biasmodels <- readRDS(biasmodels)
+> fitpar <- biasmodels$fitpar
+> ebt0 <- biasmodels$ebt0
+> txps <- biasmodels$txps
+> 
+> ## Estimate average fragment length
+> avefraglength <- sum(fitpar$`1`$fraglen.density$x * fitpar$`1`$fraglen.density$y/
++                        sum(fitpar$`1`$fraglen.density$y))
+> 
+> ## Load bam file 
+> bam.files <- bam
+> names(bam.files) <- "1"
+> 
+> ## Determine which gene(s) to investigate
+> if (file.exists(gene)) {
++   genes <- unlist(read.delim(gene, as.is = TRUE, header = FALSE))
++ } else {
++   genes <- gene
++ }
+> 
+> ## Investigate each gene
+> mclapply(genes, function(currgene) {
++   ## Get transcripts for gene of interest
++   txlist <- names(subset(txps, gene_id == currgene))
++   names(txlist) <- txlist
++ 
++     if (length(txlist) > 0) {
++     
++     ## Predict coverage for each transcript
++     pred.cov <- lapply(txlist, function(tx) {
++       message(tx)
++       ## Get transcript model
++       txmod <- ebt0[[tx]]
++       
++       pc <- tryCatch({
++         m <- predictCoverage(gene = txmod,
++                              bam.files = bam.files,
++                              fitpar = fitpar,
++                              genome = Hsapiens,
++                              model.names = "all")
++         ## Scale predicted coverage to agree with Salmon's estimated count
++         m$`1`$pred.cov$all <- m$`1`$pred.cov$all/sum(m$`1`$pred.cov$all) * 
++           genemodels$quantsf$NumReads[genemodels$quantsf$Name == tx] * avefraglength
++         m
++       }, error = function(e) NULL)
++       pc
++     })
++     
++     junctionlist <- lapply(txlist, function(tx) {
++       txmod <- sort(ebt0[[tx]])
++       junctions <- GenomicRanges::setdiff(range(txmod), txmod)
++       if (all(strand(txmod) == "+")) {
++         junctionpos <- cumsum(width(txmod))
++         junctionpos <- junctionpos[-length(junctionpos)]
++         junctioncov <- as.numeric(pred.cov[[tx]]$"1"$pred.cov$all)[junctionpos]
++       } else if (all(strand(txmod) == "-")) {
++         junctionpos <- cumsum(width(rev(txmod)))
++         junctionpos <- junctionpos[-length(junctionpos)]
++         junctioncov <- as.numeric(pred.cov[[tx]]$"1"$pred.cov$all)[junctionpos]
++         junctioncov <- rev(junctioncov)
++       } else {
++         stop("Unknown or mixed strand")
++       }
++       mcols(junctions)$coverage <- junctioncov
++       junctions
++     })
++     
++     
++     jl <- do.call(rbind, lapply(junctionlist, as.data.frame)) %>% 
++       dplyr::group_by(seqnames, start, end, width, strand) %>%
++       dplyr::summarize(coverage = sum(coverage, na.rm = TRUE)) %>% ungroup() %>%
++       dplyr::mutate(coverage = replace(coverage, is.na(coverage), 0))
++     
++     jl <- dplyr::left_join(jl, genemodels$jcov) %>%
++       dplyr::mutate(uniqreads = replace(uniqreads, is.na(uniqreads), 0),
++                     mmreads = replace(mmreads, is.na(mmreads), 0)) %>%
++       dplyr::mutate(scaledcoverage = coverage/sum(coverage, na.rm = TRUE) * sum(uniqreads, na.rm = TRUE)) %>%
++       dplyr::mutate(tot_coverage = sum(coverage, na.rm = TRUE),
++                     tot_reads = sum(uniqreads, na.rm = TRUE)) %>%
++       dplyr::mutate(prop_pval = calc_prop_p(coverage, uniqreads, tot_coverage, tot_reads)) %>%
++       dplyr::mutate(junctionid = paste0("J", seq_len(length(scaledcoverage)))) %>% 
++       dplyr::mutate(difference = uniqreads - scaledcoverage) %>%
++       dplyr::mutate(ranking = order(order(difference))) %>%
++       dplyr::select(junctionid, everything())
++     
++     pdf(paste0(outdir, "/", currgene, ".pdf"), width = 12, height = 10)
++     tryCatch({
++       plot_tracks(mygene = currgene, genemodels = genemodels$genemodels_exon, 
++                   genemodels2 = genemodels$genemodels_cds, 
++                   gtf_file = NULL, rnaseq_datafiles = structure(bigwig, names = "s1"), 
++                   rnaseq_condition = structure("g1", names = "s1"), show_chr = NULL, 
++                   min_coord = NULL, max_coord = NULL, 
++                   pdf_filename = NULL, pdf_width = 7, pdf_height = 7)
++     }, error = function(e) message(e))
++     
++     grid.newpage()
++     grid.table(genemodels$quantsf %>% dplyr::filter(Name %in% txlist))
++     
++     grid.newpage()
++     grid.table(jl %>% dplyr::select(junctionid, seqnames, start, end, width, strand, 
++                                     uniqreads, mmreads, scaledcoverage, prop_pval))
++     
++     print(ggplot(jl, aes(x = scaledcoverage, y = uniqreads, label = junctionid)) + 
++             geom_point(size = 4) + geom_label_repel() + 
++             geom_abline(intercept = 0, slope = 1) + 
++             ggtitle(paste0("score = ", round(sum(abs(jl$uniqreads - jl$scaledcoverage), 
++                                                  na.rm = TRUE)/sum(jl$uniqreads, na.rm = TRUE), 2))) + 
++             xlab("Scaled predicted coverage") + ylab("Number of uniquely mapped reads"))
++     dev.off()
++     
++     write.table(jl %>%
++                   dplyr::mutate(coverage = round(coverage, 2),
++                                 scaledcoverage = round(scaledcoverage, 2),
++                                 difference = round(difference, 2)), 
++                 file = paste0(outdir, "/", gene, ".txt"),
++                 quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t")
++     print(as.data.frame(jl))
++     
++     saveRDS(NULL, paste0(checkdir, "/", currgene, ".rds"))
++   }
++ }, mc.preschedule = FALSE, mc.cores = ncores)
+ENST00000377046
+ENST00000352980
+ENST00000341318
+ENST00000532042
+ENST00000530446
+ENST00000534104
+ENST00000530605
+ENST00000534293
+ENST00000527544
+ENST00000528198
+ENST00000531880
+ENST00000534650
+ENST00000525204
+ENST00000534681
+ENST00000533441
+ENST00000525600
+ENST00000533596
+Joining, by = c("seqnames", "start", "end", "strand")
+   junctionid seqnames    start      end width strand   coverage uniqreads
+1          J1       11 65712280 65712349    70      +   0.000000         0
+2          J2       11 65712280 65712378    99      +  36.508211        18
+3          J3       11 65712446 65712765   320      + 210.527745       104
+4          J4       11 65712598 65712765   168      +   2.935243         3
+5          J5       11 65712835 65712921    87      + 372.181452       247
+6          J6       11 65713056 65713347   292      +   1.600983         0
+7          J7       11 65713059 65713347   289      +  28.011041        35
+8          J8       11 65713059 65713592   534      + 234.635423       160
+9          J9       11 65713504 65713592    89      +  17.034795        21
+10        J10       11 65713668 65713773   106      + 285.285378       133
+11        J11       11 65713849 65714494   646      + 321.615086       191
+12        J12       11 65713849 65714659   811      +   1.864451         2
+13        J13       11 65714744 65714820    77      + 565.046975       526
+14        J14       11 65714911 65716666  1756      + 527.936606       540
+15        J15       11 65716808 65716888    81      + 574.461571       440
+16        J16       11 65716983 65718589  1607      + 551.198831       351
+17        J17       11 65718750 65718872   123      + 515.374750       540
+18        J18       11 65718776 65718872    97      +   1.660402         5
+19        J19       11 65718955 65719046    92      + 422.748291       431
+   mmreads scaledcoverage tot_coverage tot_reads    prop_pval  difference
+1        0       0.000000     4670.627      3747          NaN   0.0000000
+2        0      29.288628     4670.627      3747 1.150421e-01 -11.2886284
+3        0     168.895401     4670.627      3747 4.024422e-05 -64.8954011
+4        0       2.354792     4670.627      3747 1.000000e+00   0.6452079
+5        1     298.581717     4670.627      3747 1.815281e-02 -51.5817173
+6        0       1.284385     4670.627      3747 7.352040e-01  -1.2843846
+7        0      22.471793     4670.627      3747 1.006945e-01  12.5282069
+8        0     188.235731     4670.627      3747 1.155859e-01 -28.2357308
+9        0      13.666125     4670.627      3747 2.431404e-01   7.3338749
+10       0     228.869541     4670.627      3747 1.048576e-07 -95.8695413
+11       0     258.014966     4670.627      3747 7.675678e-04 -67.0149662
+12       0       1.495752     4670.627      3747 1.000000e+00   0.5042481
+13       0     453.307642     4670.627      3747 9.295360e-03  72.6923584
+14       0     423.535933     4670.627      3747 2.386806e-05 116.4640673
+15       0     460.860480     4670.627      3747 4.556448e-01 -20.8604797
+16       0     442.197999     4670.627      3747 3.821679e-04 -91.1979994
+17       0     413.458213     4670.627      3747 3.892825e-06 126.5417874
+18       0       1.332054     4670.627      3747 2.311406e-01   3.6679460
+19       0     339.148848     4670.627      3747 2.462620e-04  91.8511520
+   ranking
+1       10
+2        8
+3        4
+4       12
+5        5
+6        9
+7       15
+8        6
+9       14
+10       1
+11       3
+12      11
+13      16
+14      18
+15       7
+16       2
+17      19
+18      13
+19      17
+[[1]]
+NULL
+
+> 
+> saveRDS(NULL, paste0(checkdir, "/", gene, ".rds"))
+> sessionInfo()
+R version 3.4.0 (2017-04-21)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 14.04.5 LTS
+
+Matrix products: default
+BLAS: /usr/local/R/R-3.4.0/lib/libRblas.so
+LAPACK: /usr/local/R/R-3.4.0/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=en_CA.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=en_CA.UTF-8        LC_COLLATE=en_CA.UTF-8    
+ [5] LC_MONETARY=en_CA.UTF-8    LC_MESSAGES=en_CA.UTF-8   
+ [7] LC_PAPER=en_CA.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=en_CA.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+ [1] grid      stats4    parallel  stats     graphics  grDevices utils    
+ [8] datasets  methods   base     
+
+other attached packages:
+ [1] Gviz_1.20.0                           
+ [2] gridExtra_2.3                         
+ [3] ggrepel_0.7.0                         
+ [4] cowplot_0.8.0                         
+ [5] ggplot2_2.2.1                         
+ [6] BSgenome.Hsapiens.NCBI.GRCh38_1.3.1000
+ [7] BSgenome_1.44.2                       
+ [8] rtracklayer_1.36.4                    
+ [9] GenomicAlignments_1.12.2              
+[10] Rsamtools_1.28.0                      
+[11] Biostrings_2.44.2                     
+[12] XVector_0.16.0                        
+[13] SummarizedExperiment_1.6.5            
+[14] DelayedArray_0.2.7                    
+[15] matrixStats_0.52.2                    
+[16] Biobase_2.36.2                        
+[17] GenomicRanges_1.28.5                  
+[18] GenomeInfoDb_1.12.2                   
+[19] IRanges_2.10.3                        
+[20] S4Vectors_0.14.5                      
+[21] BiocGenerics_0.22.0                   
+[22] alpine_1.2.0                          
+[23] dplyr_0.7.4                           
+
+loaded via a namespace (and not attached):
+ [1] ProtGenerics_1.8.0            bitops_1.0-6                 
+ [3] bit64_0.9-7                   RColorBrewer_1.1-2           
+ [5] httr_1.3.1                    tools_3.4.0                  
+ [7] backports_1.1.1               R6_2.2.2                     
+ [9] rpart_4.1-11                  Hmisc_4.0-3                  
+[11] DBI_0.7                       lazyeval_0.2.0               
+[13] colorspace_1.3-2              nnet_7.3-12                  
+[15] curl_2.8.1                    bit_1.1-12                   
+[17] compiler_3.4.0                graph_1.54.0                 
+[19] htmlTable_1.9                 scales_0.5.0                 
+[21] checkmate_1.8.4               RBGL_1.52.0                  
+[23] speedglm_0.3-2                stringr_1.2.0                
+[25] digest_0.6.12                 foreign_0.8-69               
+[27] base64enc_0.1-3               dichromat_2.0-0              
+[29] pkgconfig_2.0.1               htmltools_0.3.6              
+[31] ensembldb_2.0.4               htmlwidgets_0.9              
+[33] rlang_0.1.2                   RSQLite_2.0                  
+[35] BiocInstaller_1.26.1          shiny_1.0.5                  
+[37] bindr_0.1                     BiocParallel_1.10.1          
+[39] acepack_1.4.1                 VariantAnnotation_1.22.3     
+[41] RCurl_1.95-4.8                magrittr_1.5                 
+[43] GenomeInfoDbData_0.99.0       Formula_1.2-2                
+[45] Matrix_1.2-11                 Rcpp_0.12.13                 
+[47] munsell_0.4.3                 stringi_1.1.5                
+[49] yaml_2.1.14                   MASS_7.3-47                  
+[51] zlibbioc_1.22.0               plyr_1.8.4                   
+[53] AnnotationHub_2.8.2           blob_1.1.0                   
+[55] lattice_0.20-35               splines_3.4.0                
+[57] GenomicFeatures_1.28.5        knitr_1.17                   
+[59] biomaRt_2.32.1                XML_3.98-1.9                 
+[61] glue_1.1.1                    biovizBase_1.24.0            
+[63] latticeExtra_0.6-28           data.table_1.10.4            
+[65] httpuv_1.3.5                  gtable_0.2.0                 
+[67] assertthat_0.2.0              mime_0.5                     
+[69] xtable_1.8-2                  AnnotationFilter_1.0.0       
+[71] survival_2.41-3               tibble_1.3.4                 
+[73] AnnotationDbi_1.38.2          memoise_1.1.0                
+[75] bindrcpp_0.2                  cluster_2.0.6                
+[77] interactiveDisplayBase_1.14.0
+> date()
+[1] "Thu Nov  2 16:16:52 2017"
+> 
+> 
+> proc.time()
+   user  system elapsed 
+ 43.715   1.563 190.707 

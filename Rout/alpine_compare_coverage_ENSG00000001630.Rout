@@ -22,20 +22,22 @@ Type 'q()' to quit R.
 +   eval(parse(text = args[[i]]))
 + }
 > 
-> print(gene)
+> print(gene)  ## gene of interest, or file listing collection of genes (one per row)
 [1] "ENSG00000001630"
-> print(bam)
+> print(bam)  ## bam file
 [1] "STAR/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bam"
-> print(bw)
+> print(bigwig)  ## bigwig file for visualization
 [1] "STARbigwig/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bw"
-> print(genemodels)
+> print(genemodels)  ## gene models etc (output of alpine_prepare_for_comparison.R)
 [1] "alpine/alpine_genemodels.rds"
-> print(quantsf)
-[1] "salmon/cDNA/20151016.A-Cortex_RNA/quant.sf"
-> print(biasmodels)
+> print(biasmodels)  ## bias model object (output of alpine_fitbiasmodel.R)
 [1] "alpine/alpine_fitbiasmodel.rds"
-> print(outrds)
-[1] "alpine_out/ENSG00000001630.rds"
+> print(ncores)  ## number of cores for parallel computations
+[1] 1
+> print(outdir)  ## output directory
+[1] "alpine_out"
+> print(checkdir)  ## directory to write (empty) rds files (time stamps)
+[1] "alpine_check"
 > 
 > suppressPackageStartupMessages(library(dplyr))
 > suppressPackageStartupMessages(library(alpine))
@@ -44,128 +46,151 @@ Type 'q()' to quit R.
 > suppressPackageStartupMessages(library(ggplot2))
 > suppressPackageStartupMessages(library(cowplot))
 > suppressPackageStartupMessages(library(ggrepel))
+> suppressPackageStartupMessages(library(parallel))
 > suppressPackageStartupMessages(library(grid))
 > suppressPackageStartupMessages(library(gridExtra))
 > 
 > source("Rscripts/plot_tracks.R")
 > 
-> ## Read gene models for plot (pregenerated from gtf to save time)
-> genemodels <- readRDS(genemodels)
-> quantsf <- genemodels$quantsf
+> calc_prop_p <- function(coverage, uniqreads, tot_coverage, tot_reads) {
++   sapply(seq_along(coverage), function(i) {
++     prop.test(x = c(coverage[i], uniqreads[i]), n = c(tot_coverage[i], tot_reads[i]),
++               alternative = "two.sided")$p.value
++   })
++ }
 > 
-> ## Read bias model parameters and gene models
+> ## Read gene models for Gviz plot (pregenerated from gtf to save time) and
+> ## Salmon quantifications
+> genemodels <- readRDS(genemodels)
+> 
+> ## Read bias model parameters and exon-by-transcript objects
 > biasmodels <- readRDS(biasmodels)
 > fitpar <- biasmodels$fitpar
 > ebt0 <- biasmodels$ebt0
 > txps <- biasmodels$txps
 > 
 > ## Estimate average fragment length
-> avefraglength <- sum(fitpar$`1`$fraglen.density$x * fitpar$`1`$fraglen.density$y/sum(fitpar$`1`$fraglen.density$y))
-> 
-> ## Get transcripts for gene of interest
-> txlist <- names(subset(txps, gene_id == gene))
-> stopifnot(length(txlist) > 0)
-> names(txlist) <- txlist
+> avefraglength <- sum(fitpar$`1`$fraglen.density$x * fitpar$`1`$fraglen.density$y/
++                        sum(fitpar$`1`$fraglen.density$y))
 > 
 > ## Load bam file 
 > bam.files <- bam
 > names(bam.files) <- "1"
 > 
-> ## Predict coverage for each transcript
-> pred.cov <- lapply(txlist, function(tx) {
-+   message(tx)
-+   ## Get transcript model
-+   txmod <- ebt0[[tx]]
-+   
-+   pc <- tryCatch({
-+     m <- predictCoverage(gene = txmod,
-+                          bam.files = bam.files,
-+                          fitpar = fitpar,
-+                          genome = Hsapiens,
-+                          model.names = "all")
-+     ## Scale predicted coverage to agree with Salmon's estimated count
-+     m$`1`$pred.cov$all <- m$`1`$pred.cov$all/sum(m$`1`$pred.cov$all) * quantsf$NumReads[quantsf$Name == tx] * avefraglength
-+     m
-+   }, error = function(e) NULL)
-+   pc
-+ })
+> ## Determine which gene(s) to investigate
+> if (file.exists(gene)) {
++   genes <- unlist(read.delim(gene, as.is = TRUE, header = FALSE))
++ } else {
++   genes <- gene
++ }
+> 
+> ## Investigate each gene
+> mclapply(genes, function(currgene) {
++   ## Get transcripts for gene of interest
++   txlist <- names(subset(txps, gene_id == currgene))
++   names(txlist) <- txlist
++ 
++     if (length(txlist) > 0) {
++     
++     ## Predict coverage for each transcript
++     pred.cov <- lapply(txlist, function(tx) {
++       message(tx)
++       ## Get transcript model
++       txmod <- ebt0[[tx]]
++       
++       pc <- tryCatch({
++         m <- predictCoverage(gene = txmod,
++                              bam.files = bam.files,
++                              fitpar = fitpar,
++                              genome = Hsapiens,
++                              model.names = "all")
++         ## Scale predicted coverage to agree with Salmon's estimated count
++         m$`1`$pred.cov$all <- m$`1`$pred.cov$all/sum(m$`1`$pred.cov$all) * 
++           genemodels$quantsf$NumReads[genemodels$quantsf$Name == tx] * avefraglength
++         m
++       }, error = function(e) NULL)
++       pc
++     })
++     
++     junctionlist <- lapply(txlist, function(tx) {
++       txmod <- sort(ebt0[[tx]])
++       junctions <- GenomicRanges::setdiff(range(txmod), txmod)
++       if (all(strand(txmod) == "+")) {
++         junctionpos <- cumsum(width(txmod))
++         junctionpos <- junctionpos[-length(junctionpos)]
++         junctioncov <- as.numeric(pred.cov[[tx]]$"1"$pred.cov$all)[junctionpos]
++       } else if (all(strand(txmod) == "-")) {
++         junctionpos <- cumsum(width(rev(txmod)))
++         junctionpos <- junctionpos[-length(junctionpos)]
++         junctioncov <- as.numeric(pred.cov[[tx]]$"1"$pred.cov$all)[junctionpos]
++         junctioncov <- rev(junctioncov)
++       } else {
++         stop("Unknown or mixed strand")
++       }
++       mcols(junctions)$coverage <- junctioncov
++       junctions
++     })
++     
++     
++     jl <- do.call(rbind, lapply(junctionlist, as.data.frame)) %>% 
++       dplyr::group_by(seqnames, start, end, width, strand) %>%
++       dplyr::summarize(coverage = sum(coverage, na.rm = TRUE)) %>% ungroup() %>%
++       dplyr::mutate(coverage = replace(coverage, is.na(coverage), 0))
++     
++     jl <- dplyr::left_join(jl, genemodels$jcov) %>%
++       dplyr::mutate(uniqreads = replace(uniqreads, is.na(uniqreads), 0),
++                     mmreads = replace(mmreads, is.na(mmreads), 0)) %>%
++       dplyr::mutate(scaledcoverage = coverage/sum(coverage, na.rm = TRUE) * sum(uniqreads, na.rm = TRUE)) %>%
++       dplyr::mutate(tot_coverage = sum(coverage, na.rm = TRUE),
++                     tot_reads = sum(uniqreads, na.rm = TRUE)) %>%
++       dplyr::mutate(prop_pval = calc_prop_p(coverage, uniqreads, tot_coverage, tot_reads)) %>%
++       dplyr::mutate(junctionid = paste0("J", seq_len(length(scaledcoverage)))) %>% 
++       dplyr::mutate(difference = uniqreads - scaledcoverage) %>%
++       dplyr::mutate(ranking = order(order(difference))) %>%
++       dplyr::select(junctionid, everything())
++     
++     pdf(paste0(outdir, "/", currgene, ".pdf"), width = 12, height = 10)
++     tryCatch({
++       plot_tracks(mygene = currgene, genemodels = genemodels$genemodels_exon, 
++                   genemodels2 = genemodels$genemodels_cds, 
++                   gtf_file = NULL, rnaseq_datafiles = structure(bigwig, names = "s1"), 
++                   rnaseq_condition = structure("g1", names = "s1"), show_chr = NULL, 
++                   min_coord = NULL, max_coord = NULL, 
++                   pdf_filename = NULL, pdf_width = 7, pdf_height = 7)
++     }, error = function(e) message(e))
++     
++     grid.newpage()
++     grid.table(genemodels$quantsf %>% dplyr::filter(Name %in% txlist))
++     
++     grid.newpage()
++     grid.table(jl %>% dplyr::select(junctionid, seqnames, start, end, width, strand, 
++                                     uniqreads, mmreads, scaledcoverage, prop_pval))
++     
++     print(ggplot(jl, aes(x = scaledcoverage, y = uniqreads, label = junctionid)) + 
++             geom_point(size = 4) + geom_label_repel() + 
++             geom_abline(intercept = 0, slope = 1) + 
++             ggtitle(paste0("score = ", round(sum(abs(jl$uniqreads - jl$scaledcoverage), 
++                                                  na.rm = TRUE)/sum(jl$uniqreads, na.rm = TRUE), 2))) + 
++             xlab("Scaled predicted coverage") + ylab("Number of uniquely mapped reads"))
++     dev.off()
++     
++     write.table(jl %>%
++                   dplyr::mutate(coverage = round(coverage, 2),
++                                 scaledcoverage = round(scaledcoverage, 2),
++                                 difference = round(difference, 2)), 
++                 file = paste0(outdir, "/", gene, ".txt"),
++                 quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t")
++     print(as.data.frame(jl))
++     
++     saveRDS(NULL, paste0(checkdir, "/", currgene, ".rds"))
++   }
++ }, mc.preschedule = FALSE, mc.cores = ncores)
 ENST00000003100
 ENST00000450723
 ENST00000422867
 ENST00000482924
 ENST00000435873
-> 
-> junctionlist <- lapply(txlist, function(tx) {
-+   txmod <- sort(ebt0[[tx]])
-+   junctions <- GenomicRanges::setdiff(range(txmod), txmod)
-+   if (all(strand(txmod) == "+")) {
-+     junctionpos <- cumsum(width(txmod))
-+     junctionpos <- junctionpos[-length(junctionpos)]
-+     junctioncov <- as.numeric(pred.cov[[tx]]$"1"$pred.cov$all)[junctionpos]
-+   } else if (all(strand(txmod) == "-")) {
-+     junctionpos <- cumsum(width(rev(txmod)))
-+     junctionpos <- junctionpos[-length(junctionpos)]
-+     junctioncov <- as.numeric(pred.cov[[tx]]$"1"$pred.cov$all)[junctionpos]
-+     junctioncov <- rev(junctioncov)
-+   } else {
-+     stop("Unknown or mixed strand")
-+   }
-+   mcols(junctions)$coverage <- junctioncov
-+   junctions
-+ })
-> 
-> jl <- do.call(rbind, lapply(junctionlist, as.data.frame)) %>% 
-+   dplyr::group_by(seqnames, start, end, width, strand) %>%
-+   dplyr::summarize(coverage = sum(coverage, na.rm = TRUE)) %>% ungroup() %>%
-+   dplyr::mutate(coverage = replace(coverage, is.na(coverage), 0))
-> 
-> jl <- dplyr::left_join(jl, genemodels$jcov) %>%
-+   dplyr::mutate(uniqreads = replace(uniqreads, is.na(uniqreads), 0),
-+                 mmreads = replace(mmreads, is.na(mmreads), 0)) %>%
-+   dplyr::mutate(scaledcoverage = coverage/sum(coverage, na.rm = TRUE) * sum(uniqreads, na.rm = TRUE)) %>%
-+   dplyr::mutate(junctionid = paste0("J", seq_len(length(scaledcoverage)))) %>%
-+   dplyr::select(junctionid, everything())
 Joining, by = c("seqnames", "start", "end", "strand")
-Warning messages:
-1: Column `seqnames` joining factor and character vector, coercing into character vector 
-2: Column `strand` joining factor and character vector, coercing into character vector 
-> 
-> pdf(gsub("rds$", "pdf", outrds), width = 12, height = 10)
-> tryCatch({
-+   plot_tracks(mygene = gene, genemodels = genemodels$genemodels_exon, 
-+               genemodels2 = genemodels$genemodels_cds, 
-+               gtf_file = NULL, rnaseq_datafiles = structure(bw, names = "s1"), 
-+               rnaseq_condition = structure("g1", names = "s1"), show_chr = NULL, 
-+               min_coord = NULL, max_coord = NULL, 
-+               pdf_filename = NULL, pdf_width = 7, pdf_height = 7)
-+ }, error = function(e) message(e))
-> 
-> grid.newpage()
-> grid.table(quantsf %>% dplyr::filter(Name %in% txlist))
-> 
-> grid.newpage()
-> grid.table(jl %>% dplyr::select(junctionid, seqnames, start, end, width, strand, 
-+                                 uniqreads, mmreads, scaledcoverage))
-> 
-> print(ggplot(jl, aes(x = scaledcoverage, y = uniqreads, label = junctionid)) + 
-+         geom_point(size = 4) + geom_label_repel() + 
-+         geom_abline(intercept = 0, slope = 1) + 
-+         ggtitle(paste0("score = ", round(sum(abs(jl$uniqreads - jl$scaledcoverage), 
-+                                                  na.rm = TRUE)/sum(jl$uniqreads, na.rm = TRUE), 2))) + 
-+         xlab("Scaled predicted coverage") + ylab("Number of uniquely mapped reads"))
-> dev.off()
-null device 
-          1 
-> 
-> # print(sort(fit$residuals))
-> write.table(jl %>% dplyr::mutate(difference = uniqreads - scaledcoverage) %>%
-+   dplyr::mutate(ranking = order(order(difference))) %>%
-+     dplyr::mutate(coverage = round(coverage, 2),
-+                   scaledcoverage = round(scaledcoverage, 2),
-+                   difference = round(difference, 2)), 
-+   file = gsub("rds$", "txt", outrds),
-+   quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t")
-> print(as.data.frame(jl))
    junctionid seqnames    start      end width strand   coverage uniqreads
 1          J1        7 92113844 92117043  3200      -  973.49886       821
 2          J2        7 92117093 92117176    84      -    1.27283        12
@@ -179,21 +204,37 @@ null device
 10        J10        7 92131873 92134172  2300      -  360.61180       145
 11        J11        7 92131873 92134665  2793      -   10.73154        33
 12        J12        7 92131873 92142462 10590      -    0.00000         0
-   mmreads scaledcoverage
-1        0    705.2549385
-2        0      0.9221063
-3        1    655.0184755
-4        2    625.0794388
-5        4    612.9618168
-6        4    699.2419287
-7        1    651.9003905
-8        0    792.7050778
-9        0    581.8947372
-10       0    261.2465863
-11       0      7.7745038
-12       0      0.0000000
+   mmreads scaledcoverage tot_coverage tot_reads    prop_pval  difference
+1        0    705.2549385      7721.68      5594 6.138934e-04  115.745062
+2        0      0.9221063      7721.68      5594 9.804826e-04   11.077894
+3        1    655.0184755      7721.68      5594 1.255257e-09  202.981525
+4        2    625.0794388      7721.68      5594 1.219545e-03  103.920561
+5        4    612.9618168      7721.68      5594 1.071557e-01   51.038183
+6        4    699.2419287      7721.68      5594 9.046482e-01    4.758071
+7        1    651.9003905      7721.68      5594 6.445236e-02   60.099610
+8        0    792.7050778      7721.68      5594 1.191519e-18 -282.705078
+9        0    581.8947372      7721.68      5594 5.573856e-10 -175.894737
+10       0    261.2465863      7721.68      5594 7.913318e-10 -116.246586
+11       0      7.7745038      7721.68      5594 1.453765e-05   25.225496
+12       0      0.0000000      7721.68      5594          NaN    0.000000
+   ranking
+1       11
+2        6
+3       12
+4       10
+5        8
+6        5
+7        9
+8        1
+9        2
+10       3
+11       7
+12       4
+[[1]]
+NULL
+
 > 
-> saveRDS(NULL, outrds)
+> saveRDS(NULL, paste0(checkdir, "/", gene, ".rds"))
 > sessionInfo()
 R version 3.4.0 (2017-04-21)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -216,30 +257,29 @@ attached base packages:
  [8] datasets  methods   base     
 
 other attached packages:
- [1] bindrcpp_0.2                          
- [2] Gviz_1.20.0                           
- [3] gridExtra_2.3                         
- [4] ggrepel_0.7.0                         
- [5] cowplot_0.8.0                         
- [6] ggplot2_2.2.1                         
- [7] BSgenome.Hsapiens.NCBI.GRCh38_1.3.1000
- [8] BSgenome_1.44.2                       
- [9] rtracklayer_1.36.4                    
-[10] GenomicAlignments_1.12.2              
-[11] Rsamtools_1.28.0                      
-[12] Biostrings_2.44.2                     
-[13] XVector_0.16.0                        
-[14] SummarizedExperiment_1.6.5            
-[15] DelayedArray_0.2.7                    
-[16] matrixStats_0.52.2                    
-[17] Biobase_2.36.2                        
-[18] GenomicRanges_1.28.5                  
-[19] GenomeInfoDb_1.12.2                   
-[20] IRanges_2.10.3                        
-[21] S4Vectors_0.14.5                      
-[22] BiocGenerics_0.22.0                   
-[23] alpine_1.2.0                          
-[24] dplyr_0.7.4                           
+ [1] Gviz_1.20.0                           
+ [2] gridExtra_2.3                         
+ [3] ggrepel_0.7.0                         
+ [4] cowplot_0.8.0                         
+ [5] ggplot2_2.2.1                         
+ [6] BSgenome.Hsapiens.NCBI.GRCh38_1.3.1000
+ [7] BSgenome_1.44.2                       
+ [8] rtracklayer_1.36.4                    
+ [9] GenomicAlignments_1.12.2              
+[10] Rsamtools_1.28.0                      
+[11] Biostrings_2.44.2                     
+[12] XVector_0.16.0                        
+[13] SummarizedExperiment_1.6.5            
+[14] DelayedArray_0.2.7                    
+[15] matrixStats_0.52.2                    
+[16] Biobase_2.36.2                        
+[17] GenomicRanges_1.28.5                  
+[18] GenomeInfoDb_1.12.2                   
+[19] IRanges_2.10.3                        
+[20] S4Vectors_0.14.5                      
+[21] BiocGenerics_0.22.0                   
+[22] alpine_1.2.0                          
+[23] dplyr_0.7.4                           
 
 loaded via a namespace (and not attached):
  [1] ProtGenerics_1.8.0            bitops_1.0-6                 
@@ -251,40 +291,40 @@ loaded via a namespace (and not attached):
 [13] colorspace_1.3-2              nnet_7.3-12                  
 [15] curl_2.8.1                    bit_1.1-12                   
 [17] compiler_3.4.0                graph_1.54.0                 
-[19] htmlTable_1.9                 labeling_0.3                 
-[21] scales_0.5.0                  checkmate_1.8.4              
-[23] RBGL_1.52.0                   speedglm_0.3-2               
-[25] stringr_1.2.0                 digest_0.6.12                
-[27] foreign_0.8-69                base64enc_0.1-3              
-[29] dichromat_2.0-0               pkgconfig_2.0.1              
-[31] htmltools_0.3.6               ensembldb_2.0.4              
-[33] htmlwidgets_0.9               rlang_0.1.2                  
-[35] RSQLite_2.0                   BiocInstaller_1.26.1         
-[37] shiny_1.0.5                   bindr_0.1                    
-[39] BiocParallel_1.10.1           acepack_1.4.1                
-[41] VariantAnnotation_1.22.3      RCurl_1.95-4.8               
-[43] magrittr_1.5                  GenomeInfoDbData_0.99.0      
-[45] Formula_1.2-2                 Matrix_1.2-11                
-[47] Rcpp_0.12.13                  munsell_0.4.3                
-[49] stringi_1.1.5                 yaml_2.1.14                  
-[51] MASS_7.3-47                   zlibbioc_1.22.0              
-[53] plyr_1.8.4                    AnnotationHub_2.8.2          
-[55] blob_1.1.0                    lattice_0.20-35              
-[57] splines_3.4.0                 GenomicFeatures_1.28.5       
-[59] knitr_1.17                    biomaRt_2.32.1               
-[61] XML_3.98-1.9                  glue_1.1.1                   
-[63] biovizBase_1.24.0             latticeExtra_0.6-28          
-[65] data.table_1.10.4             httpuv_1.3.5                 
-[67] gtable_0.2.0                  assertthat_0.2.0             
-[69] mime_0.5                      xtable_1.8-2                 
-[71] AnnotationFilter_1.0.0        survival_2.41-3              
-[73] tibble_1.3.4                  AnnotationDbi_1.38.2         
-[75] memoise_1.1.0                 cluster_2.0.6                
+[19] htmlTable_1.9                 scales_0.5.0                 
+[21] checkmate_1.8.4               RBGL_1.52.0                  
+[23] speedglm_0.3-2                stringr_1.2.0                
+[25] digest_0.6.12                 foreign_0.8-69               
+[27] base64enc_0.1-3               dichromat_2.0-0              
+[29] pkgconfig_2.0.1               htmltools_0.3.6              
+[31] ensembldb_2.0.4               htmlwidgets_0.9              
+[33] rlang_0.1.2                   RSQLite_2.0                  
+[35] BiocInstaller_1.26.1          shiny_1.0.5                  
+[37] bindr_0.1                     BiocParallel_1.10.1          
+[39] acepack_1.4.1                 VariantAnnotation_1.22.3     
+[41] RCurl_1.95-4.8                magrittr_1.5                 
+[43] GenomeInfoDbData_0.99.0       Formula_1.2-2                
+[45] Matrix_1.2-11                 Rcpp_0.12.13                 
+[47] munsell_0.4.3                 stringi_1.1.5                
+[49] yaml_2.1.14                   MASS_7.3-47                  
+[51] zlibbioc_1.22.0               plyr_1.8.4                   
+[53] AnnotationHub_2.8.2           blob_1.1.0                   
+[55] lattice_0.20-35               splines_3.4.0                
+[57] GenomicFeatures_1.28.5        knitr_1.17                   
+[59] biomaRt_2.32.1                XML_3.98-1.9                 
+[61] glue_1.1.1                    biovizBase_1.24.0            
+[63] latticeExtra_0.6-28           data.table_1.10.4            
+[65] httpuv_1.3.5                  gtable_0.2.0                 
+[67] assertthat_0.2.0              mime_0.5                     
+[69] xtable_1.8-2                  AnnotationFilter_1.0.0       
+[71] survival_2.41-3               tibble_1.3.4                 
+[73] AnnotationDbi_1.38.2          memoise_1.1.0                
+[75] bindrcpp_0.2                  cluster_2.0.6                
 [77] interactiveDisplayBase_1.14.0
 > date()
-[1] "Wed Nov  1 20:53:09 2017"
+[1] "Thu Nov  2 13:58:36 2017"
 > 
 > 
 > proc.time()
    user  system elapsed 
-148.513  10.094 160.369 
+ 73.141  15.494 208.274 

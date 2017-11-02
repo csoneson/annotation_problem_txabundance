@@ -26,7 +26,7 @@ suppressPackageStartupMessages(library(gridExtra))
 source("Rscripts/plot_tracks.R")
 
 calc_prop_p <- function(coverage, uniqreads, tot_coverage, tot_reads) {
-  sapply(seq_along(prop_coverage), function(i) {
+  sapply(seq_along(coverage), function(i) {
     prop.test(x = c(coverage[i], uniqreads[i]), n = c(tot_coverage[i], tot_reads[i]),
               alternative = "two.sided")$p.value
   })

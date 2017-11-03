@@ -62,8 +62,8 @@ mclapply(genes, function(currgene) {
   ## Get transcripts for gene of interest
   txlist <- names(subset(txps, gene_id == currgene))
   names(txlist) <- txlist
-
-    if (length(txlist) > 0) {
+  
+  if (length(txlist) > 0) {
     
     ## Predict coverage for each transcript
     pred.cov <- lapply(txlist, function(tx) {
@@ -139,11 +139,13 @@ mclapply(genes, function(currgene) {
     grid.table(jl %>% dplyr::select(junctionid, seqnames, start, end, width, strand, 
                                     uniqreads, mmreads, scaledcoverage, prop_pval))
     
+    genescore <- round(sum(abs(jl$uniqreads - jl$scaledcoverage), 
+                           na.rm = TRUE)/sum(jl$uniqreads, na.rm = TRUE), 2)
+    
     print(ggplot(jl, aes(x = scaledcoverage, y = uniqreads, label = junctionid)) + 
             geom_point(size = 4) + geom_label_repel() + 
             geom_abline(intercept = 0, slope = 1) + 
-            ggtitle(paste0("score = ", round(sum(abs(jl$uniqreads - jl$scaledcoverage), 
-                                                 na.rm = TRUE)/sum(jl$uniqreads, na.rm = TRUE), 2))) + 
+            ggtitle(paste0("score = ", genescore)) + 
             xlab("Scaled predicted coverage") + ylab("Number of uniquely mapped reads"))
     dev.off()
     
@@ -151,11 +153,11 @@ mclapply(genes, function(currgene) {
                   dplyr::mutate(coverage = round(coverage, 2),
                                 scaledcoverage = round(scaledcoverage, 2),
                                 difference = round(difference, 2)), 
-                file = paste0(outdir, "/", gene, ".txt"),
+                file = paste0(outdir, "/", currgene, ".txt"),
                 quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t")
     print(as.data.frame(jl))
     
-    saveRDS(NULL, paste0(checkdir, "/", currgene, ".rds"))
+    saveRDS(list(score = genescore), paste0(checkdir, "/", currgene, ".rds"))
   }
 }, mc.preschedule = FALSE, mc.cores = ncores)
 

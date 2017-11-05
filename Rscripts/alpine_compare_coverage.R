@@ -161,7 +161,7 @@ mclapply(genes, function(currgene) {
   }
 }, mc.preschedule = FALSE, mc.cores = ncores)
 
-saveRDS(NULL, paste0(checkdir, "/", gene, ".rds"))
+saveRDS(NULL, paste0(checkdir, "/", basename(gene), ".rds"))
 sessionInfo()
 date()
 

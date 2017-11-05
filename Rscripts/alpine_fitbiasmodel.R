@@ -5,6 +5,9 @@ for (i in 1:length(args)) {
 
 print(gtf)
 print(bam)  ## used to extract "medium to highly expressed genes" to fit the bias model
+print(readlength)
+print(minsize)
+print(maxsize)
 print(outdir)
 
 suppressPackageStartupMessages(library(ensembldb))
@@ -49,7 +52,7 @@ length(ebt.fit)
 
 ## Sample 500 genes to use for the fitting of the bias model
 set.seed(1)
-ebt.fit <- ebt.fit[sample(length(ebt.fit), 500)]
+ebt.fit <- ebt.fit[sample(length(ebt.fit), 1000)]
 
 ## Read bam file
 bam.files <- bam
@@ -65,13 +68,9 @@ ebt.fit <- ebt.fit[txps.fit$cts > 500 & txps.fit$cts < 10000]
 length(ebt.fit)
 
 ## Get fragment width and read length
-w <- getFragmentWidths(bam.files, ebt.fit[[1]])
+w <- getFragmentWidths(bam.files, ebt.fit[[min(which(sapply(ebt.fit, length) > 1))]])
 quantile(w, c(.025, .975))
 getReadLength(bam.files)
-
-readlength <- 126
-minsize <- 100
-maxsize <- 300
 
 ## Names of genes to retain
 gene.names <- names(ebt.fit)

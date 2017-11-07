@@ -1,5 +1,7 @@
 R := R_LIBS=/home/Shared/Rlib/release-3.5-lib/ /usr/local/R/R-3.4.0/bin/R CMD BATCH --no-restore --no-save
 salmon := /home/charlotte/software/Salmon-0.8.2_linux_x86_64/bin/salmon
+kallisto := /home/charlotte/software/kallisto_linux-v0.43.1/kallisto
+RSEM := /home/charlotte/software/RSEM-1.3.0
 refdir := /home/Shared/data/annotation/Human/Ensembl_GRCh38.90
 cdna := $(refdir)/cDNA/Homo_sapiens.GRCh38.cdna.all.fa
 cds := $(refdir)/cds/Homo_sapiens.GRCh38.cds.all.fa
@@ -10,6 +12,12 @@ genome := $(refdir)/genome/Homo_sapiens.GRCh38.dna.primary_assembly.fa
 gtf := $(refdir)/gtf/Homo_sapiens.GRCh38.90.gtf
 samtools := /usr/local/bin/samtools
 bedtools := /usr/local/bin/bedtools
+tx2gene := reference/Homo_sapiens.GRCh38.90_tx2gene.rds
+rsemgene2tx := reference/Homo_sapiens.GRCh38.90_gene2tx.txt
+hisat2 := /home/charlotte/software/hisat2-2.1.0
+hisat2index := $(refdir)/genome/hisat2idx/Homo_sapiens.GRCh38.dna.primary_assembly
+hisat2ss := reference/hisat2splicesites.txt
+stringtie := /home/charlotte/software/stringtie-1.3.3b.Linux_x86_64/stringtie
 
 ## List FASTQ files (without the _{R1,R2}.fastq.gz)
 fastqfiles := \
@@ -18,23 +26,23 @@ fastqfiles := \
 
 .PHONY: all
 
-all: $(refdir)/cDNA/Homo_sapiens.GRCh38.cdna.all_sidx_v0.8.2/hash.bin \
+all: quant \
+$(refdir)/cDNA/Homo_sapiens.GRCh38.cdna.all_sidx_v0.8.2/hash.bin \
 $(refdir)/cds/Homo_sapiens.GRCh38.cds.all_sidx_v0.8.2/hash.bin \
 $(STARindex)/SA \
-reference/Homo_sapiens.GRCh38.90_tx2gene.rds \
-$(foreach F,$(fastqfiles),salmon/cDNA/$(notdir $(F))/quant.sf) \
-$(foreach F,$(fastqfiles),salmon/cds/$(notdir $(F))/quant.sf) \
+$(tx2gene) \
 $(foreach F,$(fastqfiles),output/$(notdir $(F))_cdna_vs_cds.rds) \
-$(foreach F,$(fastqfiles),STARbigwig/$(notdir $(F))_Aligned.sortedByCoord.out.bw) \
-$(foreach F,$(fastqfiles),STAR/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoord.out.bam.bai) \
 $(foreach F,$(fastqfiles),alpine_check/$(notdir $(F))/genes_to_run.txt.rds)
 
 quant: $(foreach F,$(fastqfiles),salmon/cDNA/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),salmon/cds/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),STAR/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoord.out.bam.bai) \
-$(foreach F,$(fastqfiles),STARbigwig/$(notdir $(F))_Aligned.sortedByCoord.out.bw)
+$(foreach F,$(fastqfiles),STARbigwig/$(notdir $(F))_Aligned.sortedByCoord.out.bw) \
+$(foreach F,$(fastqfiles),kallisto/cDNA/$(notdir $(F))/abundance.tsv) \
+$(foreach F,$(fastqfiles),RSEM/cDNA/$(notdir $(F))/$(notdir $(F)).isoforms.results) \
+$(foreach F,$(fastqfiles),HISAT2/$(notdir $(F))/$(notdir $(F)).bam)
 
-alpine: $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_fitbiasmodel.rds) \
+alpineprep: $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_fitbiasmodel.rds) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/genes_to_run.txt) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_genemodels.rds)
 
@@ -42,8 +50,11 @@ $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_genemodels.rds)
 ##                                   Reference files                                    ##
 ## ==================================================================================== ##
 ## Generate tx2gene
-reference/Homo_sapiens.GRCh38.90_tx2gene.rds: $(cdna) $(cds) $(ncrna) Rscripts/generate_tx2gene.R
+$(tx2gene): $(cdna) $(cds) $(ncrna) Rscripts/generate_tx2gene.R
 	$(R) "--args cdna='$(word 1,$^)' cds='$(word 2,$^)' ncrna='$(word 3,$^)' outrds='$@'" Rscripts/generate_tx2gene.R Rout/generate_tx2gene.Rout 
+
+$(rsemgene2tx): $(tx2gene) Rscripts/generate_rsemgene2tx.R
+	$(R) "--args tx2gene='$(tx2gene)' rsemgene2tx='$@'" Rscripts/generate_rsemgene2tx.R Rout/generate_rsemgene2tx.Rout
 
 ## Build Salmon index for cDNA and CDS sequences
 $(refdir)/cDNA/Homo_sapiens.GRCh38.cdna.all_sidx_v0.8.2/hash.bin: $(cdna)
@@ -52,10 +63,33 @@ $(refdir)/cDNA/Homo_sapiens.GRCh38.cdna.all_sidx_v0.8.2/hash.bin: $(cdna)
 $(refdir)/cds/Homo_sapiens.GRCh38.cds.all_sidx_v0.8.2/hash.bin: $(cds)
 	$(salmon) index -t $< -k 25 -i $(@D) -p 10 --type quasi
 
-## Build genome index
+## Build kallisto index for cDNA sequences
+$(refdir)/cDNA/Homo_sapiens.GRCh38.cdna.all_kidx: $(cdna)
+	$(kallisto) index -i $@ -k 25 $<
+
+## Build RSEM index
+reference/RSEM/Homo_sapiens.GRCh38.rsem.n2g.idx.fa: $(cdna) $(rsemgene2tx) 
+	mkdir -p $(@D)
+	$(RSEM)/rsem-prepare-reference --transcript-to-gene-map $(rsemgene2tx) --bowtie --bowtie-path /usr/bin \
+	$(cdna) reference/RSEM/Homo_sapiens.GRCh38.rsem
+
+## Build genome index for STAR
 $(STARindex)/SA: $(genome) $(gtf)
 	$(STAR) --runMode genomeGenerate --runThreadN 24 --genomeDir $(STARindex) \
 	--genomeFastaFiles $(genome) --sjdbGTFfile $(gtf) --sjdbOverhang 150
+
+## Build genome index for HISAT2
+$(hisat2index).1.ht2: $(genome)
+	mkdir -p $(@D)
+	$(hisat2)/hisat2-build -p 10 $(genome) $(hisat2index)
+
+## Extract splice sites for HISAT2
+$(hisat2ss): $(gtf)
+	python $(hisat2)/hisat2_extract_splice_sites.py $(gtf) > $(hisat2ss)
+
+## Extract list of junctions per transcript
+reference/junctions_by_transcript.rds: $(gtf)
+	$(R) "--args gtf='$(gtf)' outrds='$@'" Rscripts/get_junctions_per_transcript.R Rout/get_junctions_per_transcript.Rout
 
 ## ==================================================================================== ##
 ##                                    Salmon                                            ##
@@ -72,11 +106,54 @@ $(foreach F,$(fastqfiles),$(eval $(call salmonrule,$(F),$(refdir)/cds/Homo_sapie
 ## Compare Salmon quants from cDNA and CDS
 define salmoncomprule
 output/$(notdir $(1))_cdna_vs_cds.rds: salmon/cDNA/$(notdir $(1))/quant.sf salmon/cds/$(notdir $(1))/quant.sf \
-reference/Homo_sapiens.GRCh38.90_tx2gene.rds $(gtf) \
+$(tx2gene) $(gtf) \
 STARbigwig/$(notdir $(1))_Aligned.sortedByCoord.out.bw Rscripts/compare_cdna_and_cds_quants.R
 	$(R) "--args cdnaquant='$$(word 1,$$^)' cdsquant='$$(word 2,$$^)' tx2gene='$$(word 3,$$^)' gtffile='$$(word 4,$$^)' bwfile='$$(word 5,$$^)' outrds='$$@'" Rscripts/compare_cdna_and_cds_quants.R Rout/$(notdir $(1))_compare_cdna_and_cds_quants.Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call salmoncomprule,$(F))))
+
+## ==================================================================================== ##
+##                              HISAT2 + StringTie                                      ##
+## ==================================================================================== ##
+## Run HISAT2
+define hisat2rule
+HISAT2/$(notdir $(1))/$(notdir $(1)).bam: $(hisat2index).1.ht2 $(1)_R1.fastq.gz $(1)_R2.fastq.gz $(hisat2ss)
+	mkdir -p $$(@D)
+	$(hisat2)/hisat2 -p 10 -x $(hisat2index) --dta -1 $(1)_R1.fastq.gz -2 $(1)_R2.fastq.gz \
+	--known-splicesite-infile $(hisat2ss) | \
+	$(samtools) view -b -@ 10 - | $(samtools) sort - $$@
+endef
+$(foreach F,$(fastqfiles),$(eval $(call hisat2rule,$(F))))
+
+## Run StringTie
+define stringtierule
+stringtie/$(notdir $(1))/$(notdir $(1)).gtf: HISAT2/$(notdir $(1))/$(notdir $(1)).bam
+	mkdir -p $$(@D)
+	$(stringtie) $$< -o $$@	-p 10 -G $(gtf) -A $$@.tab
+endef
+$(foreach F,$(fastqfiles),$(eval $(call stringtierule,$(F))))
+
+## ==================================================================================== ##
+##                                     RSEM                                             ##
+## ==================================================================================== ##
+## Run RSEM
+define rsemrule
+$(3)/$(notdir $(1))/$(notdir $(1)).isoforms.results: $(2).n2g.idx.fa $(1)_R1.fastq.gz $(1)_R2.fastq.gz
+	mkdir -p $$(@D)
+	bash -c '$(RSEM)/rsem-calculate-expression -p 10 --bowtie-path /usr/bin --paired-end <(gunzip -c $$(word 2,$$^)) <(gunzip -c $$(word 3,$$^)) $(2) $(3)/$(notdir $(1))/$(notdir $(1))'
+endef
+$(foreach F,$(fastqfiles),$(eval $(call rsemrule,$(F),reference/RSEM/Homo_sapiens.GRCh38.rsem,RSEM/cDNA)))
+
+## ==================================================================================== ##
+##                                   kallisto                                           ##
+## ==================================================================================== ##
+## Run kallisto
+define kallistorule
+$(3)/$(notdir $(1))/abundance.tsv: $(2) $(1)_R1.fastq.gz $(1)_R2.fastq.gz
+	mkdir -p $$(@D)
+	$(kallisto) quant -i $$(word 1,$$^) -o $$(@D) --bias -t 10 $$(word 2,$$^) $$(word 3,$$^)
+endef
+$(foreach F,$(fastqfiles),$(eval $(call kallistorule,$(F),$(refdir)/cDNA/Homo_sapiens.GRCh38.cdna.all_kidx,kallisto/cDNA)))
 
 ## ==================================================================================== ##
 ##                                     STAR                                             ##
@@ -121,7 +198,7 @@ $(foreach F,$(fastqfiles),$(eval $(call bwrule,$(F))))
 ## Summarize gene characteristics
 define genecharrule
 alpine/$(1)/gene_characteristics.rds: $(gtf) salmon/cDNA/$(1)/quant.sf \
-reference/Homo_sapiens.GRCh38.90_tx2gene.rds Rscripts/summarize_gene_characteristics.R
+$(tx2gene) Rscripts/summarize_gene_characteristics.R
 	mkdir -p $$(@D)
 	$(R) "--args quantsf='$$(word 2,$$^)' gtf='$$(word 1,$$^)' tx2gene='$$(word 3,$$^)' outrds='$$@'" Rscripts/summarize_gene_characteristics.R Rout/summarize_gene_characteristics_$(1).Rout
 endef

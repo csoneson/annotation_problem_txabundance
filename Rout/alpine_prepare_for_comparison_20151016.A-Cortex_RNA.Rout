@@ -24,14 +24,21 @@ Type 'q()' to quit R.
 > 
 > print(gtf)
 [1] "/home/Shared/data/annotation/Human/Ensembl_GRCh38.90/gtf/Homo_sapiens.GRCh38.90.gtf"
-> print(junctioncov)
+> print(junctioncov) ## Junction reads from STAR
 [1] "STAR/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_SJ.out.tab"
-> print(quantsf)
+> print(quantsf) ## Salmon quantifications
 [1] "salmon/cDNA/20151016.A-Cortex_RNA/quant.sf"
+> print(abundancetsv) ## kallisto quantifications
+[1] "kallisto/cDNA/20151016.A-Cortex_RNA/abundance.tsv"
+> print(isoformsresults) ## RSEM quantifications
+[1] "RSEM/cDNA/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA.isoforms.results"
+> print(stringtiegtf) ## StringTie quantifications
+[1] "stringtie_onlyref/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA.gtf"
 > print(outrds)
 [1] "alpine/20151016.A-Cortex_RNA/alpine_genemodels.rds"
 > 
 > suppressPackageStartupMessages(library(dplyr))
+> suppressPackageStartupMessages(library(rtracklayer))
 > source("Rscripts/plot_tracks.R")
 > 
 > ## Create gene models for Gviz visualization
@@ -47,12 +54,46 @@ Type 'q()' to quit R.
 +   dplyr::mutate(strand = replace(strand, strand == 2, "-")) %>%
 +   dplyr::select(-motif, -annot, -maxoverhang)
 > 
+> ## Read effective lengths from Salmon (for StringTie later)
+> effl <- read.delim(quantsf, header = TRUE, as.is = TRUE) %>%
++   dplyr::mutate(Name = gsub("\\.[0-9]+", "", Name)) %>%
++   dplyr::rename(transcript = Name)
+> 
 > ## Read Salmon quantifications
-> quantsf <- read.delim(quantsf, header = TRUE, as.is = TRUE)
-> quantsf$Name <- gsub("\\.[0-9]+", "", quantsf$Name)
+> quantsf <- read.delim(quantsf, header = TRUE, as.is = TRUE) %>%
++   dplyr::mutate(Name = gsub("\\.[0-9]+", "", Name)) %>%
++   dplyr::select(Name, TPM, NumReads) %>%
++   dplyr::rename(transcript = Name, count = NumReads)
+> 
+> ## Read kallisto quantifications
+> abundancetsv <- read.delim(abundancetsv, header = TRUE, as.is = TRUE) %>%
++   dplyr::mutate(target_id = gsub("\\.[0-9]+", "", target_id)) %>%
++   dplyr::select(target_id, tpm, est_counts) %>%
++   dplyr::rename(transcript = target_id, count = est_counts, TPM = tpm)
+> 
+> ## Read RSEM quantifications
+> isoformsresults <- read.delim(isoformsresults, header = TRUE, as.is = TRUE) %>%
++   dplyr::mutate(transcript_id = gsub("\\.[0-9]+", "", transcript_id)) %>%
++   dplyr::select(transcript_id, TPM, expected_count) %>%
++   dplyr::rename(transcript = transcript_id, count = expected_count)
+> 
+> ## Read StringTie quantifications
+> stringtiegtf <- import(stringtiegtf) 
+> stringtiegtf <- subset(stringtiegtf, type == "transcript")
+> stringtiegtf <- as.data.frame(mcols(stringtiegtf)[, c("transcript_id", "TPM")]) %>%
++   dplyr::rename(transcript = transcript_id) %>%
++   dplyr::mutate(TPM = as.numeric(as.character(TPM)))
+> ## Use Salmon effective lengths to derive an "expected count" for StringTie
+> stringtiegtf <- dplyr::left_join(stringtiegtf, effl %>% dplyr::select(transcript, EffectiveLength)) %>%
++   dplyr::mutate(count = TPM * EffectiveLength/sum(TPM * EffectiveLength, na.rm = TRUE) * sum(effl$NumReads))
+Joining, by = "transcript"
+> 
+> ## Make a list with one element for each method, with columns transcript, TPM, count
+> quants <- list(Salmon = quantsf, kallisto = abundancetsv, RSEM = isoformsresults,
++                StringTie = stringtiegtf)
 > 
 > saveRDS(list(genemodels_exon = genemodels_exon, genemodels_cds = genemodels_cds,
-+              jcov = jcov, quantsf = quantsf), file = outrds)
++              jcov = jcov, quants = quants), file = outrds)
 > 
 > sessionInfo()
 R version 3.4.0 (2017-04-21)
@@ -124,8 +165,8 @@ loaded via a namespace (and not attached):
 [81] Rcpp_0.12.13                  rpart_4.1-11                 
 [83] acepack_1.4.1                
 > date()
-[1] "Sun Nov  5 16:47:54 2017"
+[1] "Wed Nov  8 09:38:22 2017"
 > 
 > proc.time()
    user  system elapsed 
-137.593   3.659 141.918 
+164.691   4.910 171.575 

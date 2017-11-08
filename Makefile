@@ -40,11 +40,15 @@ $(foreach F,$(fastqfiles),STAR/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoo
 $(foreach F,$(fastqfiles),STARbigwig/$(notdir $(F))_Aligned.sortedByCoord.out.bw) \
 $(foreach F,$(fastqfiles),kallisto/cDNA/$(notdir $(F))/abundance.tsv) \
 $(foreach F,$(fastqfiles),RSEM/cDNA/$(notdir $(F))/$(notdir $(F)).isoforms.results) \
-$(foreach F,$(fastqfiles),HISAT2/$(notdir $(F))/$(notdir $(F)).bam)
+$(foreach F,$(fastqfiles),stringtie/$(notdir $(F))/$(notdir $(F)).gtf) \
+$(foreach F,$(fastqfiles),stringtie_onlyref/$(notdir $(F))/$(notdir $(F)).gtf)
 
 alpineprep: $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_fitbiasmodel.rds) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/genes_to_run.txt) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_genemodels.rds)
+
+## subset_genes_to_run.txt is a manually created file, which can be used to test a few genes
+sumsub: $(foreach F,$(fastqfiles),alpine_check/$(notdir $(F))/subset_genes_to_run.txt.rds)
 
 ## ==================================================================================== ##
 ##                                   Reference files                                    ##
@@ -120,8 +124,8 @@ define hisat2rule
 HISAT2/$(notdir $(1))/$(notdir $(1)).bam: $(hisat2index).1.ht2 $(1)_R1.fastq.gz $(1)_R2.fastq.gz $(hisat2ss)
 	mkdir -p $$(@D)
 	$(hisat2)/hisat2 -p 10 -x $(hisat2index) --dta -1 $(1)_R1.fastq.gz -2 $(1)_R2.fastq.gz \
-	--known-splicesite-infile $(hisat2ss) | \
-	$(samtools) view -b -@ 10 - | $(samtools) sort - $$@
+	--known-splicesite-infile $(hisat2ss) --summary-file $$@_summary.txt | \
+	$(samtools) view -b -@ 10 - | $(samtools) sort -o $$@ -T $(notdir $(1))tmp -@ 10 - 
 endef
 $(foreach F,$(fastqfiles),$(eval $(call hisat2rule,$(F))))
 
@@ -132,6 +136,14 @@ stringtie/$(notdir $(1))/$(notdir $(1)).gtf: HISAT2/$(notdir $(1))/$(notdir $(1)
 	$(stringtie) $$< -o $$@	-p 10 -G $(gtf) -A $$@.tab
 endef
 $(foreach F,$(fastqfiles),$(eval $(call stringtierule,$(F))))
+
+## Run StringTie without assembly of new transcripts
+define stringtierefrule
+stringtie_onlyref/$(notdir $(1))/$(notdir $(1)).gtf: HISAT2/$(notdir $(1))/$(notdir $(1)).bam
+	mkdir -p $$(@D)
+	$(stringtie) $$< -o $$@	-p 10 -G $(gtf) -e -A $$@.tab
+endef
+$(foreach F,$(fastqfiles),$(eval $(call stringtierefrule,$(F))))
 
 ## ==================================================================================== ##
 ##                                     RSEM                                             ##
@@ -224,9 +236,10 @@ $(eval $(call fitbiasrule,20170918.A-WT_3,151,140,450))
 ## Prepare reference files
 define alpinerefrule
 alpine/$(1)/alpine_genemodels.rds: $(gtf) STAR/$(1)/$(1)_Aligned.sortedByCoord.out.bam \
-salmon/cDNA/$(1)/quant.sf Rscripts/alpine_prepare_for_comparison.R
+salmon/cDNA/$(1)/quant.sf kallisto/cDNA/$(1)/abundance.tsv RSEM/cDNA/$(1)/$(1).isoforms.results \
+stringtie_onlyref/$(1)/$(1).gtf Rscripts/alpine_prepare_for_comparison.R
 	mkdir -p $$(@D)
-	$(R) "--args gtf='$(gtf)' junctioncov='STAR/$(1)/$(1)_SJ.out.tab' quantsf='$$(word 3,$$^)' outrds='$$@'" Rscripts/alpine_prepare_for_comparison.R Rout/alpine_prepare_for_comparison_$(1).Rout
+	$(R) "--args gtf='$(gtf)' junctioncov='STAR/$(1)/$(1)_SJ.out.tab' quantsf='$$(word 3,$$^)' abundancetsv='$$(word 4,$$^)' isoformsresults='$$(word 5,$$^)' stringtiegtf='$$(word 6,$$^)' outrds='$$@'" Rscripts/alpine_prepare_for_comparison.R Rout/alpine_prepare_for_comparison_$(1).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call alpinerefrule,$(notdir $(F)))))
 
@@ -241,6 +254,7 @@ STARbigwig/$(1)_Aligned.sortedByCoord.out.bw $(2)
 	$(R) "--args gene='$(2)' bam='$$(word 2,$$^)' bigwig='$$(word 5,$$^)' ncores=$(3) genemodels='$$(word 3,$$^)' biasmodels='$$(word 1,$$^)' outdir='alpine_out/$(1)' checkdir='$$(@D)'" Rscripts/alpine_compare_coverage.R Rout/alpine_compare_coverage_$(1)_$(notdir $(2)).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call alpinepredrule,$(notdir $(F)),alpine/$(notdir $(F))/genes_to_run.txt,25)))
+$(foreach F,$(fastqfiles),$(eval $(call alpinepredrule,$(notdir $(F)),alpine/$(notdir $(F))/subset_genes_to_run.txt,25)))
 
 
 

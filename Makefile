@@ -9,6 +9,8 @@ bedtools := /usr/local/bin/bedtools
 hisat2 := /home/charlotte/software/hisat2-2.1.0
 stringtie := /home/charlotte/software/stringtie-1.3.3b.Linux_x86_64/stringtie
 bwa := /home/charlotte/software/bwa/bwa
+hera := /home/charlotte/software/hera/build/hera
+hera_build := /home/charlotte/software/hera/build/hera_build
 
 ## Reference files
 refdir := /home/Shared/data/annotation/Human/Ensembl_GRCh38.90
@@ -27,6 +29,7 @@ salmoncdsindex := $(refdir)/cds/Homo_sapiens.GRCh38.cds.all_sidx_v0.8.2
 kallistocdnancrnaindex := $(refdir)/cDNA/Homo_sapiens.GRCh38.cdna.ncrna.all_kidx
 rsemcdnancrnaindex := reference/RSEM/Homo_sapiens.GRCh38.rsem.cdna.ncrna
 bwacdnancrnaindex := $(txome).sa
+heraindex := reference/hera/Homo_sapiens.GRCh38
 
 ## Other annotation files
 hisat2ss := reference/hisat2splicesites.txt
@@ -60,6 +63,8 @@ $(foreach F,$(fastqfiles),RSEM/cDNAncRNA/$(notdir $(F))/$(notdir $(F)).isoforms.
 $(foreach F,$(fastqfiles),stringtie/$(notdir $(F))/$(notdir $(F)).gtf) \
 $(foreach F,$(fastqfiles),stringtie_onlyref/$(notdir $(F))/$(notdir $(F)).gtf) \
 $(foreach F,$(fastqfiles),salmonbwa/cDNAncRNA/$(notdir $(F))/quant.sf)
+
+hera: $(heraindex)/index $(foreach F,$(fastqfiles),hera/$(notdir $(F))/abundance.tsv)
 
 alpineprep: $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_fitbiasmodel.rds) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/genes_to_run.txt) \
@@ -120,6 +125,22 @@ reference/junctions_by_transcript.rds: $(gtf)
 $(bwacdnancrnaindex): $(txome)
 	$(bwa) index $(txome)
 
+## hera index
+$(heraindex)/index: $(genome) $(gtf)
+	mkdir -p $(@D)
+	$(hera_build) --fasta $(genome) --gtf $(gtf) --outdir $(@D)/
+
+## ==================================================================================== ##
+##                                      HERA                                            ##
+## ==================================================================================== ##
+## Run hera
+define herarule
+hera/$(notdir $(1))/abundance.tsv: $(heraindex)/index $(1)_R1.fastq.gz $(1)_R2.fastq.gz
+	mkdir -p $$(@D)
+	$(hera) quant -i $(heraindex) -o $$(@D) -w 1 -t 10 $(1)_R1.fastq.gz $(1)_R2.fastq.gz
+endef
+$(foreach F,$(fastqfiles),$(eval $(call herarule,$(F))))
+
 ## ==================================================================================== ##
 ##                                  BWA + Salmon                                        ##
 ## ==================================================================================== ##
@@ -127,7 +148,7 @@ $(bwacdnancrnaindex): $(txome)
 define bwarule
 $(3)/$(notdir $(1))/$(notdir $(1)).bam: $(2) $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
-	$(bwa) mem $(txome) $(1)_R1.fastq.gz $(1)_R2.fastq.gz | $(samtools) view -b -@ 10 - > $$@
+	$(bwa) mem $(txome) $(1)_R1.fastq.gz $(1)_R2.fastq.gz | $(samtools) view -b -F 0x0800 -@ 10 - > $$@
 endef
 $(foreach F,$(fastqfiles),$(eval $(call bwarule,$(F),$(bwacdnancrnaindex),bwa/cDNAncRNA)))
 
@@ -281,11 +302,13 @@ $(eval $(call fitbiasrule,20170918.A-WT_3,151,140,450))
 define alpinerefrule
 alpine/$(1)/alpine_genemodels.rds: $(gtf) STAR/$(1)/$(1)_Aligned.sortedByCoord.out.bam \
 salmon/cDNAncRNA/$(1)/quant.sf kallisto/cDNAncRNA/$(1)/abundance.tsv RSEM/cDNAncRNA/$(1)/$(1).isoforms.results \
-stringtie_onlyref/$(1)/$(1).gtf Rscripts/alpine_prepare_for_comparison.R
+stringtie_onlyref/$(1)/$(1).gtf salmonbwa/cDNAncRNA/$(1)/quant.sf hera/$(1)/abundance.tsv \
+Rscripts/alpine_prepare_for_comparison.R
 	mkdir -p $$(@D)
-	$(R) "--args gtf='$(gtf)' junctioncov='STAR/$(1)/$(1)_SJ.out.tab' quantsf='$$(word 3,$$^)' abundancetsv='$$(word 4,$$^)' isoformsresults='$$(word 5,$$^)' stringtiegtf='$$(word 6,$$^)' outrds='$$@'" Rscripts/alpine_prepare_for_comparison.R Rout/alpine_prepare_for_comparison_$(1).Rout
+	$(R) "--args gtf='$(gtf)' junctioncov='STAR/$(1)/$(1)_SJ.out.tab' quantsf='$$(word 3,$$^)' quantsfbwa='$$(word 7,$$^)' quantsfnanopore='$(2)' abundancetsv='$$(word 4,$$^)' heratsv='$$(word 8,$$^)' isoformsresults='$$(word 5,$$^)' stringtiegtf='$$(word 6,$$^)' outrds='$$@'" Rscripts/alpine_prepare_for_comparison.R Rout/alpine_prepare_for_comparison_$(1).Rout
 endef
-$(foreach F,$(fastqfiles),$(eval $(call alpinerefrule,$(notdir $(F)))))
+$(eval $(call alpinerefrule,20151016.A-Cortex_RNA,))
+$(eval $(call alpinerefrule,20170918.A-WT_3,/home/Shared/data/seq/hussain_bath_nanopore_rnaseq/NSK007/salmonminimap2/SS2_wt_1/quant.sf))
 
 ## Predict coverage and compare to observed junction coverage
 ## "gene" can be either a gene ID or a text file with a list of genes to investigate
@@ -294,7 +317,10 @@ alpine_check/$(1)/$(notdir $(2)).rds: alpine/$(1)/alpine_fitbiasmodel.rds STAR/$
 alpine/$(1)/alpine_genemodels.rds Rscripts/alpine_compare_coverage.R \
 STARbigwig/$(1)_Aligned.sortedByCoord.out.bw $(2)
 	mkdir -p $$(@D)
-	mkdir -p alpine_out/$(1)
+	mkdir -p alpine_out/$(1)/plots
+	mkdir -p alpine_out/$(1)/jcov
+	mkdir -p alpine_out/$(1)/tpm
+	mkdir -p alpine_out/$(1)/count	
 	$(R) "--args gene='$(2)' bam='$$(word 2,$$^)' bigwig='$$(word 5,$$^)' ncores=$(3) genemodels='$$(word 3,$$^)' biasmodels='$$(word 1,$$^)' outdir='alpine_out/$(1)' checkdir='$$(@D)'" Rscripts/alpine_compare_coverage.R Rout/alpine_compare_coverage_$(1)_$(notdir $(2)).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call alpinepredrule,$(notdir $(F)),alpine/$(notdir $(F))/genes_to_run.txt,25)))

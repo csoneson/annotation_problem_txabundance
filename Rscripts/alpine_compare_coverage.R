@@ -25,13 +25,6 @@ suppressPackageStartupMessages(library(gridExtra))
 
 source("Rscripts/plot_tracks.R")
 
-calc_prop_p <- function(coverage, uniqreads, tot_coverage, tot_reads) {
-  sapply(seq_along(coverage), function(i) {
-    prop.test(x = c(coverage[i], uniqreads[i]), n = c(tot_coverage[i], tot_reads[i]),
-              alternative = "two.sided")$p.value
-  })
-}
-
 ## Read gene models for Gviz plot (pregenerated from gtf to save time) and
 ## quantifications
 genemodels <- readRDS(genemodels)
@@ -77,14 +70,13 @@ mclapply(genes, function(currgene) {
                              fitpar = fitpar,
                              genome = Hsapiens,
                              model.names = "all")
-        ## Scale predicted coverage to agree with Salmon's estimated count
+        ## Scale predicted coverage to agree with estimated counts
         m$`1`$pred.cov$scaled <- list()
-        for (nm in names(genemodels$quants)) {
+        for (nm in unique(genemodels$quants$method)) {
           m$`1`$pred.cov$scaled[[nm]] <- m$`1`$pred.cov$all/sum(m$`1`$pred.cov$all) * 
-            genemodels$quants[[nm]]$count[genemodels$quants[[nm]]$transcript == tx] * avefraglength
+            genemodels$quants$count[genemodels$quants$transcript == tx & 
+                                      genemodels$quants$method == nm] * avefraglength
         }
-        # m$`1`$pred.cov$all <- m$`1`$pred.cov$all/sum(m$`1`$pred.cov$all) * 
-        #   genemodels$quantsf$NumReads[genemodels$quantsf$Name == tx] * avefraglength
         m
       }, error = function(e) NULL)
       pc
@@ -97,25 +89,21 @@ mclapply(genes, function(currgene) {
       if (all(strand(txmod) == "+")) {
         junctionpos <- cumsum(width(txmod))
         junctionpos <- junctionpos[-length(junctionpos)]
-        for (nm in names(genemodels$quants)) {
+        for (nm in unique(genemodels$quants$method)) {
           junctioncov[[nm]] <- as.numeric(pred.cov[[tx]]$"1"$pred.cov$scaled[[nm]])[junctionpos]
         }
-        # junctioncov <- as.numeric(pred.cov[[tx]]$"1"$pred.cov$all)[junctionpos]
       } else if (all(strand(txmod) == "-")) {
         junctionpos <- cumsum(width(rev(txmod)))
         junctionpos <- junctionpos[-length(junctionpos)]
-        for (nm in names(genemodels$quants)) {
+        for (nm in unique(genemodels$quants$method)) {
           junctioncov[[nm]] <- rev(as.numeric(pred.cov[[tx]]$"1"$pred.cov$scaled[[nm]])[junctionpos])
         }
-        # junctioncov <- as.numeric(pred.cov[[tx]]$"1"$pred.cov$all)[junctionpos]
-        # junctioncov <- rev(junctioncov)
       } else {
         stop("Unknown or mixed strand")
       }
-      for (nm in names(genemodels$quants)) {
-        mcols(junctions)[, paste0(nm, "_coverage")] <- junctioncov[[nm]]
+      for (nm in unique(genemodels$quants$method)) {
+        mcols(junctions)[, nm] <- junctioncov[[nm]]
       }
-      # mcols(junctions)$coverage <- junctioncov
       junctions
     })
     
@@ -124,29 +112,32 @@ mclapply(genes, function(currgene) {
       x
     }
     
-    covcols <- grep("_coverage", colnames(mcols(junctionlist[[1]])), value = TRUE)
-    jl <- do.call(rbind, lapply(junctionlist, as.data.frame)) %>% 
-      dplyr::group_by(seqnames, start, end, width, strand) %>%
-      dplyr::summarize_at(.vars = covcols, .funs = sum, na.rm = TRUE) %>%
-      # dplyr::summarize(coverage = sum(coverage, na.rm = TRUE)) %>% 
-      ungroup() %>%
-      dplyr::mutate_at(.vars = covcols, .funs = funs(replna))
-      # dplyr::mutate(coverage = replace(coverage, is.na(coverage), 0))
+    jl <- do.call(rbind, lapply(junctionlist, function(w) {
+      as.data.frame(w) %>%
+        tidyr::gather(method, coverage, -seqnames, -start, -end, -width, -strand)
+      })) %>% 
+      dplyr::group_by(seqnames, start, end, width, strand, method) %>%
+      dplyr::summarize(coverage = sum(coverage, na.rm = TRUE)) %>%
+      dplyr::mutate(coverage = replna(coverage)) %>%
+      dplyr::ungroup()
+
+    jl0 <- jl %>% dplyr::select(seqnames, start, end, width, strand) %>%
+      dplyr::distinct() %>% dplyr::arrange(start) %>% 
+      dplyr::mutate(junctionid = paste0("J", seq_len(length(start))))
     
     jl <- dplyr::left_join(jl, genemodels$jcov) %>%
       dplyr::mutate(uniqreads = replace(uniqreads, is.na(uniqreads), 0),
                     mmreads = replace(mmreads, is.na(mmreads), 0)) %>%
-      dplyr::mutate_at(.vars = covcols, .funs = funs(./sum(., na.rm = TRUE) * sum(uniqreads, na.rm = TRUE))) %>%
-      # dplyr::mutate(scaledcoverage = coverage/sum(coverage, na.rm = TRUE) * sum(uniqreads, na.rm = TRUE)) %>%
-      # dplyr::mutate(tot_coverage = sum(coverage, na.rm = TRUE),
-      #               tot_reads = sum(uniqreads, na.rm = TRUE)) %>%
-      # dplyr::mutate(prop_pval = calc_prop_p(coverage, uniqreads, tot_coverage, tot_reads)) %>%
-      dplyr::mutate(junctionid = paste0("J", seq_len(length(uniqreads)))) %>% 
-      # dplyr::mutate(difference = uniqreads - scaledcoverage) %>%
-      # dplyr::mutate(ranking = order(order(difference))) %>%
+      dplyr::group_by(method) %>%
+      dplyr::mutate(scaledcoverage = coverage/sum(coverage, na.rm = TRUE) * 
+                      sum(uniqreads, na.rm = TRUE)) %>%
+      dplyr::mutate(score = round(sum(abs(uniqreads - scaledcoverage), na.rm = TRUE)/
+                                    sum(uniqreads, na.rm = TRUE), 2)) %>% 
+      dplyr::mutate(methodscore = paste0(method, " (", score, ")")) %>%
+      dplyr::left_join(jl0) %>% dplyr::ungroup() %>% 
       dplyr::select(junctionid, everything())
-    
-    pdf(paste0(outdir, "/", currgene, ".pdf"), width = 12, height = 10)
+
+    pdf(paste0(outdir, "/plots/", currgene, ".pdf"), width = 12, height = 10)
     tryCatch({
       plot_tracks(mygene = currgene, genemodels = genemodels$genemodels_exon, 
                   genemodels2 = genemodels$genemodels_cds, 
@@ -156,55 +147,33 @@ mclapply(genes, function(currgene) {
                   pdf_filename = NULL, pdf_width = 7, pdf_height = 7)
     }, error = function(e) message(e))
     
-    grid.newpage()
-    quants0 <- genemodels$quants
-    for (nm in names(quants0)) {
-      idx <- which(colnames(quants0[[nm]]) != "transcript")
-      colnames(quants0[[nm]])[idx] <- paste0(nm, "_", colnames(quants0[[nm]])[idx])
-    }
-    quants0 <- lapply(quants0, function(x) x %>% dplyr::filter(transcript %in% txlist))
-    quants0 <- Reduce(function(...) dplyr::full_join(..., by = "transcript"), quants0)
-    grid.table(quants0 %>% dplyr::select(-StringTie_EffectiveLength))
-    # grid.table(genemodels$quantsf %>% dplyr::filter(Name %in% txlist))
-    
-    grid.newpage()
-    grid.table(jl %>% dplyr::select(junctionid, seqnames, start, end, width, strand, 
-                                    uniqreads, mmreads, Salmon_coverage, kallisto_coverage,
-                                    RSEM_coverage, StringTie_coverage))
-
-    methods <- names(genemodels$quants)
-    names(methods) <- methods
-    genescore <- lapply(methods, function(nm) {
-      round(sum(abs(jl$uniqreads - jl[, paste0(nm, "_coverage")]), na.rm = TRUE)/
-              sum(jl$uniqreads, na.rm = TRUE), 2)
-    })    
-    # genescore <- round(sum(abs(jl$uniqreads - jl$scaledcoverage), 
-    #                        na.rm = TRUE)/sum(jl$uniqreads, na.rm = TRUE), 2)
-    
-    plots <- lapply(methods, function(nm) {
-      ggplot(jl, aes_string(x = paste0(nm, "_coverage"), y = "uniqreads", 
-                            label = "junctionid")) + 
-        geom_point(size = 4) + geom_label_repel() + 
-        geom_abline(intercept = 0, slope = 1) + 
-        ggtitle(paste0(nm, ", score = ", genescore[[nm]])) + 
-        xlab("Scaled predicted coverage") + ylab("Number of uniquely mapped reads")
-    })
-    print(plot_grid(plotlist = plots))
-
-    # print(ggplot(jl, aes(x = scaledcoverage, y = uniqreads, label = junctionid)) + 
-    #         geom_point(size = 4) + geom_label_repel() + 
-    #         geom_abline(intercept = 0, slope = 1) + 
-    #         ggtitle(paste0("score = ", genescore)) + 
-    #         xlab("Scaled predicted coverage") + ylab("Number of uniquely mapped reads"))
+    print(ggplot(jl, aes(x = scaledcoverage, y = uniqreads, label = junctionid)) + 
+            geom_point(size = 4) + geom_label_repel() +
+            facet_wrap(~ methodscore) + 
+            geom_abline(intercept = 0, slope = 1) + 
+            xlab("Scaled predicted coverage") + 
+            ylab("Number of uniquely mapped reads") + 
+            theme_bw())
     dev.off()
     
-    write.table(jl %>%
-                  dplyr::mutate_at(.vars = covcols, .funs = funs(round(., 2))),
-                file = paste0(outdir, "/", currgene, ".txt"),
-                quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t")
-    # print(as.data.frame(jl))
+    write.table(jl %>% dplyr::select(-score, -coverage, -method) %>%
+                  tidyr::spread(methodscore, scaledcoverage),
+                file = paste0(outdir, "/jcov/", currgene, "_jcov.txt"),
+                quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
     
-    saveRDS(list(score = genescore), paste0(checkdir, "/", currgene, ".rds"))
+    write.table(genemodels$quants %>% dplyr::filter(transcript %in% txlist) %>% 
+                  dplyr::select(transcript, method, TPM) %>%
+                  tidyr::spread(method, TPM),
+                file = paste0(outdir, "/tpm/", currgene, "_tpm.txt"),
+                quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
+    
+    write.table(genemodels$quants %>% dplyr::filter(transcript %in% txlist) %>% 
+                  dplyr::select(transcript, method, count) %>%
+                  tidyr::spread(method, count),
+                file = paste0(outdir, "/count/", currgene, "_count.txt"),
+                quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
+    
+    saveRDS(jl, paste0(checkdir, "/", currgene, ".rds"))
   }
 }, mc.preschedule = FALSE, mc.cores = ncores)
 

@@ -29,17 +29,17 @@ source("Rscripts/plot_tracks.R")
 ## quantifications
 genemodels <- readRDS(genemodels)
 
-## Read bias model parameters and exon-by-transcript objects
+# ## Read bias model parameters and exon-by-transcript objects
 biasmodels <- readRDS(biasmodels)
 fitpar <- biasmodels$fitpar
 ebt0 <- biasmodels$ebt0
 txps <- biasmodels$txps
 
-## Estimate average fragment length
+# ## Estimate average fragment length
 avefraglength <- sum(fitpar$`1`$fraglen.density$x * fitpar$`1`$fraglen.density$y/
                        sum(fitpar$`1`$fraglen.density$y))
 
-## Load bam file 
+# ## Load bam file 
 bam.files <- bam
 names(bam.files) <- "1"
 
@@ -157,18 +157,21 @@ mclapply(genes, function(currgene) {
     dev.off()
     
     write.table(jl %>% dplyr::select(-score, -coverage, -method) %>%
+                  dplyr::mutate(scaledcoverage = round(scaledcoverage, 2)) %>% 
                   tidyr::spread(methodscore, scaledcoverage),
                 file = paste0(outdir, "/jcov/", currgene, "_jcov.txt"),
                 quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
     
     write.table(genemodels$quants %>% dplyr::filter(transcript %in% txlist) %>% 
                   dplyr::select(transcript, method, TPM) %>%
+                  dplyr::mutate(TPM = round(TPM, 2)) %>% 
                   tidyr::spread(method, TPM),
                 file = paste0(outdir, "/tpm/", currgene, "_tpm.txt"),
                 quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
     
     write.table(genemodels$quants %>% dplyr::filter(transcript %in% txlist) %>% 
                   dplyr::select(transcript, method, count) %>%
+                  dplyr::mutate(count = round(count, 2)) %>% 
                   tidyr::spread(method, count),
                 file = paste0(outdir, "/count/", currgene, "_count.txt"),
                 quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)

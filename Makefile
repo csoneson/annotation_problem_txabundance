@@ -41,6 +41,9 @@ fastqfiles := \
 /home/Shared/data/seq/roche_pacbio_targeted_cdna/Illumina_RNA_seq/20151016.A-Cortex_RNA \
 /home/Shared/data/seq/hussain_bath_nanopore_rnaseq/Illumina/FASTQ/20170918.A-WT_4
 
+## Abundance quantification methods
+quantmethods := Salmon SalmonBWA kallisto RSEM StringTie hera
+
 ## ==================================================================================== ##
 ##                                    Main rules                                        ##
 ## ==================================================================================== ##
@@ -70,6 +73,9 @@ alpineprep: $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_fitbiasmodel.
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/genes_to_run.txt) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_genemodels.rds) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_predicted_coverage.rds)
+
+scalecov: $(foreach M,$(quantmethods),alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_$(M).rds)
+#$(foreach M,quantmethods,$(foreach F,$(fastqfiles),alpine/$(notdir $(F))/scaled_junction_coverage_$(M)))
 
 tmp: $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_predicted_coverage.rds)
 
@@ -313,23 +319,23 @@ $(foreach F,$(fastqfiles),$(eval $(call predcovrule,$(notdir $(F)),16)))
 ## Scale junction coverage by transcript abundance estimates for each method
 define juncscalerule
 alpine/$(1)/scaled_junction_coverage_$(2).rds: alpine/$(1)/alpine_predicted_coverage.rds \
-$(3) $(4) Rscripts/alpine_scale_junction_coverage.R
+$(3) $(4) $(tx2gene) Rscripts/alpine_scale_junction_coverage.R
 	mkdir -p $$(@D)
-	$(R) "--args predcovrds='$$(word 1,$$^)' txquants='$(3)' quantreadscript='$(4)' strandspec='$(5)' outrds='$$@'" Rscripts/alpine_scale_junction_coverage.R Rout/alpine_scale_junction_coverage_$(1)_$(2).Rout
+	$(R) "--args predcovrds='$$(word 1,$$^)' txquants='$(3)' quantreadscript='$(4)' tx2gene='$(tx2gene)' strandspec='$(5)' method='$(6)' outrds='$$@'" Rscripts/alpine_scale_junction_coverage.R Rout/alpine_scale_junction_coverage_$(1)_$(2).Rout
 endef
-$(eval $(call juncscalerule,20151016.A-Cortex_RNA,Salmon,salmon/cDNAncRNA/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,no))
-$(eval $(call juncscalerule,20151016.A-Cortex_RNA,SalmonBWA,salmonbwa/cDNAncRNA/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,no))
-$(eval $(call juncscalerule,20151016.A-Cortex_RNA,kallisto,kallisto/cDNAncRNA/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_kallisto.R,no))
-$(eval $(call juncscalerule,20151016.A-Cortex_RNA,RSEM,RSEM/cDNAncRNA/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA.isoforms.results,Rscripts/read_quant_rsem.R,no))
-$(eval $(call juncscalerule,20151016.A-Cortex_RNA,hera,hera/cDNAncRNA/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_hera.R,no))
-$(eval $(call juncscalerule,20151016.A-Cortex_RNA,StringTie,stringtie_onlyref/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA.gtf,Rscripts/read_quant_stringtie.R,no))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,Salmon,salmon/cDNAncRNA/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,no,Salmon))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,SalmonBWA,salmonbwa/cDNAncRNA/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,no,SalmonBWA))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,kallisto,kallisto/cDNAncRNA/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_kallisto.R,no,kallisto))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,RSEM,RSEM/cDNAncRNA/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA.isoforms.results,Rscripts/read_quant_rsem.R,no,RSEM))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,hera,hera/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_hera.R,no,hera))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,StringTie,stringtie_onlyref/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA.gtf,Rscripts/read_quant_stringtie.R,no,StringTie))
 
-$(eval $(call juncscalerule,20170918.A-WT_4,Salmon,salmon/cDNAncRNA/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,yes))
-$(eval $(call juncscalerule,20170918.A-WT_4,SalmonBWA,salmonbwa/cDNAncRNA/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,yes))
-$(eval $(call juncscalerule,20170918.A-WT_4,kallisto,kallisto/cDNAncRNA/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_kallisto.R,yes))
-$(eval $(call juncscalerule,20170918.A-WT_4,RSEM,RSEM/cDNAncRNA/20170918.A-WT_4/20170918.A-WT_4.isoforms.results,Rscripts/read_quant_rsem.R,yes))
-$(eval $(call juncscalerule,20170918.A-WT_4,hera,hera/cDNAncRNA/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_hera.R,yes))
-$(eval $(call juncscalerule,20170918.A-WT_4,StringTie,stringtie_onlyref/20170918.A-WT_4/20170918.A-WT_4.gtf,Rscripts/read_quant_stringtie.R,yes))
+$(eval $(call juncscalerule,20170918.A-WT_4,Salmon,salmon/cDNAncRNA/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,yes,Salmon))
+$(eval $(call juncscalerule,20170918.A-WT_4,SalmonBWA,salmonbwa/cDNAncRNA/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,yes,SalmonBWA))
+$(eval $(call juncscalerule,20170918.A-WT_4,kallisto,kallisto/cDNAncRNA/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_kallisto.R,yes,kallisto))
+$(eval $(call juncscalerule,20170918.A-WT_4,RSEM,RSEM/cDNAncRNA/20170918.A-WT_4/20170918.A-WT_4.isoforms.results,Rscripts/read_quant_rsem.R,yes,RSEM))
+$(eval $(call juncscalerule,20170918.A-WT_4,hera,hera/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_hera.R,yes,hera))
+$(eval $(call juncscalerule,20170918.A-WT_4,StringTie,stringtie_onlyref/20170918.A-WT_4/20170918.A-WT_4.gtf,Rscripts/read_quant_stringtie.R,yes,StringTie))
 
 ## Prepare reference files
 define alpinerefrule

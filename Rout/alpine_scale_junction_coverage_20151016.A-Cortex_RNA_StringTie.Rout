@@ -1,0 +1,66 @@
+
+R version 3.4.0 (2017-04-21) -- "You Stupid Darkness"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> args <- (commandArgs(trailingOnly = TRUE))
+> for (i in 1:length(args)) {
++   eval(parse(text = args[[i]]))
++ }
+> 
+> print(predcovrds)  ## predicted transcript and junction coverage
+[1] "alpine/20151016.A-Cortex_RNA/alpine_predicted_coverage.rds"
+> print(txquants)  ## transcript quantification file
+[1] "stringtie_onlyref/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA.gtf"
+> print(quantreadscript)  ## script containing a function "read_quant()"
+[1] "Rscripts/read_quant_stringtie.R"
+> print(strandspec)  ## "yes" or "no"
+[1] "no"
+> print(tx2gene)  ## link transcripts to genes
+[1] "reference/Homo_sapiens.GRCh38.90_tx2gene.rds"
+> print(method)  ## method ID to add to the quantification table
+[1] "StringTie"
+> print(outrds)  ## output file
+[1] "alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_StringTie.rds"
+> 
+> suppressPackageStartupMessages(library(alpine))
+> suppressPackageStartupMessages(library(parallel))
+> suppressPackageStartupMessages(library(dplyr))
+> 
+> source(quantreadscript)
+> 
+> predcovs <- readRDS(predcovrds)
+> quants <- read_quant(file = txquants, avefraglength = predcovs[[1]]$avefraglength)
+Import genomic features from the file as a GRanges object ... OK
+Prepare the 'metadata' data frame ... OK
+Make the TxDb object ... OK
+> tx2gene <- readRDS(tx2gene)
+> tx2gene$tx <- gsub("\\.[0-9]+", "", tx2gene$tx)
+> tx2gene$gene <- gsub("\\.[0-9]+", "", tx2gene$gene)
+> 
+> transcripts <- names(predcovs)
+> names(transcripts) <- transcripts
+> 
+> scaledcovs <- lapply(transcripts, function(tx) {
++   tryCatch({
++     ab <- quants$count[quants$transcript == tx]
++     m <- predcovs[[tx]]$junctions
++     m$pred.cov <- m$pred.cov / sum(predcovs[[tx]]$pred.cov) * 
++       ab * predcovs[[tx]]$avefraglength
++     as.data.frame(m) %>% dplyr::mutate(transcript = tx)
++   }, error = function(e) NULL)
++ })

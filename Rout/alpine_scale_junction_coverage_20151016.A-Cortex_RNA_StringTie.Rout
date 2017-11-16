@@ -29,7 +29,7 @@ Type 'q()' to quit R.
 > print(quantreadscript)  ## script containing a function "read_quant()"
 [1] "Rscripts/read_quant_stringtie.R"
 > print(strandspec)  ## "yes" or "no"
-[1] "no"
+[1] "yes"
 > print(tx2gene)  ## link transcripts to genes
 [1] "reference/Homo_sapiens.GRCh38.90_tx2gene.rds"
 > print(method)  ## method ID to add to the quantification table
@@ -64,3 +64,28 @@ Make the TxDb object ... OK
 +     as.data.frame(m) %>% dplyr::mutate(transcript = tx)
 +   }, error = function(e) NULL)
 + })
+Warning message:
+call dbDisconnect() when finished working with a connection 
+> 
+> allcovs <- do.call(rbind, scaledcovs)
+> if (strandspec == "no") {
++   allcovs$strand <- "*"
++ }
+> allcovs <- allcovs %>%
++   dplyr::group_by(seqnames, start, end, strand) %>%
++   dplyr::mutate(pred.cov = sum(pred.cov)) %>%
++   dplyr::ungroup() %>%
++   dplyr::left_join(tx2gene %>% dplyr::select(tx, gene, symbol), by = c("transcript" = "tx")) %>%
++   dplyr::group_by(seqnames, start, end, strand, gene) %>%
++   dplyr::mutate(transcript = paste(transcript, collapse = ",")) %>%
++   dplyr::ungroup() %>%
++   dplyr::distinct() %>% 
++   dplyr::mutate(method = method)
+> 
+> quants <- quants %>% dplyr::left_join(tx2gene %>% dplyr::select(tx, gene, symbol), 
++                                       by = c("transcript" = "tx")) %>%
++   dplyr::mutate(method = method) %>% 
++   dplyr::select(transcript, gene, symbol, count, TPM, method)
+> 
+> saveRDS(list(scaledcovs = scaledcovs, allcovs = allcovs, quants = quants), 
++         file = outrds)

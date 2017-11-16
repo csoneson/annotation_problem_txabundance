@@ -51,6 +51,11 @@ allcovs <- allcovs %>%
   dplyr::distinct() %>% 
   dplyr::mutate(method = method)
 
+quants <- quants %>% dplyr::left_join(tx2gene %>% dplyr::select(tx, gene, symbol), 
+                                      by = c("transcript" = "tx")) %>%
+  dplyr::mutate(method = method) %>% 
+  dplyr::select(transcript, gene, symbol, count, TPM, method)
+
 saveRDS(list(scaledcovs = scaledcovs, allcovs = allcovs, quants = quants), 
         file = outrds)
 

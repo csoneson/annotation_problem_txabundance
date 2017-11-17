@@ -54,10 +54,12 @@ all: prepref quant \
 $(foreach F,$(fastqfiles),output/$(notdir $(F))_cdna_vs_cds.rds) \
 $(foreach F,$(fastqfiles),alpine_check/$(notdir $(F))/genes_to_run.txt.rds)
 
+## Prepare reference files and indexes
 prepref: $(txome) $(salmoncdnancrnaindex)/hash.bin $(salmoncdsindex)/hash.bin \
 $(kallistocdnancrnaindex) $(rsemcdnancrnaindex).n2g.idx.fa $(STARindex)/SA $(tx2gene) \
-$(bwacdnancrnaindex)
+$(bwacdnancrnaindex) $(heraindex)/index $(hisat2index).1.ht2 $(hisat2ss) $(rsemgene2tx)
 
+## Align and quantify each sample
 quant: $(foreach F,$(fastqfiles),salmon/cDNAncRNA/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),salmon/cds/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),STAR/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoord.out.bam.bai) \
@@ -69,6 +71,7 @@ $(foreach F,$(fastqfiles),stringtie_onlyref/$(notdir $(F))/$(notdir $(F)).gtf) \
 $(foreach F,$(fastqfiles),salmonbwa/cDNAncRNA/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),hera/$(notdir $(F))/abundance.tsv)
 
+## Prepare files for alpine
 alpineprep: $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_fitbiasmodel.rds) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/genes_to_run.txt) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_genemodels.rds) \
@@ -114,8 +117,11 @@ $(rsemcdnancrnaindex).n2g.idx.fa: $(txome) $(rsemgene2tx)
 
 ## Build genome index for STAR
 $(STARindex)/SA: $(genome) $(gtf)
+	mkdir -p $(STARindex)
 	$(STAR) --runMode genomeGenerate --runThreadN 24 --genomeDir $(STARindex) \
 	--genomeFastaFiles $(genome) --sjdbGTFfile $(gtf) --sjdbOverhang 150
+
+$(STARindex)/chrNameLength.txt: $(STARindex)/SA
 
 ## Build genome index for HISAT2
 $(hisat2index).1.ht2: $(genome)
@@ -185,7 +191,8 @@ $(foreach F,$(fastqfiles),$(eval $(call salmonrule,$(F),$(salmoncdsindex),salmon
 define salmoncomprule
 output/$(notdir $(1))_cdna_vs_cds.rds: salmon/cDNAncRNA/$(notdir $(1))/quant.sf salmon/cds/$(notdir $(1))/quant.sf \
 $(tx2gene) $(gtf) \
-STARbigwig/$(notdir $(1))_Aligned.sortedByCoord.out.bw Rscripts/compare_cdna_and_cds_quants.R
+STARbigwig/$(notdir $(1))_Aligned.sortedByCoord.out.bw Rscripts/compare_cdna_and_cds_quants.R \
+Rscripts/plot_tracks.R
 	$(R) "--args cdnaquant='$$(word 1,$$^)' cdsquant='$$(word 2,$$^)' tx2gene='$$(word 3,$$^)' gtffile='$$(word 4,$$^)' bwfile='$$(word 5,$$^)' outrds='$$@'" Rscripts/compare_cdna_and_cds_quants.R Rout/compare_cdna_and_cds_quants_$(notdir $(1)).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call salmoncomprule,$(F))))
@@ -205,17 +212,17 @@ $(foreach F,$(fastqfiles),$(eval $(call hisat2rule,$(F))))
 
 ## Run StringTie
 define stringtierule
-stringtie/$(notdir $(1))/$(notdir $(1)).gtf: HISAT2/$(notdir $(1))/$(notdir $(1)).bam
+stringtie/$(notdir $(1))/$(notdir $(1)).gtf: HISAT2/$(notdir $(1))/$(notdir $(1)).bam $(gtf)
 	mkdir -p $$(@D)
-	$(stringtie) $$< -o $$@	-p 10 -G $(gtf) -A $$@.tab
+	$(stringtie) $$< -o $$@ -p 10 -G $(gtf) -A $$@.tab
 endef
 $(foreach F,$(fastqfiles),$(eval $(call stringtierule,$(F))))
 
 ## Run StringTie without assembly of new transcripts
 define stringtierefrule
-stringtie_onlyref/$(notdir $(1))/$(notdir $(1)).gtf: HISAT2/$(notdir $(1))/$(notdir $(1)).bam
+stringtie_onlyref/$(notdir $(1))/$(notdir $(1)).gtf: HISAT2/$(notdir $(1))/$(notdir $(1)).bam $(gtf)
 	mkdir -p $$(@D)
-	$(stringtie) $$< -o $$@	-p 10 -G $(gtf) -e -A $$@.tab
+	$(stringtie) $$< -o $$@ -p 10 -G $(gtf) -e -A $$@.tab
 endef
 $(foreach F,$(fastqfiles),$(eval $(call stringtierefrule,$(F))))
 
@@ -279,7 +286,7 @@ endef
 $(foreach F,$(fastqfiles),$(eval $(call bwrule,$(F))))
 
 ## ==================================================================================== ##
-##                                   alpine                                             ##
+##                               select genes                                           ##
 ## ==================================================================================== ##
 ## Summarize gene characteristics
 define genecharrule
@@ -297,6 +304,9 @@ alpine/$(1)/genes_to_run.txt: alpine/$(1)/gene_characteristics.rds
 endef
 $(foreach F,$(fastqfiles),$(eval $(call genelistrule,$(notdir $(F)))))
 
+## ==================================================================================== ##
+##                                   alpine                                             ##
+## ==================================================================================== ##
 ## Fit bias model
 define fitbiasrule
 alpine/$(1)/alpine_fitbiasmodel.rds: $(gtf) STAR/$(1)/$(1)_Aligned.sortedByCoord.out.bam \
@@ -314,7 +324,7 @@ STAR/$(1)/$(1)_Aligned.sortedByCoord.out.bam Rscripts/alpine_get_predicted_cover
 	mkdir -p $$(@D)
 	$(R) "--args bam='$$(word 2,$$^)' biasmodels='$$(word 1,$$^)' ncores=$(2) outrds='$$@'" Rscripts/alpine_get_predicted_coverage.R Rout/alpine_get_predicted_coverage_$(1).Rout
 endef
-$(foreach F,$(fastqfiles),$(eval $(call predcovrule,$(notdir $(F)),16)))
+$(foreach F,$(fastqfiles),$(eval $(call predcovrule,$(notdir $(F)),32)))
 
 ## Scale junction coverage by transcript abundance estimates for each method
 define juncscalerule

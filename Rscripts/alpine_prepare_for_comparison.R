@@ -11,7 +11,7 @@ print(junctioncovhera) ## Hera quantifications
 print(junctioncovkallisto) ## kallisto quantifications
 print(junctioncovRSEM) ## RSEM quantifications
 print(junctioncovStringTie) ## StringTie quantifications
-print(quantsfnanopore) ## If present, nanopore results
+print(junctioncovNanopore) ## If present, nanopore results
 print(outrds)
 
 suppressPackageStartupMessages(library(dplyr))
@@ -38,6 +38,9 @@ jcovscaled <- do.call(rbind, list(readRDS(junctioncovSalmon)$allcovs,
                                   readRDS(junctioncovkallisto)$allcovs,
                                   readRDS(junctioncovRSEM)$allcovs,
                                   readRDS(junctioncovStringTie)$allcovs))
+if (junctioncovNanopore != "") {
+  jcovscaled <- rbind(jcovscaled, readRDS(junctioncovNanopore)$allcovs)
+}
 
 allquants <- do.call(rbind, list(readRDS(junctioncovSalmon)$quants,
                                  readRDS(junctioncovSalmonBWA)$quants,
@@ -45,6 +48,10 @@ allquants <- do.call(rbind, list(readRDS(junctioncovSalmon)$quants,
                                  readRDS(junctioncovkallisto)$quants,
                                  readRDS(junctioncovRSEM)$quants,
                                  readRDS(junctioncovStringTie)$quants))
+
+if (junctioncovNanopore != "") {
+  allquants <- rbind(allquants, readRDS(junctioncovNanopore)$quants)
+}
 
 saveRDS(list(genemodels_exon = genemodels_exon, genemodels_cds = genemodels_cds,
              jcov = jcov, jcovscaled = jcovscaled, allquants = allquants), file = outrds)

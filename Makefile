@@ -42,7 +42,7 @@ fastqfiles := \
 /home/Shared/data/seq/hussain_bath_nanopore_rnaseq/Illumina/FASTQ/20170918.A-WT_4
 
 ## Abundance quantification methods
-quantmethods := Salmon SalmonBWA kallisto RSEM StringTie hera
+quantmethods := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS
 quantmethods2 := $(quantmethods) SalmonMinimap2Nanopore
 
 ## ==================================================================================== ##
@@ -73,7 +73,7 @@ $(foreach F,$(fastqfiles),hera/$(notdir $(F))/abundance.tsv)
 
 ## Prepare files for alpine
 alpineprep: $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_fitbiasmodel.rds) \
-$(foreach F,$(fastqfiles),alpine/$(notdir $(F))/genes_to_run.txt) \
+$(foreach F,$(fastqfiles),gene_selection/$(notdir $(F))/genes_to_run.txt) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_genemodels.rds) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_predicted_coverage.rds)
 
@@ -290,7 +290,7 @@ $(foreach F,$(fastqfiles),$(eval $(call bwrule,$(F))))
 ## ==================================================================================== ##
 ## Summarize gene characteristics
 define genecharrule
-alpine/$(1)/gene_characteristics.rds: $(gtf) salmon/cDNAncRNA/$(1)/quant.sf \
+gene_selection/$(1)/gene_characteristics.rds: $(gtf) salmon/cDNAncRNA/$(1)/quant.sf \
 $(tx2gene) Rscripts/summarize_gene_characteristics.R
 	mkdir -p $$(@D)
 	$(R) "--args quantsf='$$(word 2,$$^)' gtf='$$(word 1,$$^)' tx2gene='$$(word 3,$$^)' outrds='$$@'" Rscripts/summarize_gene_characteristics.R Rout/summarize_gene_characteristics_$(1).Rout
@@ -299,7 +299,7 @@ $(foreach F,$(fastqfiles),$(eval $(call genecharrule,$(notdir $(F)))))
 
 ## Generate text file with genes to investigate further
 define genelistrule
-alpine/$(1)/genes_to_run.txt: alpine/$(1)/gene_characteristics.rds
+gene_selection/$(1)/genes_to_run.txt: gene_selection/$(1)/gene_characteristics.rds Rscripts/list_genes_to_run.R
 	$(R) "--args inrds='$$<' outtxt='$$@'" Rscripts/list_genes_to_run.R Rout/list_genes_to_run_$(1).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call genelistrule,$(notdir $(F)))))
@@ -331,22 +331,24 @@ define juncscalerule
 alpine/$(1)/scaled_junction_coverage_$(2).rds: alpine/$(1)/alpine_predicted_coverage.rds \
 $(3) $(4) $(tx2gene) Rscripts/alpine_scale_junction_coverage.R
 	mkdir -p $$(@D)
-	$(R) "--args predcovrds='$$(word 1,$$^)' txquants='$(3)' quantreadscript='$(4)' tx2gene='$(tx2gene)' strandspec='$(5)' method='$(6)' outrds='$$@'" Rscripts/alpine_scale_junction_coverage.R Rout/alpine_scale_junction_coverage_$(1)_$(2).Rout
+	$(R) "--args predcovrds='$$(word 1,$$^)' txquants='$(3)' quantreadscript='$(4)' tx2gene='$(tx2gene)' strandspec='$(5)' method='$(2)' outrds='$$@'" Rscripts/alpine_scale_junction_coverage.R Rout/alpine_scale_junction_coverage_$(1)_$(2).Rout
 endef
-$(eval $(call juncscalerule,20151016.A-Cortex_RNA,Salmon,salmon/cDNAncRNA/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,yes,Salmon))
-$(eval $(call juncscalerule,20151016.A-Cortex_RNA,SalmonBWA,salmonbwa/cDNAncRNA/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,yes,SalmonBWA))
-$(eval $(call juncscalerule,20151016.A-Cortex_RNA,kallisto,kallisto/cDNAncRNA/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_kallisto.R,yes,kallisto))
-$(eval $(call juncscalerule,20151016.A-Cortex_RNA,RSEM,RSEM/cDNAncRNA/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA.isoforms.results,Rscripts/read_quant_rsem.R,yes,RSEM))
-$(eval $(call juncscalerule,20151016.A-Cortex_RNA,hera,hera/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_hera.R,yes,hera))
-$(eval $(call juncscalerule,20151016.A-Cortex_RNA,StringTie,stringtie_onlyref/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA.gtf,Rscripts/read_quant_stringtie.R,yes,StringTie))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,Salmon,salmon/cDNAncRNA/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,yes))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,SalmonBWA,salmonbwa/cDNAncRNA/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,yes))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,SalmonCDS,salmon/cds/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,yes))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,kallisto,kallisto/cDNAncRNA/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_kallisto.R,yes))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,RSEM,RSEM/cDNAncRNA/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA.isoforms.results,Rscripts/read_quant_rsem.R,yes))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,hera,hera/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_hera.R,yes))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,StringTie,stringtie_onlyref/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA.gtf,Rscripts/read_quant_stringtie.R,yes))
 
-$(eval $(call juncscalerule,20170918.A-WT_4,Salmon,salmon/cDNAncRNA/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,yes,Salmon))
-$(eval $(call juncscalerule,20170918.A-WT_4,SalmonBWA,salmonbwa/cDNAncRNA/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,yes,SalmonBWA))
-$(eval $(call juncscalerule,20170918.A-WT_4,kallisto,kallisto/cDNAncRNA/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_kallisto.R,yes,kallisto))
-$(eval $(call juncscalerule,20170918.A-WT_4,RSEM,RSEM/cDNAncRNA/20170918.A-WT_4/20170918.A-WT_4.isoforms.results,Rscripts/read_quant_rsem.R,yes,RSEM))
-$(eval $(call juncscalerule,20170918.A-WT_4,hera,hera/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_hera.R,yes,hera))
-$(eval $(call juncscalerule,20170918.A-WT_4,StringTie,stringtie_onlyref/20170918.A-WT_4/20170918.A-WT_4.gtf,Rscripts/read_quant_stringtie.R,yes,StringTie))
-$(eval $(call juncscalerule,20170918.A-WT_4,SalmonMinimap2Nanopore,/home/Shared/data/seq/hussain_bath_nanopore_rnaseq/NSK007/salmonminimap2/SS2_wt_1/quant.sf,Rscripts/read_quant_salmon.R,no,SalmonMinimap2Nanopore))
+$(eval $(call juncscalerule,20170918.A-WT_4,Salmon,salmon/cDNAncRNA/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,yes))
+$(eval $(call juncscalerule,20170918.A-WT_4,SalmonBWA,salmonbwa/cDNAncRNA/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,yes))
+$(eval $(call juncscalerule,20170918.A-WT_4,SalmonCDS,salmon/cds/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,yes))
+$(eval $(call juncscalerule,20170918.A-WT_4,kallisto,kallisto/cDNAncRNA/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_kallisto.R,yes))
+$(eval $(call juncscalerule,20170918.A-WT_4,RSEM,RSEM/cDNAncRNA/20170918.A-WT_4/20170918.A-WT_4.isoforms.results,Rscripts/read_quant_rsem.R,yes))
+$(eval $(call juncscalerule,20170918.A-WT_4,hera,hera/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_hera.R,yes))
+$(eval $(call juncscalerule,20170918.A-WT_4,StringTie,stringtie_onlyref/20170918.A-WT_4/20170918.A-WT_4.gtf,Rscripts/read_quant_stringtie.R,yes))
+$(eval $(call juncscalerule,20170918.A-WT_4,SalmonMinimap2Nanopore,/home/Shared/data/seq/hussain_bath_nanopore_rnaseq/NSK007/salmonminimap2/SS2_wt_1/quant.sf,Rscripts/read_quant_salmon.R,no))
 
 ## Prepare reference files
 define alpinerefrule
@@ -354,9 +356,9 @@ alpine/$(1)/alpine_genemodels.rds: $(gtf) STAR/$(1)/$(1)_Aligned.sortedByCoord.o
 alpine/$(1)/scaled_junction_coverage_Salmon.rds alpine/$(1)/scaled_junction_coverage_hera.rds \
 alpine/$(1)/scaled_junction_coverage_RSEM.rds alpine/$(1)/scaled_junction_coverage_StringTie.rds \
 alpine/$(1)/scaled_junction_coverage_SalmonBWA.rds alpine/$(1)/scaled_junction_coverage_kallisto.rds \
-Rscripts/alpine_prepare_for_comparison.R
+alpine/$(1)/scaled_junction_coverage_SalmonCDS.rds Rscripts/alpine_prepare_for_comparison.R Rscripts/plot_tracks.R
 	mkdir -p $$(@D)
-	$(R) "--args gtf='$(gtf)' junctioncovSTAR='STAR/$(1)/$(1)_SJ.out.tab' junctioncovSalmon='$$(word 3,$$^)' junctioncovSalmonBWA='$$(word 7,$$^)' junctioncovNanopore='$(2)' junctioncovhera='$$(word 4,$$^)' junctioncovkallisto='$$(word 8,$$^)' junctioncovRSEM='$$(word 5,$$^)' junctioncovStringTie='$$(word 6,$$^)' outrds='$$@'" Rscripts/alpine_prepare_for_comparison.R Rout/alpine_prepare_for_comparison_$(1).Rout
+	$(R) "--args gtf='$(gtf)' junctioncovSTAR='STAR/$(1)/$(1)_SJ.out.tab' junctioncovSalmon='$$(word 3,$$^)' junctioncovSalmonBWA='$$(word 7,$$^)' junctioncovSalmonCDS='$$(word 9,$$^)' junctioncovNanopore='$(2)' junctioncovhera='$$(word 4,$$^)' junctioncovkallisto='$$(word 8,$$^)' junctioncovRSEM='$$(word 5,$$^)' junctioncovStringTie='$$(word 6,$$^)' outrds='$$@'" Rscripts/alpine_prepare_for_comparison.R Rout/alpine_prepare_for_comparison_$(1).Rout
 endef
 $(eval $(call alpinerefrule,20151016.A-Cortex_RNA,))
 $(eval $(call alpinerefrule,20170918.A-WT_4,alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonMinimap2Nanopore.rds))
@@ -364,18 +366,18 @@ $(eval $(call alpinerefrule,20170918.A-WT_4,alpine/20170918.A-WT_4/scaled_juncti
 ## Predict coverage and compare to observed junction coverage
 ## "gene" can be either a gene ID or a text file with a list of genes to investigate
 define alpinepredrule
-alpine_check/$(1)/$(notdir $(2)).rds: alpine/$(1)/alpine_fitbiasmodel.rds STAR/$(1)/$(1)_Aligned.sortedByCoord.out.bam \
-alpine/$(1)/alpine_genemodels.rds Rscripts/alpine_compare_coverage.R \
-STARbigwig/$(1)_Aligned.sortedByCoord.out.bw $(2)
+alpine_check/$(1)/$(notdir $(2)).rds: alpine/$(1)/alpine_genemodels.rds \
+STARbigwig/$(1)_Aligned.sortedByCoord.out.bw $(2) Rscripts/alpine_compare_coverage.R \
+Rscripts/plot_tracks.R
 	mkdir -p $$(@D)
 	mkdir -p alpine_out/$(1)/plots
 	mkdir -p alpine_out/$(1)/jcov
 	mkdir -p alpine_out/$(1)/tpm
 	mkdir -p alpine_out/$(1)/count	
-	$(R) "--args gene='$(2)' bam='$$(word 2,$$^)' bigwig='$$(word 5,$$^)' ncores=$(3) genemodels='$$(word 3,$$^)' biasmodels='$$(word 1,$$^)' outdir='alpine_out/$(1)' checkdir='$$(@D)'" Rscripts/alpine_compare_coverage.R Rout/alpine_compare_coverage_$(1)_$(notdir $(2)).Rout
+	$(R) "--args gene='$(2)' bigwig='$$(word 2,$$^)' ncores=$(3) genemodels='$$(word 1,$$^)' outdir='alpine_out/$(1)' checkdir='$$(@D)'" Rscripts/alpine_compare_coverage.R Rout/alpine_compare_coverage_$(1)_$(notdir $(2)).Rout
 endef
-$(foreach F,$(fastqfiles),$(eval $(call alpinepredrule,$(notdir $(F)),alpine/$(notdir $(F))/genes_to_run.txt,25)))
-$(foreach F,$(fastqfiles),$(eval $(call alpinepredrule,$(notdir $(F)),alpine/$(notdir $(F))/subset_genes_to_run.txt,25)))
+$(foreach F,$(fastqfiles),$(eval $(call alpinepredrule,$(notdir $(F)),gene_selection/$(notdir $(F))/genes_to_run.txt,25)))
+$(foreach F,$(fastqfiles),$(eval $(call alpinepredrule,$(notdir $(F)),gene_selection/$(notdir $(F))/subset_genes_to_run.txt,25)))
 
 
 

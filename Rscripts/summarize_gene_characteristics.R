@@ -39,10 +39,7 @@ genechar <- quantsf %>% dplyr::mutate(Name = gsub("\\.[0-9]+", "", Name),
                    maxnbrex = max(nex),
                    maxlength = max(totlength))
 
-saveRDS(genechar %>% dplyr::filter(maxnbrex > 1 & 
-                                     count > 1000 & 
-                                     maxlength > 350),
-        file = outrds)
+saveRDS(genechar, file = outrds)
 
 sessionInfo()
 date()

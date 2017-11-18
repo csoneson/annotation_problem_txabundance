@@ -2,6 +2,7 @@
 
 suppressPackageStartupMessages(library(rtracklayer))
 suppressPackageStartupMessages(library(GenomicFeatures))
+suppressPackageStartupMessages(library(dplyr))
 
 read_quant <- function(file, avefraglength) {
   txdb <- makeTxDbFromGFF(file, format = "gtf")

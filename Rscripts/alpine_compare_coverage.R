@@ -28,15 +28,10 @@ if (file.exists(gene)) {
   genes <- gene
 }
 
-replna <- function(x) {
-  x[is.na(x)] <- 0
-  x
-}
-
 ## Investigate each gene
 mclapply(genes, function(currgene) {
   jl <- genemodels$jcovscaled %>% dplyr::filter(gene == currgene) %>%
-    dplyr::mutate(pred.cov = replna(pred.cov))
+    dplyr::mutate(pred.cov = replace(pred.cov, is.na(pred.cov), 0))
   
   jl0 <- jl %>% dplyr::select(seqnames, start, end, width, strand) %>%
     dplyr::distinct() %>% dplyr::arrange(start) %>% 
@@ -77,7 +72,7 @@ mclapply(genes, function(currgene) {
                 dplyr::mutate(scaledcoverage = round(scaledcoverage, 2)) %>% 
                 tidyr::spread(methodscore, scaledcoverage) %%
                 dplyr::arrange(start),
-              file = paste0(outdir, "/jcov/", currgene, "_jcov.txt"),
+              file = paste0(outdir, "/jcov/", currgene, "_jscaledcov.txt"),
               quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
   
   write.table(genemodels$allquants %>% dplyr::filter(gene == currgene) %>% 

@@ -7,6 +7,7 @@ print(gtf)
 print(junctioncovSTAR) ## Junction reads from STAR
 print(junctioncovSalmon) ## Salmon quantifications
 print(junctioncovSalmonBWA) ## Salmon quantifications in alignment mode (after BWA)
+print(junctioncovSalmonCDS) ## Salmon quantifications based on CDSs only
 print(junctioncovhera) ## Hera quantifications
 print(junctioncovkallisto) ## kallisto quantifications
 print(junctioncovRSEM) ## RSEM quantifications
@@ -34,6 +35,7 @@ jcov <- jcov %>% dplyr::mutate(strand = replace(strand, strand == 1, "+")) %>%
 ## Read and merge junction coverages predicted by each method
 jcovscaled <- do.call(rbind, list(readRDS(junctioncovSalmon)$allcovs,
                                   readRDS(junctioncovSalmonBWA)$allcovs,
+                                  readRDS(junctioncovSalmonCDS)$allcovs,
                                   readRDS(junctioncovhera)$allcovs,
                                   readRDS(junctioncovkallisto)$allcovs,
                                   readRDS(junctioncovRSEM)$allcovs,
@@ -44,6 +46,7 @@ if (junctioncovNanopore != "") {
 
 allquants <- do.call(rbind, list(readRDS(junctioncovSalmon)$quants,
                                  readRDS(junctioncovSalmonBWA)$quants,
+                                 readRDS(junctioncovSalmonCDS)$quants, 
                                  readRDS(junctioncovhera)$quants,
                                  readRDS(junctioncovkallisto)$quants,
                                  readRDS(junctioncovRSEM)$quants,

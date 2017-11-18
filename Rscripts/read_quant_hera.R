@@ -1,5 +1,7 @@
 ## Read Hera abundance.tsv
 
+suppressPackageStartupMessages(library(dplyr))
+
 read_quant <- function(file, avefraglength) {
   read.delim(file, header = TRUE, as.is = TRUE) %>%
     dplyr::mutate(target_id = sapply(strsplit(X.target_id, ":"), .subset, 1)) %>%

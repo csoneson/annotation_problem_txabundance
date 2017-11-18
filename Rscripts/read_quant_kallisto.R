@@ -1,5 +1,7 @@
 ## Read kallisto abundance.tsv
 
+suppressPackageStartupMessages(library(dplyr))
+
 read_quant <- function(file, avefraglength) {
   read.delim(file, header = TRUE, as.is = TRUE) %>%
     dplyr::mutate(target_id = gsub("\\.[0-9]+", "", target_id)) %>%

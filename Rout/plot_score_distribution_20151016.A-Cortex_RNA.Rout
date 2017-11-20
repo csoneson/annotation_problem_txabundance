@@ -1,0 +1,110 @@
+
+R version 3.4.0 (2017-04-21) -- "You Stupid Darkness"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> args <- (commandArgs(trailingOnly = TRUE))
+> for (i in 1:length(args)) {
++   eval(parse(text = args[[i]]))
++ }
+> 
+> print(genesummaryrds)  ## gene summary information
+[1] "gene_selection/20151016.A-Cortex_RNA/gene_characteristics.rds"
+> print(genemodels)  ## gene models etc (output of alpine_prepare_for_comparison.R)
+[1] "alpine/20151016.A-Cortex_RNA/alpine_genemodels.rds"
+> print(outrds)  ## output file
+[1] "alpine/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_gene_scores.rds"
+> 
+> suppressPackageStartupMessages(library(dplyr))
+> suppressPackageStartupMessages(library(ggplot2))
+> 
+> gsr <- readRDS(genesummaryrds)
+> x <- readRDS(genemodels)
+> jcovscaled <- x$jcovscaled
+> 
+> pdf(gsub("rds$", "pdf", outrds))
+> tmp1 <- gsr %>% dplyr::filter(maxnbrex > 1 & 
++                                 count > 1000 & 
++                                 maxlength > 350)
+> tmp1 <- jcovscaled %>% dplyr::filter(gene %in% tmp1$gene)
+> print(ggplot(tmp1 %>% dplyr::select(gene, method, score) %>% dplyr::distinct(), 
++              aes(x = score, color = method)) + geom_density() + theme_bw() + 
++         ggtitle("Score distribution, max nbr exons > 1, count > 1000, max length > 350") + 
++         scale_color_manual(values = c("#DC050C", "#7BAFDE", "#B17BA6", "#F1932D",
++                                       "#4EB265", "#CAEDAB", "#777777", "#E8601C",
++                                       "#1965B0", "#882E72", "#F6C141", "#F7EE55",
++                                       "#90C987")[seq_len(length(unique(jcovscaled$method)))]))
+Warning message:
+Removed 245 rows containing non-finite values (stat_density). 
+> print(ggplot(tmp1 %>% dplyr::select(gene, method, score) %>% dplyr::distinct(), 
++              aes(x = method, y = score, color = method)) + geom_boxplot() + theme_bw() + 
++         theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) + 
++         ggtitle("Score distribution, max nbr exons > 1, count > 1000, max length > 350") + 
++         scale_color_manual(values = c("#DC050C", "#7BAFDE", "#B17BA6", "#F1932D",
++                                       "#4EB265", "#CAEDAB", "#777777", "#E8601C",
++                                       "#1965B0", "#882E72", "#F6C141", "#F7EE55",
++                                       "#90C987")[seq_len(length(unique(jcovscaled$method)))]))
+Warning message:
+Removed 245 rows containing non-finite values (stat_boxplot). 
+> ## Rank distribution (1 is best)
+> print(ggplot(tmp1 %>% dplyr::select(gene, method, score) %>% dplyr::distinct() %>% 
++                dplyr::mutate(score = replace(score, is.na(score), 10)) %>% 
++                dplyr::group_by(gene) %>% dplyr::mutate(rank = rank(score)) %>%
++                dplyr::mutate(keep = !(var(rank) == 0)) %>% dplyr::filter(keep), 
++              aes(x = rank)) + geom_bar() + facet_wrap(~method) + theme_bw() + 
++         ggtitle("Rank distribution, max nbr exons > 1, count > 1000, max length > 350"))
+> 
+> dev.off()
+null device 
+          1 
+> 
+> saveRDS(NULL, file = outrds)
+> sessionInfo()
+R version 3.4.0 (2017-04-21)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 14.04.5 LTS
+
+Matrix products: default
+BLAS: /usr/local/R/R-3.4.0/lib/libRblas.so
+LAPACK: /usr/local/R/R-3.4.0/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=en_CA.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=en_CA.UTF-8        LC_COLLATE=en_CA.UTF-8    
+ [5] LC_MONETARY=en_CA.UTF-8    LC_MESSAGES=en_CA.UTF-8   
+ [7] LC_PAPER=en_CA.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=en_CA.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] bindrcpp_0.2  ggplot2_2.2.1 dplyr_0.7.4  
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_0.12.13     digest_0.6.12    assertthat_0.2.0 plyr_1.8.4      
+ [5] grid_3.4.0       R6_2.2.2         gtable_0.2.0     magrittr_1.5    
+ [9] scales_0.5.0     rlang_0.1.2      lazyeval_0.2.0   labeling_0.3    
+[13] glue_1.1.1       munsell_0.4.3    compiler_3.4.0   pkgconfig_2.0.1 
+[17] colorspace_1.3-2 bindr_0.1        tibble_1.3.4    
+> date()
+[1] "Mon Nov 20 20:44:04 2017"
+> 
+> proc.time()
+   user  system elapsed 
+ 42.591   0.651  43.368 

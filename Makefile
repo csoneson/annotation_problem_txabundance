@@ -52,7 +52,8 @@ quantmethods2 := $(quantmethods) SalmonMinimap2Nanopore
 
 all: prepref quant \
 $(foreach F,$(fastqfiles),output/$(notdir $(F))_cdna_vs_cds.rds) \
-$(foreach F,$(fastqfiles),alpine_check/$(notdir $(F))/genes_to_run.txt.rds)
+$(foreach F,$(fastqfiles),alpine_check/$(notdir $(F))/genes_to_run.txt.rds) \
+$(foreach F,$(fastqfiles),alpine/$(notdir $(F))/$(notdir $(F))_gene_scores.rds)
 
 ## Prepare reference files and indexes
 prepref: $(txome) $(salmoncdnancrnaindex)/hash.bin $(salmoncdsindex)/hash.bin \
@@ -376,5 +377,14 @@ endef
 $(foreach F,$(fastqfiles),$(eval $(call alpinepredrule,$(notdir $(F)),gene_selection/$(notdir $(F))/genes_to_run.txt,25)))
 $(foreach F,$(fastqfiles),$(eval $(call alpinepredrule,$(notdir $(F)),gene_selection/$(notdir $(F))/subset_genes_to_run.txt,25)))
 
+## ==================================================================================== ##
+##                            plot gene scores                                          ##
+## ==================================================================================== ##
+define plotscorerule
+alpine/$(1)/$(1)_gene_scores.rds: alpine/$(1)/alpine_genemodels.rds \
+gene_selection/$(1)/gene_characteristics.rds Rscripts/plot_score_distribution.R
+	$(R) "--args genesummaryrds='$$(word 2,$$^)' genemodels='$$(word 1,$$^)' outrds='$$@'" Rscripts/plot_score_distribution.R Rout/plot_score_distribution_$(1).Rout
+endef
+$(foreach F,$(fastqfiles),$(eval $(call plotscorerule,$(notdir $(F)))))
 
 

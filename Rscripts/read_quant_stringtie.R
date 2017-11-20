@@ -5,15 +5,16 @@ suppressPackageStartupMessages(library(GenomicFeatures))
 suppressPackageStartupMessages(library(dplyr))
 
 read_quant <- function(file, avefraglength) {
-  txdb <- makeTxDbFromGFF(file, format = "gtf")
-  ebt <- exonsBy(txdb, "tx")
-  gtf <- import(file) 
-  gtf <- subset(gtf, type == "transcript")
-  mcols(gtf)$length <- width(gtf)
-  as.data.frame(mcols(gtf)[, c("transcript_id", "TPM", "length", "cov")]) %>%
+  gtf <- import(file)
+  gtfex <- subset(gtf, type == "exon")
+  txlengths <- as.data.frame(gtfex) %>% dplyr::group_by(transcript_id) %>%
+    dplyr::summarize(width = sum(width))
+  gtftx <- subset(gtf, type == "transcript")
+  as.data.frame(gtftx) %>% dplyr::select(transcript_id, TPM, cov) %>%
+    dplyr::left_join(txlengths) %>%
     dplyr::rename(transcript = transcript_id) %>%
     dplyr::mutate(TPM = as.numeric(as.character(TPM)),
                   cov = as.numeric(as.character(cov))) %>%
-    dplyr::mutate(count = cov * length / avefraglength) %>%
+    dplyr::mutate(count = cov * width / avefraglength) %>%
     dplyr::select(transcript, count, TPM)
 }

@@ -30,24 +30,7 @@ if (file.exists(gene)) {
 
 ## Investigate each gene
 mclapply(genes, function(currgene) {
-  jl <- genemodels$jcovscaled %>% dplyr::filter(gene == currgene) %>%
-    dplyr::mutate(pred.cov = replace(pred.cov, is.na(pred.cov), 0))
-  
-  jl0 <- jl %>% dplyr::select(seqnames, start, end, width, strand) %>%
-    dplyr::distinct() %>% dplyr::arrange(start) %>% 
-    dplyr::mutate(junctionid = paste0("J", seq_len(length(start))))
-    
-  jl <- jl %>% dplyr::left_join(genemodels$jcov, by = c("seqnames", "start", "end")) %>%
-    dplyr::mutate(uniqreads = replace(uniqreads, is.na(uniqreads), 0),
-                  mmreads = replace(mmreads, is.na(mmreads), 0)) %>%
-    dplyr::group_by(method) %>%
-    dplyr::mutate(scaledcoverage = pred.cov/sum(pred.cov, na.rm = TRUE) * 
-                    sum(uniqreads, na.rm = TRUE)) %>%
-    dplyr::mutate(score = round(sum(abs(uniqreads - scaledcoverage), na.rm = TRUE)/
-                                  sum(uniqreads, na.rm = TRUE), 2)) %>% 
-    dplyr::mutate(methodscore = paste0(method, " (", score, ")")) %>%
-    dplyr::left_join(jl0) %>% dplyr::ungroup() %>% 
-    dplyr::select(junctionid, everything())
+  jl <- genemodels$jcovscaled %>% dplyr::filter(gene == currgene)
 
   pdf(paste0(outdir, "/plots/", currgene, ".pdf"), width = 12, height = 10)
   tryCatch({
@@ -70,7 +53,7 @@ mclapply(genes, function(currgene) {
   
   write.table(jl %>% dplyr::select(-score, -pred.cov, -method) %>%
                 dplyr::mutate(scaledcoverage = round(scaledcoverage, 2)) %>% 
-                tidyr::spread(methodscore, scaledcoverage) %%
+                tidyr::spread(methodscore, scaledcoverage) %>%
                 dplyr::arrange(start),
               file = paste0(outdir, "/jcov/", currgene, "_jscaledcov.txt"),
               quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)

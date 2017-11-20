@@ -23,9 +23,9 @@ Type 'q()' to quit R.
 + }
 > 
 > print(inrds)
-[1] "gene_selection/20151016.A-Cortex_RNA/gene_characteristics.rds"
+[1] "gene_selection/20170918.A-WT_4/gene_characteristics.rds"
 > print(outtxt)
-[1] "gene_selection/20151016.A-Cortex_RNA/genes_to_run.txt"
+[1] "gene_selection/20170918.A-WT_4/genes_to_run.txt"
 > 
 > suppressPackageStartupMessages(library(dplyr))
 > 
@@ -67,4 +67,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-  0.986   0.103   1.068 
+  1.047   0.108   1.138 

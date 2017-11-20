@@ -38,6 +38,8 @@ Type 'q()' to quit R.
 [1] "alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_StringTie.rds"
 > 
 > suppressPackageStartupMessages(library(alpine))
+Warning message:
+package ‘alpine’ was built under R version 3.4.2 
 > suppressPackageStartupMessages(library(parallel))
 > suppressPackageStartupMessages(library(dplyr))
 > 
@@ -45,9 +47,7 @@ Type 'q()' to quit R.
 > 
 > predcovs <- readRDS(predcovrds)
 > quants <- read_quant(file = txquants, avefraglength = predcovs[[1]]$avefraglength)
-Import genomic features from the file as a GRanges object ... OK
-Prepare the 'metadata' data frame ... OK
-Make the TxDb object ... OK
+Joining, by = "transcript_id"
 > tx2gene <- readRDS(tx2gene)
 > tx2gene$tx <- gsub("\\.[0-9]+", "", tx2gene$tx)
 > tx2gene$gene <- gsub("\\.[0-9]+", "", tx2gene$gene)
@@ -64,8 +64,6 @@ Make the TxDb object ... OK
 +     as.data.frame(m) %>% dplyr::mutate(transcript = tx)
 +   }, error = function(e) NULL)
 + })
-Warning message:
-call dbDisconnect() when finished working with a connection 
 > 
 > allcovs <- do.call(rbind, scaledcovs)
 > if (strandspec == "no") {
@@ -115,7 +113,7 @@ other attached packages:
  [1] bindrcpp_0.2           GenomicFeatures_1.28.5 AnnotationDbi_1.38.2  
  [4] Biobase_2.36.2         rtracklayer_1.36.4     GenomicRanges_1.28.5  
  [7] GenomeInfoDb_1.12.2    IRanges_2.10.3         S4Vectors_0.14.5      
-[10] BiocGenerics_0.22.0    dplyr_0.7.4            alpine_1.2.0          
+[10] BiocGenerics_0.22.0    dplyr_0.7.4            alpine_1.4.0          
 
 loaded via a namespace (and not attached):
  [1] Rcpp_0.12.13               bindr_0.1                 
@@ -140,8 +138,8 @@ loaded via a namespace (and not attached):
 [39] assertthat_0.2.0           SummarizedExperiment_1.6.5
 [41] stringi_1.1.5              RCurl_1.95-4.8            
 > date()
-[1] "Thu Nov 16 22:14:43 2017"
+[1] "Mon Nov 20 14:22:18 2017"
 > 
 > proc.time()
     user   system  elapsed 
-6914.180  372.700 7371.107 
+5714.697  213.750 5991.831 

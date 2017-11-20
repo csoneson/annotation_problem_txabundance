@@ -23,19 +23,19 @@ Type 'q()' to quit R.
 + }
 > 
 > print(predcovrds)  ## predicted transcript and junction coverage
-[1] "alpine/20151016.A-Cortex_RNA/alpine_predicted_coverage.rds"
+[1] "alpine/20170918.A-WT_4/alpine_predicted_coverage.rds"
 > print(txquants)  ## transcript quantification file
-[1] "salmon/cDNAncRNA/20151016.A-Cortex_RNA/quant.sf"
+[1] "hera/20170918.A-WT_4/abundance.tsv"
 > print(quantreadscript)  ## script containing a function "read_quant()"
-[1] "Rscripts/read_quant_salmon.R"
+[1] "Rscripts/read_quant_hera.R"
 > print(strandspec)  ## "yes" or "no"
 [1] "yes"
 > print(tx2gene)  ## link transcripts to genes
 [1] "reference/Homo_sapiens.GRCh38.90_tx2gene.rds"
 > print(method)  ## method ID to add to the quantification table
-[1] "Salmon"
+[1] "hera"
 > print(outrds)  ## output file
-[1] "alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_Salmon.rds"
+[1] "alpine/20170918.A-WT_4/scaled_junction_coverage_hera.rds"
 > 
 > suppressPackageStartupMessages(library(alpine))
 Warning message:
@@ -139,8 +139,8 @@ loaded via a namespace (and not attached):
 [49] assertthat_0.2.0           SummarizedExperiment_1.6.5
 [51] stringi_1.1.5              RCurl_1.95-4.8            
 > date()
-[1] "Sun Nov 19 22:05:39 2017"
+[1] "Sun Nov 19 21:58:33 2017"
 > 
 > proc.time()
     user   system  elapsed 
-6574.444  195.669 6806.966 
+6079.761  259.391 6380.126 

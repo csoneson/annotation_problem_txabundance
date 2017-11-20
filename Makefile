@@ -77,10 +77,7 @@ $(foreach F,$(fastqfiles),gene_selection/$(notdir $(F))/genes_to_run.txt) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_genemodels.rds) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_predicted_coverage.rds)
 
-scalecov: $(foreach M,$(quantmethods),alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_$(M).rds)
-#$(foreach M,quantmethods,$(foreach F,$(fastqfiles),alpine/$(notdir $(F))/scaled_junction_coverage_$(M)))
-
-tmp: $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_predicted_coverage.rds)
+scalecov: $(foreach M,quantmethods,$(foreach F,$(fastqfiles),alpine/$(notdir $(F))/scaled_junction_coverage_$(M)))
 
 ## subset_genes_to_run.txt is a manually created file, which can be used to test a few genes
 sumsub: $(foreach F,$(fastqfiles),alpine_check/$(notdir $(F))/subset_genes_to_run.txt.rds)
@@ -356,7 +353,7 @@ alpine/$(1)/alpine_genemodels.rds: $(gtf) STAR/$(1)/$(1)_Aligned.sortedByCoord.o
 alpine/$(1)/scaled_junction_coverage_Salmon.rds alpine/$(1)/scaled_junction_coverage_hera.rds \
 alpine/$(1)/scaled_junction_coverage_RSEM.rds alpine/$(1)/scaled_junction_coverage_StringTie.rds \
 alpine/$(1)/scaled_junction_coverage_SalmonBWA.rds alpine/$(1)/scaled_junction_coverage_kallisto.rds \
-alpine/$(1)/scaled_junction_coverage_SalmonCDS.rds Rscripts/alpine_prepare_for_comparison.R Rscripts/plot_tracks.R
+alpine/$(1)/scaled_junction_coverage_SalmonCDS.rds Rscripts/alpine_prepare_for_comparison.R Rscripts/plot_tracks.R $(2)
 	mkdir -p $$(@D)
 	$(R) "--args gtf='$(gtf)' junctioncovSTAR='STAR/$(1)/$(1)_SJ.out.tab' junctioncovSalmon='$$(word 3,$$^)' junctioncovSalmonBWA='$$(word 7,$$^)' junctioncovSalmonCDS='$$(word 9,$$^)' junctioncovNanopore='$(2)' junctioncovhera='$$(word 4,$$^)' junctioncovkallisto='$$(word 8,$$^)' junctioncovRSEM='$$(word 5,$$^)' junctioncovStringTie='$$(word 6,$$^)' outrds='$$@'" Rscripts/alpine_prepare_for_comparison.R Rout/alpine_prepare_for_comparison_$(1).Rout
 endef

@@ -1,0 +1,45 @@
+
+R version 3.4.0 (2017-04-21) -- "You Stupid Darkness"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> args <- (commandArgs(trailingOnly = TRUE))
+> for (i in 1:length(args)) {
++   eval(parse(text = args[[i]]))
++ }
+> 
+> print(gene)  ## gene of interest, or file listing collection of genes (one per row)
+[1] "gene_selection/20170918.A-WT_4/genes_to_run.txt"
+> print(bigwig)  ## bigwig file for visualization
+[1] "STARbigwig/20170918.A-WT_4_Aligned.sortedByCoord.out.bw"
+> print(genemodels)  ## gene models etc (output of alpine_prepare_for_comparison.R)
+[1] "alpine/20170918.A-WT_4/alpine_genemodels.rds"
+> print(ncores)  ## number of cores for parallel computations
+[1] 25
+> print(outdir)  ## output directory
+[1] "alpine_out/20170918.A-WT_4"
+> print(checkdir)  ## directory to write (empty) rds files (time stamps)
+[1] "alpine_check/20170918.A-WT_4"
+> 
+> suppressPackageStartupMessages(library(dplyr))
+> suppressPackageStartupMessages(library(ggplot2))
+> suppressPackageStartupMessages(library(cowplot))
+> suppressPackageStartupMessages(library(ggrepel))
+> 
+> source("Rscripts/plot_tracks.R")
+
+Execution halted

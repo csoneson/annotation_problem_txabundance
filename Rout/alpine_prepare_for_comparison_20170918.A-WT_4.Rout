@@ -25,25 +25,25 @@ Type 'q()' to quit R.
 > print(gtf)
 [1] "/home/Shared/data/annotation/Human/Ensembl_GRCh38.90/gtf/Homo_sapiens.GRCh38.90.gtf"
 > print(junctioncovSTAR) ## Junction reads from STAR
-[1] "STAR/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_SJ.out.tab"
+[1] "STAR/20170918.A-WT_4/20170918.A-WT_4_SJ.out.tab"
 > print(junctioncovSalmon) ## Salmon quantifications
-[1] "alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_Salmon.rds"
+[1] "alpine/20170918.A-WT_4/scaled_junction_coverage_Salmon.rds"
 > print(junctioncovSalmonBWA) ## Salmon quantifications in alignment mode (after BWA)
-[1] "alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_SalmonBWA.rds"
+[1] "alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonBWA.rds"
 > print(junctioncovSalmonCDS) ## Salmon quantifications based on CDSs only
-[1] "alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_SalmonCDS.rds"
+[1] "alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonCDS.rds"
 > print(junctioncovhera) ## Hera quantifications
-[1] "alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_hera.rds"
+[1] "alpine/20170918.A-WT_4/scaled_junction_coverage_hera.rds"
 > print(junctioncovkallisto) ## kallisto quantifications
-[1] "alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_kallisto.rds"
+[1] "alpine/20170918.A-WT_4/scaled_junction_coverage_kallisto.rds"
 > print(junctioncovRSEM) ## RSEM quantifications
-[1] "alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_RSEM.rds"
+[1] "alpine/20170918.A-WT_4/scaled_junction_coverage_RSEM.rds"
 > print(junctioncovStringTie) ## StringTie quantifications
-[1] "alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_StringTie.rds"
+[1] "alpine/20170918.A-WT_4/scaled_junction_coverage_StringTie.rds"
 > print(junctioncovNanopore) ## If present, nanopore results
-[1] ""
+[1] "alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonMinimap2Nanopore.rds"
 > print(outrds)
-[1] "alpine/20151016.A-Cortex_RNA/alpine_genemodels.rds"
+[1] "alpine/20170918.A-WT_4/alpine_genemodels.rds"
 > 
 > suppressPackageStartupMessages(library(dplyr))
 > suppressPackageStartupMessages(library(ggplot2))
@@ -134,7 +134,7 @@ Joining, by = c("seqnames", "start", "end", "gene")
 +                                       "#1965B0", "#882E72", "#F6C141", "#F7EE55",
 +                                       "#90C987")[seq_len(length(unique(jcovscaled$method)))]))
 Warning message:
-Removed 87954 rows containing non-finite values (stat_density). 
+Removed 101290 rows containing non-finite values (stat_density). 
 > print(ggplot(jcovscaled %>% dplyr::select(gene, method, score) %>% dplyr::distinct(), 
 +              aes(x = method, y = score, color = method)) + geom_boxplot() + theme_bw() + 
 +         ggtitle("Score distribution") + 
@@ -143,7 +143,7 @@ Removed 87954 rows containing non-finite values (stat_density).
 +                                       "#1965B0", "#882E72", "#F6C141", "#F7EE55",
 +                                       "#90C987")[seq_len(length(unique(jcovscaled$method)))]))
 Warning message:
-Removed 87954 rows containing non-finite values (stat_boxplot). 
+Removed 101290 rows containing non-finite values (stat_boxplot). 
 > ## Rank distribution (1 is best)
 > print(ggplot(jcovscaled %>% dplyr::select(gene, method, score) %>% dplyr::distinct() %>% 
 +                dplyr::mutate(score = replace(score, is.na(score), 10)) %>% 
@@ -228,8 +228,8 @@ loaded via a namespace (and not attached):
 [81] Rcpp_0.12.13                  rpart_4.1-11                 
 [83] acepack_1.4.1                
 > date()
-[1] "Mon Nov 20 14:31:57 2017"
+[1] "Mon Nov 20 14:23:01 2017"
 > 
 > proc.time()
    user  system elapsed 
-562.505  13.302 577.353 
+524.892   6.906 533.279 

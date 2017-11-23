@@ -58,7 +58,7 @@ package ‘alpine’ was built under R version 3.4.2
 +   tryCatch({
 +     ab <- quants$count[quants$transcript == tx]
 +     m <- predcovs[[tx]]$junctions
-+     m$pred.cov <- m$pred.cov / sum(predcovs[[tx]]$pred.cov) * 
++     m$pred.cov <- m$pred.cov / max(1e-10, sum(predcovs[[tx]]$pred.cov)) * 
 +       ab * predcovs[[tx]]$avefraglength
 +     as.data.frame(m) %>% dplyr::mutate(transcript = tx)
 +   }, error = function(e) NULL)
@@ -139,8 +139,8 @@ loaded via a namespace (and not attached):
 [49] assertthat_0.2.0           SummarizedExperiment_1.6.5
 [51] stringi_1.1.5              RCurl_1.95-4.8            
 > date()
-[1] "Sun Nov 19 21:18:44 2017"
+[1] "Thu Nov 23 21:51:49 2017"
 > 
 > proc.time()
     user   system  elapsed 
-3872.567   95.525 3991.766 
+3509.421   75.590 3603.277 

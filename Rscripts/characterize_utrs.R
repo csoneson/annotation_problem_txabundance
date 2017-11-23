@@ -41,5 +41,6 @@ ggplot(utrsum %>% dplyr::mutate(lengthdiffgr = Hmisc::cut2(lengthdiff, g = 10)),
 
 dev.off()
 
+saveRDS(utrs, file = outrds)
 sessionInfo()
 date()

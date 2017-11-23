@@ -64,6 +64,7 @@ Type 'q()' to quit R.
 null device 
           1 
 > 
+> saveRDS(utrs, file = outrds)
 > sessionInfo()
 R version 3.4.0 (2017-04-21)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -121,8 +122,8 @@ loaded via a namespace (and not attached):
 [55] rpart_4.1-11               GenomicAlignments_1.12.2  
 [57] nnet_7.3-12                compiler_3.4.0            
 > date()
-[1] "Thu Nov 23 20:31:17 2017"
+[1] "Thu Nov 23 20:35:48 2017"
 > 
 > proc.time()
    user  system elapsed 
- 66.917   1.960  69.724 
+ 67.118   2.154  69.626 

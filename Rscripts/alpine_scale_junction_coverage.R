@@ -30,7 +30,7 @@ scaledcovs <- lapply(transcripts, function(tx) {
   tryCatch({
     ab <- quants$count[quants$transcript == tx]
     m <- predcovs[[tx]]$junctions
-    m$pred.cov <- m$pred.cov / sum(predcovs[[tx]]$pred.cov) * 
+    m$pred.cov <- m$pred.cov / max(1e-10, sum(predcovs[[tx]]$pred.cov)) * 
       ab * predcovs[[tx]]$avefraglength
     as.data.frame(m) %>% dplyr::mutate(transcript = tx)
   }, error = function(e) NULL)

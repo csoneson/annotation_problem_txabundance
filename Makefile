@@ -58,7 +58,8 @@ $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/$(notdir $(F))_gene_scores.rds)
 ## Prepare reference files and indexes
 prepref: $(txome) $(salmoncdnancrnaindex)/hash.bin $(salmoncdsindex)/hash.bin \
 $(kallistocdnancrnaindex) $(rsemcdnancrnaindex).n2g.idx.fa $(STARindex)/SA $(tx2gene) \
-$(bwacdnancrnaindex) $(heraindex)/index $(hisat2index).1.ht2 $(hisat2ss) $(rsemgene2tx)
+$(bwacdnancrnaindex) $(heraindex)/index $(hisat2index).1.ht2 $(hisat2ss) $(rsemgene2tx) \
+output/characterize_utrs.rds
 
 ## Align and quantify each sample
 quant: $(foreach F,$(fastqfiles),salmon/cDNAncRNA/$(notdir $(F))/quant.sf) \
@@ -387,4 +388,9 @@ gene_selection/$(1)/gene_characteristics.rds Rscripts/plot_score_distribution.R
 endef
 $(foreach F,$(fastqfiles),$(eval $(call plotscorerule,$(notdir $(F)))))
 
+## ==================================================================================== ##
+##                          characterize 3' UTRs                                        ##
+## ==================================================================================== ##
+output/characterize_utrs.rds: $(gtf) Rscripts/characterize_utrs.R
+	$(R) "--args gtf='$(gtf)' outrds='$@'" Rscripts/characterize_utrs.R Rout/characterize_utrs.Rout
 

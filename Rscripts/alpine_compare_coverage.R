@@ -5,7 +5,8 @@ for (i in 1:length(args)) {
 
 print(gene)  ## gene of interest, or file listing collection of genes (one per row)
 print(bigwig)  ## bigwig file for visualization
-print(genemodels)  ## gene models etc (output of alpine_prepare_for_comparison.R)
+print(genemodels)  ## gene models 
+print(combcovrds)  ## combined junction coverages
 print(ncores)  ## number of cores for parallel computations
 print(outdir)  ## output directory
 print(checkdir)  ## directory to write (empty) rds files (time stamps)
@@ -20,6 +21,7 @@ source("Rscripts/plot_tracks.R")
 ## Read gene models for Gviz plot (pregenerated from gtf to save time) and
 ## quantifications
 genemodels <- readRDS(genemodels)
+combcov <- readRDS(combcovrds)
 
 ## Determine which gene(s) to investigate
 if (file.exists(gene)) {
@@ -30,7 +32,7 @@ if (file.exists(gene)) {
 
 ## Investigate each gene
 mclapply(genes, function(currgene) {
-  jl <- genemodels$jcovscaled %>% dplyr::filter(gene == currgene)
+  jl <- combcov$jcovscaled %>% dplyr::filter(gene == currgene)
 
   pdf(paste0(outdir, "/plots/", currgene, ".pdf"), width = 12, height = 10)
   tryCatch({
@@ -58,14 +60,14 @@ mclapply(genes, function(currgene) {
               file = paste0(outdir, "/jcov/", currgene, "_jscaledcov.txt"),
               quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
   
-  write.table(genemodels$allquants %>% dplyr::filter(gene == currgene) %>% 
+  write.table(combcov$allquants %>% dplyr::filter(gene == currgene) %>% 
                 dplyr::select(transcript, method, TPM) %>%
                 dplyr::mutate(TPM = round(TPM, 2)) %>% 
                 tidyr::spread(method, TPM),
               file = paste0(outdir, "/tpm/", currgene, "_tpm.txt"),
               quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
   
-  write.table(genemodels$allquants %>% dplyr::filter(gene == currgene) %>% 
+  write.table(combcov$allquants %>% dplyr::filter(gene == currgene) %>% 
                 dplyr::select(transcript, method, count) %>%
                 dplyr::mutate(count = round(count, 2)) %>% 
                 tidyr::spread(method, count),

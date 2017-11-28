@@ -60,8 +60,7 @@ $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/$(notdir $(F))_gene_scores.rds)
 ## Prepare reference files and indexes
 prepref: $(txome) $(salmoncdnancrnaindex)/hash.bin $(salmoncdsindex)/hash.bin \
 $(kallistocdnancrnaindex) $(rsemcdnancrnaindex).n2g.idx.fa $(STARindex)/SA $(tx2gene) \
-$(bwacdnancrnaindex) $(heraindex)/index $(hisat2index).1.ht2 $(hisat2ss) $(rsemgene2tx) \
-output/characterize_utrs.rds
+$(bwacdnancrnaindex) $(heraindex)/index $(hisat2index).1.ht2 $(hisat2ss) $(rsemgene2tx)
 
 ## Align and quantify each sample
 quant: $(foreach F,$(fastqfiles),salmon/cDNAncRNA/$(notdir $(F))/quant.sf) \
@@ -78,7 +77,6 @@ $(foreach F,$(fastqfiles),hera/$(notdir $(F))/abundance.tsv)
 ## Prepare files for alpine
 alpineprep: $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_fitbiasmodel.rds) \
 $(foreach F,$(fastqfiles),gene_selection/$(notdir $(F))/genes_to_run.txt) \
-$(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_genemodels.rds) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_predicted_coverage.rds)
 
 scalecov: $(foreach M,$(quantmethods),$(foreach F,$(fastqfiles),alpine/$(notdir $(F))/scaled_junction_coverage_$(M).rds))
@@ -373,43 +371,34 @@ $(foreach F,$(fastqfiles),$(eval $(call combgexrule,$(notdir $(F)))))
 ##                            plot gene scores                                          ##
 ## ==================================================================================== ##
 define plotscorerule
-alpine/$(1)/$(1)_gene_scores.rds: alpine/$(1)/alpine_genemodels.rds \
-gene_selection/$(1)/gene_characteristics.rds Rscripts/plot_score_distribution.R
-	$(R) "--args genesummaryrds='$$(word 2,$$^)' genemodels='$$(word 1,$$^)' outrds='$$@'" Rscripts/plot_score_distribution.R Rout/plot_score_distribution_$(1).Rout
+alpine/$(1)/$(1)_gene_scores.rds: alpine/$(1)/alpine_gene_expression.rds \
+output/characterize_genes.rds alpine/$(1)/alpine_combined_coverages.rds Rscripts/plot_score_distribution.R
+	$(R) "--args covrds='$$(word 3,$$^)' gexrds='$$(word 1,$$^)' geneinfords='$$(word 2,$$^)' outrds='$$@'" Rscripts/plot_score_distribution.R Rout/plot_score_distribution_$(1).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call plotscorerule,$(notdir $(F)))))
 
 ## ==================================================================================== ##
 ##                            select genes and plot                                     ##
 ## ==================================================================================== ##
-## Summarize gene characteristics
-define genecharrule
-gene_selection/$(1)/gene_characteristics.rds: $(gtf) salmon/cDNAncRNA/$(1)/quant.sf \
-$(tx2geneext) Rscripts/summarize_gene_characteristics.R
-	mkdir -p $$(@D)
-	$(R) "--args quantsf='$$(word 2,$$^)' gtf='$$(word 1,$$^)' tx2gene='$$(word 3,$$^)' outrds='$$@'" Rscripts/summarize_gene_characteristics.R Rout/summarize_gene_characteristics_$(1).Rout
-endef
-$(foreach F,$(fastqfiles),$(eval $(call genecharrule,$(notdir $(F)))))
-
 ## Generate text file with genes to investigate further
 define genelistrule
-gene_selection/$(1)/genes_to_run.txt: gene_selection/$(1)/gene_characteristics.rds Rscripts/list_genes_to_run.R
-	$(R) "--args inrds='$$<' outtxt='$$@'" Rscripts/list_genes_to_run.R Rout/list_genes_to_run_$(1).Rout
+gene_selection/$(1)/genes_to_run.txt: alpine/$(1)/alpine_predicted_coverage.rds $(tx2geneext) Rscripts/list_genes_to_run.R
+	$(R) "--args inrds='$$<' tx2gene='$$(word 2,$$^)' outtxt='$$@'" Rscripts/list_genes_to_run.R Rout/list_genes_to_run_$(1).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call genelistrule,$(notdir $(F)))))
 
 ## Predict coverage and compare to observed junction coverage
 ## "gene" can be either a gene ID or a text file with a list of genes to investigate
 define alpinepredrule
-alpine_check/$(1)/$(notdir $(2)).rds: alpine/$(1)/alpine_genemodels.rds \
-STARbigwig/$(1)_Aligned.sortedByCoord.out.bw $(2) Rscripts/alpine_compare_coverage.R \
-Rscripts/plot_tracks.R
+alpine_check/$(1)/$(notdir $(2)).rds: $(gvizgenemodels) \
+STARbigwig/$(1)_Aligned.sortedByCoord.out.bw alpine/$(1)/alpine_combined_coverages.rds \
+$(2) Rscripts/alpine_compare_coverage.R Rscripts/plot_tracks.R
 	mkdir -p $$(@D)
 	mkdir -p alpine_out/$(1)/plots
 	mkdir -p alpine_out/$(1)/jcov
 	mkdir -p alpine_out/$(1)/tpm
 	mkdir -p alpine_out/$(1)/count	
-	$(R) "--args gene='$(2)' bigwig='$$(word 2,$$^)' ncores=$(3) genemodels='$$(word 1,$$^)' outdir='alpine_out/$(1)' checkdir='$$(@D)'" Rscripts/alpine_compare_coverage.R Rout/alpine_compare_coverage_$(1)_$(notdir $(2)).Rout
+	$(R) "--args gene='$(2)' bigwig='$$(word 2,$$^)' ncores=$(3) genemodels='$$(word 1,$$^)' combcovrds='$$(word 3,$$^)' outdir='alpine_out/$(1)' checkdir='$$(@D)'" Rscripts/alpine_compare_coverage.R Rout/alpine_compare_coverage_$(1)_$(notdir $(2)).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call alpinepredrule,$(notdir $(F)),gene_selection/$(notdir $(F))/genes_to_run.txt,25)))
 $(foreach F,$(fastqfiles),$(eval $(call alpinepredrule,$(notdir $(F)),gene_selection/$(notdir $(F))/subset_genes_to_run.txt,25)))

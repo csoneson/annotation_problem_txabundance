@@ -26,9 +26,12 @@ tx2gene$gene <- gsub("\\.[0-9]+", "", tx2gene$gene)
 transcripts <- names(predcovs)
 names(transcripts) <- transcripts
 
+## Go through all transcripts and scale predicted junction coverage by the
+## estimated abundance
 scaledcovs <- lapply(transcripts, function(tx) {
   tryCatch({
     ab <- quants$count[quants$transcript == tx]
+    if (is.na(ab)) ab <- 0
     m <- predcovs[[tx]]$junctions
     m$pred.cov <- m$pred.cov / max(1e-10, sum(predcovs[[tx]]$pred.cov)) * 
       ab * predcovs[[tx]]$avefraglength
@@ -36,10 +39,14 @@ scaledcovs <- lapply(transcripts, function(tx) {
   }, error = function(e) NULL)
 })
 
+## Combine estimates for all transcripts
 allcovs <- do.call(rbind, scaledcovs)
 if (strandspec == "no") {
   allcovs$strand <- "*"
 }
+
+## Add coverages of the same junction from different transcripts. Each junction
+## is present once per gene it is included in.
 allcovs <- allcovs %>%
   dplyr::group_by(seqnames, start, end, strand) %>%
   dplyr::mutate(pred.cov = sum(pred.cov)) %>%
@@ -51,6 +58,7 @@ allcovs <- allcovs %>%
   dplyr::distinct() %>% 
   dplyr::mutate(method = method)
 
+## Add gene info to transcript quant table
 quants <- quants %>% dplyr::left_join(tx2gene %>% dplyr::select(tx, gene, symbol), 
                                       by = c("transcript" = "tx")) %>%
   dplyr::mutate(method = method) %>% 

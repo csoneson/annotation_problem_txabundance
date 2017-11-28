@@ -31,7 +31,7 @@ Type 'q()' to quit R.
 > print(strandspec)  ## "yes" or "no"
 [1] "yes"
 > print(tx2gene)  ## link transcripts to genes
-[1] "reference/Homo_sapiens.GRCh38.90_tx2gene.rds"
+[1] "reference/Homo_sapiens.GRCh38.90_tx2gene_ext.rds"
 > print(method)  ## method ID to add to the quantification table
 [1] "StringTie"
 > print(outrds)  ## output file
@@ -55,9 +55,12 @@ Joining, by = "transcript_id"
 > transcripts <- names(predcovs)
 > names(transcripts) <- transcripts
 > 
+> ## Go through all transcripts and scale predicted junction coverage by the
+> ## estimated abundance
 > scaledcovs <- lapply(transcripts, function(tx) {
 +   tryCatch({
 +     ab <- quants$count[quants$transcript == tx]
++     if (is.na(ab)) ab <- 0
 +     m <- predcovs[[tx]]$junctions
 +     m$pred.cov <- m$pred.cov / max(1e-10, sum(predcovs[[tx]]$pred.cov)) * 
 +       ab * predcovs[[tx]]$avefraglength
@@ -65,4 +68,5 @@ Joining, by = "transcript_id"
 +   }, error = function(e) NULL)
 + })
 > 
+> ## Combine estimates for all transcripts
 > allcovs <- do.call(rbind, scaledcovs)

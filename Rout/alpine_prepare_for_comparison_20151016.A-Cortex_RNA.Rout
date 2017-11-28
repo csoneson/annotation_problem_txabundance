@@ -228,8 +228,8 @@ loaded via a namespace (and not attached):
 [81] Rcpp_0.12.13                  rpart_4.1-11                 
 [83] acepack_1.4.1                
 > date()
-[1] "Mon Nov 20 14:31:57 2017"
+[1] "Thu Nov 23 22:49:22 2017"
 > 
 > proc.time()
    user  system elapsed 
-562.505  13.302 577.353 
+535.244   7.126 543.692 

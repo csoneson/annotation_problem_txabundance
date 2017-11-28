@@ -1,0 +1,104 @@
+
+R version 3.4.0 (2017-04-21) -- "You Stupid Darkness"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> args <- (commandArgs(trailingOnly = TRUE))
+> for (i in 1:length(args)) {
++   eval(parse(text = args[[i]]))
++ }
+> 
+> print(tx2gene)
+[1] "reference/Homo_sapiens.GRCh38.90_tx2gene.rds"
+> print(gtf)
+[1] "/home/Shared/data/annotation/Human/Ensembl_GRCh38.90/gtf/Homo_sapiens.GRCh38.90.gtf"
+> print(outrds)
+[1] "reference/Homo_sapiens.GRCh38.90_tx2gene_ext.rds"
+> 
+> suppressPackageStartupMessages(library(rtracklayer))
+> suppressPackageStartupMessages(library(dplyr))
+> 
+> ## Extend tx2gene with the transcripts only included in the gtf file
+> 
+> tx2gene <- readRDS(tx2gene)
+> gtf <- import(gtf)
+> 
+> gtfsub <- as.data.frame(gtf) %>% dplyr::filter(type == "transcript") %>%
++   dplyr::select(transcript_id, transcript_version, gene_id, gene_version, 
++                gene_name, gene_biotype, transcript_biotype) %>%
++   dplyr::mutate(transcript_id = paste0(transcript_id, ".", transcript_version),
++                 gene_id = paste0(gene_id, ".", gene_version)) %>%
++   dplyr::select(-transcript_version, -gene_version) %>%
++   dplyr::rename(tx_biotype = transcript_biotype,
++                 tx = transcript_id, 
++                 gene = gene_id,
++                 symbol = gene_name) %>%
++   dplyr::select(tx, gene, symbol, gene_biotype, tx_biotype)
+> 
+> tx2gene <- tx2gene %>% dplyr::select(tx, gene, symbol, gene_biotype, tx_biotype)
+> 
+> tx2gene <- rbind(tx2gene, gtfsub) %>% dplyr::distinct()
+> 
+> saveRDS(tx2gene, file = outrds)
+> 
+> sessionInfo()
+R version 3.4.0 (2017-04-21)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 14.04.5 LTS
+
+Matrix products: default
+BLAS: /usr/local/R/R-3.4.0/lib/libRblas.so
+LAPACK: /usr/local/R/R-3.4.0/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=en_CA.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=en_CA.UTF-8        LC_COLLATE=en_CA.UTF-8    
+ [5] LC_MONETARY=en_CA.UTF-8    LC_MESSAGES=en_CA.UTF-8   
+ [7] LC_PAPER=en_CA.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=en_CA.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] parallel  stats4    stats     graphics  grDevices utils     datasets 
+[8] methods   base     
+
+other attached packages:
+[1] bindrcpp_0.2         dplyr_0.7.4          rtracklayer_1.36.4  
+[4] GenomicRanges_1.28.5 GenomeInfoDb_1.12.2  IRanges_2.10.3      
+[7] S4Vectors_0.14.5     BiocGenerics_0.22.0 
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_0.12.13               magrittr_1.5              
+ [3] bindr_0.1                  XVector_0.16.0            
+ [5] zlibbioc_1.22.0            GenomicAlignments_1.12.2  
+ [7] BiocParallel_1.10.1        lattice_0.20-35           
+ [9] R6_2.2.2                   rlang_0.1.2               
+[11] tools_3.4.0                SummarizedExperiment_1.6.5
+[13] grid_3.4.0                 Biobase_2.36.2            
+[15] matrixStats_0.52.2         assertthat_0.2.0          
+[17] tibble_1.3.4               Matrix_1.2-11             
+[19] GenomeInfoDbData_0.99.0    bitops_1.0-6              
+[21] RCurl_1.95-4.8             glue_1.1.1                
+[23] DelayedArray_0.2.7         compiler_3.4.0            
+[25] Biostrings_2.44.2          Rsamtools_1.28.0          
+[27] XML_3.98-1.9               pkgconfig_2.0.1           
+> date()
+[1] "Tue Nov 28 14:15:58 2017"
+> 
+> proc.time()
+   user  system elapsed 
+ 63.039   2.046  65.135 

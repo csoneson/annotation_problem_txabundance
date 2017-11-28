@@ -31,7 +31,7 @@ Type 'q()' to quit R.
 > print(strandspec)  ## "yes" or "no"
 [1] "yes"
 > print(tx2gene)  ## link transcripts to genes
-[1] "reference/Homo_sapiens.GRCh38.90_tx2gene.rds"
+[1] "reference/Homo_sapiens.GRCh38.90_tx2gene_ext.rds"
 > print(method)  ## method ID to add to the quantification table
 [1] "SalmonCDS"
 > print(outrds)  ## output file
@@ -54,9 +54,12 @@ package ‘alpine’ was built under R version 3.4.2
 > transcripts <- names(predcovs)
 > names(transcripts) <- transcripts
 > 
+> ## Go through all transcripts and scale predicted junction coverage by the
+> ## estimated abundance
 > scaledcovs <- lapply(transcripts, function(tx) {
 +   tryCatch({
 +     ab <- quants$count[quants$transcript == tx]
++     if (is.na(ab)) ab <- 0
 +     m <- predcovs[[tx]]$junctions
 +     m$pred.cov <- m$pred.cov / max(1e-10, sum(predcovs[[tx]]$pred.cov)) * 
 +       ab * predcovs[[tx]]$avefraglength
@@ -64,10 +67,14 @@ package ‘alpine’ was built under R version 3.4.2
 +   }, error = function(e) NULL)
 + })
 > 
+> ## Combine estimates for all transcripts
 > allcovs <- do.call(rbind, scaledcovs)
 > if (strandspec == "no") {
 +   allcovs$strand <- "*"
 + }
+> 
+> ## Add coverages of the same junction from different transcripts. Each junction
+> ## is present once per gene it is included in.
 > allcovs <- allcovs %>%
 +   dplyr::group_by(seqnames, start, end, strand) %>%
 +   dplyr::mutate(pred.cov = sum(pred.cov)) %>%
@@ -79,6 +86,7 @@ package ‘alpine’ was built under R version 3.4.2
 +   dplyr::distinct() %>% 
 +   dplyr::mutate(method = method)
 > 
+> ## Add gene info to transcript quant table
 > quants <- quants %>% dplyr::left_join(tx2gene %>% dplyr::select(tx, gene, symbol), 
 +                                       by = c("transcript" = "tx")) %>%
 +   dplyr::mutate(method = method) %>% 
@@ -139,8 +147,8 @@ loaded via a namespace (and not attached):
 [49] assertthat_0.2.0           SummarizedExperiment_1.6.5
 [51] stringi_1.1.5              RCurl_1.95-4.8            
 > date()
-[1] "Thu Nov 23 21:58:44 2017"
+[1] "Tue Nov 28 15:07:08 2017"
 > 
 > proc.time()
     user   system  elapsed 
-3766.558  212.996 4018.976 
+2917.617  122.521 3069.981 

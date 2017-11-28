@@ -35,6 +35,8 @@ heraindex := reference/hera/Homo_sapiens.GRCh38
 hisat2ss := reference/hisat2splicesites.txt
 tx2gene := reference/Homo_sapiens.GRCh38.90_tx2gene.rds
 rsemgene2tx := reference/Homo_sapiens.GRCh38.90_gene2tx.txt
+tx2geneext := reference/Homo_sapiens.GRCh38.90_tx2gene_ext.rds
+gvizgenemodels := reference/Homo_sapiens.GRCh38.90_gviz_genemodels.rds
 
 ## List FASTQ files (without the _{R1,R2}.fastq.gz part)
 fastqfiles := \
@@ -79,7 +81,7 @@ $(foreach F,$(fastqfiles),gene_selection/$(notdir $(F))/genes_to_run.txt) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_genemodels.rds) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_predicted_coverage.rds)
 
-scalecov: $(foreach M,quantmethods,$(foreach F,$(fastqfiles),alpine/$(notdir $(F))/scaled_junction_coverage_$(M)))
+scalecov: $(foreach M,$(quantmethods),$(foreach F,$(fastqfiles),alpine/$(notdir $(F))/scaled_junction_coverage_$(M).rds))
 
 ## subset_genes_to_run.txt is a manually created file, which can be used to test a few genes
 sumsub: $(foreach F,$(fastqfiles),alpine_check/$(notdir $(F))/subset_genes_to_run.txt.rds)
@@ -93,6 +95,9 @@ $(txome): $(cdna) $(ncrna)
 ## Generate tx2gene
 $(tx2gene): $(cdna) $(cds) $(ncrna) Rscripts/generate_tx2gene.R
 	$(R) "--args cdna='$(word 1,$^)' cds='$(word 2,$^)' ncrna='$(word 3,$^)' outrds='$@'" Rscripts/generate_tx2gene.R Rout/generate_tx2gene.Rout 
+
+$(tx2geneext): $(tx2gene) $(gtf) Rscripts/extend_tx2gene.R
+	$(R) "--args tx2gene='$(tx2gene)' gtf='$(gtf)' outrds='$@'" Rscripts/extend_tx2gene.R Rout/extend_tx2gene.Rout
 
 $(rsemgene2tx): $(tx2gene) Rscripts/generate_rsemgene2tx.R
 	$(R) "--args tx2gene='$(tx2gene)' rsemgene2tx='$@'" Rscripts/generate_rsemgene2tx.R Rout/generate_rsemgene2tx.Rout
@@ -143,6 +148,11 @@ $(bwacdnancrnaindex): $(txome)
 $(heraindex)/index: $(genome) $(gtf)
 	mkdir -p $(@D)
 	$(hera_build) --fasta $(genome) --gtf $(gtf) --outdir $(@D)/
+
+## Gene models for Gviz
+$(gvizgenemodels): $(gtf) Rscripts/generate_genemodels.R Rscripts/plot_tracks.R
+	$(R) "--args gtf='$(gtf)' outrds='$@'" Rscripts/generate_genemodels.R Rout/generate_genemodels.Rout
+
 
 ## ==================================================================================== ##
 ##                                      HERA                                            ##
@@ -285,26 +295,7 @@ endef
 $(foreach F,$(fastqfiles),$(eval $(call bwrule,$(F))))
 
 ## ==================================================================================== ##
-##                               select genes                                           ##
-## ==================================================================================== ##
-## Summarize gene characteristics
-define genecharrule
-gene_selection/$(1)/gene_characteristics.rds: $(gtf) salmon/cDNAncRNA/$(1)/quant.sf \
-$(tx2gene) Rscripts/summarize_gene_characteristics.R
-	mkdir -p $$(@D)
-	$(R) "--args quantsf='$$(word 2,$$^)' gtf='$$(word 1,$$^)' tx2gene='$$(word 3,$$^)' outrds='$$@'" Rscripts/summarize_gene_characteristics.R Rout/summarize_gene_characteristics_$(1).Rout
-endef
-$(foreach F,$(fastqfiles),$(eval $(call genecharrule,$(notdir $(F)))))
-
-## Generate text file with genes to investigate further
-define genelistrule
-gene_selection/$(1)/genes_to_run.txt: gene_selection/$(1)/gene_characteristics.rds Rscripts/list_genes_to_run.R
-	$(R) "--args inrds='$$<' outtxt='$$@'" Rscripts/list_genes_to_run.R Rout/list_genes_to_run_$(1).Rout
-endef
-$(foreach F,$(fastqfiles),$(eval $(call genelistrule,$(notdir $(F)))))
-
-## ==================================================================================== ##
-##                                   alpine                                             ##
+##                estimate and combine transcript/junction coverages                    ##
 ## ==================================================================================== ##
 ## Fit bias model
 define fitbiasrule
@@ -316,7 +307,8 @@ endef
 $(eval $(call fitbiasrule,20151016.A-Cortex_RNA,126,100,300))
 $(eval $(call fitbiasrule,20170918.A-WT_4,151,140,450))
 
-## Predict transcript and junction coverage
+## Predict transcript and junction coverage profiles for all transcripts that have at least one 
+## junction and are longer than the fragment length
 define predcovrule
 alpine/$(1)/alpine_predicted_coverage.rds: alpine/$(1)/alpine_fitbiasmodel.rds \
 STAR/$(1)/$(1)_Aligned.sortedByCoord.out.bam Rscripts/alpine_get_predicted_coverage.R
@@ -328,9 +320,9 @@ $(foreach F,$(fastqfiles),$(eval $(call predcovrule,$(notdir $(F)),32)))
 ## Scale junction coverage by transcript abundance estimates for each method
 define juncscalerule
 alpine/$(1)/scaled_junction_coverage_$(2).rds: alpine/$(1)/alpine_predicted_coverage.rds \
-$(3) $(4) $(tx2gene) Rscripts/alpine_scale_junction_coverage.R
+$(3) $(4) $(tx2geneext) Rscripts/alpine_scale_junction_coverage.R
 	mkdir -p $$(@D)
-	$(R) "--args predcovrds='$$(word 1,$$^)' txquants='$(3)' quantreadscript='$(4)' tx2gene='$(tx2gene)' strandspec='$(5)' method='$(2)' outrds='$$@'" Rscripts/alpine_scale_junction_coverage.R Rout/alpine_scale_junction_coverage_$(1)_$(2).Rout
+	$(R) "--args predcovrds='$$(word 1,$$^)' txquants='$(3)' quantreadscript='$(4)' tx2gene='$(tx2geneext)' strandspec='$(5)' method='$(2)' outrds='$$@'" Rscripts/alpine_scale_junction_coverage.R Rout/alpine_scale_junction_coverage_$(1)_$(2).Rout
 endef
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,Salmon,salmon/cDNAncRNA/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,SalmonBWA,salmonbwa/cDNAncRNA/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,yes))
@@ -349,18 +341,62 @@ $(eval $(call juncscalerule,20170918.A-WT_4,hera,hera/20170918.A-WT_4/abundance.
 $(eval $(call juncscalerule,20170918.A-WT_4,StringTie,stringtie_onlyref/20170918.A-WT_4/20170918.A-WT_4.gtf,Rscripts/read_quant_stringtie.R,yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,SalmonMinimap2Nanopore,/home/Shared/data/seq/hussain_bath_nanopore_rnaseq/NSK007/salmonminimap2/SS2_wt_1/quant.sf,Rscripts/read_quant_salmon.R,no))
 
-## Prepare reference files
-define alpinerefrule
-alpine/$(1)/alpine_genemodels.rds: $(gtf) STAR/$(1)/$(1)_Aligned.sortedByCoord.out.bam \
+## Combined coverages for all methods
+define combcovrule
+alpine/$(1)/alpine_combined_coverages.rds: STAR/$(1)/$(1)_Aligned.sortedByCoord.out.bam \
 alpine/$(1)/scaled_junction_coverage_Salmon.rds alpine/$(1)/scaled_junction_coverage_hera.rds \
 alpine/$(1)/scaled_junction_coverage_RSEM.rds alpine/$(1)/scaled_junction_coverage_StringTie.rds \
 alpine/$(1)/scaled_junction_coverage_SalmonBWA.rds alpine/$(1)/scaled_junction_coverage_kallisto.rds \
-alpine/$(1)/scaled_junction_coverage_SalmonCDS.rds Rscripts/alpine_prepare_for_comparison.R Rscripts/plot_tracks.R $(2)
+alpine/$(1)/scaled_junction_coverage_SalmonCDS.rds Rscripts/alpine_combine_scaled_coverages.R $(2)
 	mkdir -p $$(@D)
-	$(R) "--args gtf='$(gtf)' junctioncovSTAR='STAR/$(1)/$(1)_SJ.out.tab' junctioncovSalmon='$$(word 3,$$^)' junctioncovSalmonBWA='$$(word 7,$$^)' junctioncovSalmonCDS='$$(word 9,$$^)' junctioncovNanopore='$(2)' junctioncovhera='$$(word 4,$$^)' junctioncovkallisto='$$(word 8,$$^)' junctioncovRSEM='$$(word 5,$$^)' junctioncovStringTie='$$(word 6,$$^)' outrds='$$@'" Rscripts/alpine_prepare_for_comparison.R Rout/alpine_prepare_for_comparison_$(1).Rout
+	$(R) "--args junctioncovSTAR='STAR/$(1)/$(1)_SJ.out.tab' junctioncovSalmon='$$(word 2,$$^)' junctioncovSalmonBWA='$$(word 6,$$^)' junctioncovSalmonCDS='$$(word 8,$$^)' junctioncovNanopore='$(2)' junctioncovhera='$$(word 3,$$^)' junctioncovkallisto='$$(word 7,$$^)' junctioncovRSEM='$$(word 4,$$^)' junctioncovStringTie='$$(word 5,$$^)' outrds='$$@'" Rscripts/alpine_combine_scaled_coverages.R Rout/alpine_combine_scaled_coverages_$(1).Rout
 endef
-$(eval $(call alpinerefrule,20151016.A-Cortex_RNA,))
-$(eval $(call alpinerefrule,20170918.A-WT_4,alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonMinimap2Nanopore.rds))
+$(eval $(call combcovrule,20151016.A-Cortex_RNA,))
+$(eval $(call combcovrule,20170918.A-WT_4,alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonMinimap2Nanopore.rds))
+
+## ==================================================================================== ##
+##                            characterize genes                                        ##
+## ==================================================================================== ##
+## From annotation
+output/characterize_genes.rds: $(gtf) $(txome) Rscripts/characterize_genes.R
+	$(R) "--args gtf='$(gtf)' txome='$(txome)' outrds='$@'" Rscripts/characterize_genes.R Rout/characterize_genes.Rout
+
+## Summarize gene expression from all methods
+define combgexrule
+alpine/$(1)/alpine_gene_expression.rds: alpine/$(1)/alpine_combined_coverages.rds \
+Rscripts/combine_gene_expression_estimates.R
+	$(R) "--args combcovrds='$$(word 1,$$^)' outrds='$$@'" Rscripts/combine_gene_expression_estimates.R Rout/combine_gene_expression_estimates_$(1).Rout
+endef
+$(foreach F,$(fastqfiles),$(eval $(call combgexrule,$(notdir $(F)))))
+
+## ==================================================================================== ##
+##                            plot gene scores                                          ##
+## ==================================================================================== ##
+define plotscorerule
+alpine/$(1)/$(1)_gene_scores.rds: alpine/$(1)/alpine_genemodels.rds \
+gene_selection/$(1)/gene_characteristics.rds Rscripts/plot_score_distribution.R
+	$(R) "--args genesummaryrds='$$(word 2,$$^)' genemodels='$$(word 1,$$^)' outrds='$$@'" Rscripts/plot_score_distribution.R Rout/plot_score_distribution_$(1).Rout
+endef
+$(foreach F,$(fastqfiles),$(eval $(call plotscorerule,$(notdir $(F)))))
+
+## ==================================================================================== ##
+##                            select genes and plot                                     ##
+## ==================================================================================== ##
+## Summarize gene characteristics
+define genecharrule
+gene_selection/$(1)/gene_characteristics.rds: $(gtf) salmon/cDNAncRNA/$(1)/quant.sf \
+$(tx2geneext) Rscripts/summarize_gene_characteristics.R
+	mkdir -p $$(@D)
+	$(R) "--args quantsf='$$(word 2,$$^)' gtf='$$(word 1,$$^)' tx2gene='$$(word 3,$$^)' outrds='$$@'" Rscripts/summarize_gene_characteristics.R Rout/summarize_gene_characteristics_$(1).Rout
+endef
+$(foreach F,$(fastqfiles),$(eval $(call genecharrule,$(notdir $(F)))))
+
+## Generate text file with genes to investigate further
+define genelistrule
+gene_selection/$(1)/genes_to_run.txt: gene_selection/$(1)/gene_characteristics.rds Rscripts/list_genes_to_run.R
+	$(R) "--args inrds='$$<' outtxt='$$@'" Rscripts/list_genes_to_run.R Rout/list_genes_to_run_$(1).Rout
+endef
+$(foreach F,$(fastqfiles),$(eval $(call genelistrule,$(notdir $(F)))))
 
 ## Predict coverage and compare to observed junction coverage
 ## "gene" can be either a gene ID or a text file with a list of genes to investigate
@@ -377,20 +413,4 @@ Rscripts/plot_tracks.R
 endef
 $(foreach F,$(fastqfiles),$(eval $(call alpinepredrule,$(notdir $(F)),gene_selection/$(notdir $(F))/genes_to_run.txt,25)))
 $(foreach F,$(fastqfiles),$(eval $(call alpinepredrule,$(notdir $(F)),gene_selection/$(notdir $(F))/subset_genes_to_run.txt,25)))
-
-## ==================================================================================== ##
-##                            plot gene scores                                          ##
-## ==================================================================================== ##
-define plotscorerule
-alpine/$(1)/$(1)_gene_scores.rds: alpine/$(1)/alpine_genemodels.rds \
-gene_selection/$(1)/gene_characteristics.rds Rscripts/plot_score_distribution.R
-	$(R) "--args genesummaryrds='$$(word 2,$$^)' genemodels='$$(word 1,$$^)' outrds='$$@'" Rscripts/plot_score_distribution.R Rout/plot_score_distribution_$(1).Rout
-endef
-$(foreach F,$(fastqfiles),$(eval $(call plotscorerule,$(notdir $(F)))))
-
-## ==================================================================================== ##
-##                          characterize 3' UTRs                                        ##
-## ==================================================================================== ##
-output/characterize_utrs.rds: $(gtf) Rscripts/characterize_utrs.R
-	$(R) "--args gtf='$(gtf)' outrds='$@'" Rscripts/characterize_utrs.R Rout/characterize_utrs.Rout
 

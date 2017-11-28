@@ -34,39 +34,66 @@ Type 'q()' to quit R.
 > 
 > gsr <- readRDS(genesummaryrds)
 > x <- readRDS(genemodels)
-> jcovscaled <- x$jcovscaled
+> jcovscaled <- x$jcovscaled %>% dplyr::filter(!is.na(gene))
 > 
-> pdf(gsub("rds$", "pdf", outrds))
-> tmp1 <- gsr %>% dplyr::filter(maxnbrex > 1 & 
-+                                 count > 1000 & 
-+                                 maxlength > 350)
-> tmp1 <- jcovscaled %>% dplyr::filter(gene %in% tmp1$gene)
-> print(ggplot(tmp1 %>% dplyr::select(gene, method, score) %>% dplyr::distinct(), 
+> ## Create gene information table
+> gene_groups <- gsr %>% dplyr::mutate(all_genes = 1) %>% 
++   dplyr::mutate(high_expression = as.numeric(count > 1000))
+> 
+> ## Get the score for each gene
+> gene_scores <- jcovscaled %>% dplyr::select(gene, method, score) %>% 
++   dplyr::distinct()
+> 
+> ## Put information together
+> gene_plot <- gene_scores %>% dplyr::left_join(
++   gene_groups %>% dplyr::select(gene, all_genes, high_expression) %>%
++     tidyr::gather(group, included, -gene) %>% dplyr::filter(included == 1)
++ )
+Joining, by = "gene"
+> 
+> pdf(gsub("rds$", "pdf", outrds), width = 14)
+> print(ggplot(gene_plot, 
 +              aes(x = score, color = method)) + geom_density() + theme_bw() + 
-+         ggtitle("Score distribution, max nbr exons > 1, count > 1000, max length > 350") + 
++         ggtitle("Score distribution") + facet_wrap(~ group) + 
 +         scale_color_manual(values = c("#DC050C", "#7BAFDE", "#B17BA6", "#F1932D",
 +                                       "#4EB265", "#CAEDAB", "#777777", "#E8601C",
 +                                       "#1965B0", "#882E72", "#F6C141", "#F7EE55",
 +                                       "#90C987")[seq_len(length(unique(jcovscaled$method)))]))
 Warning message:
-Removed 245 rows containing non-finite values (stat_density). 
-> print(ggplot(tmp1 %>% dplyr::select(gene, method, score) %>% dplyr::distinct(), 
-+              aes(x = method, y = score, color = method)) + geom_boxplot() + theme_bw() + 
+Removed 88199 rows containing non-finite values (stat_density). 
+> print(ggplot(gene_plot, 
++              aes(x = score, color = group)) + geom_density() + theme_bw() + 
++         ggtitle("Score distribution") + facet_wrap(~ method))
+Warning message:
+Removed 88199 rows containing non-finite values (stat_density). 
+> print(ggplot(gene_plot, 
++              aes(x = method, y = score, color = method)) + geom_violin() + theme_bw() + 
 +         theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) + 
-+         ggtitle("Score distribution, max nbr exons > 1, count > 1000, max length > 350") + 
++         ggtitle("Score distribution") + facet_wrap(~ group) +  
 +         scale_color_manual(values = c("#DC050C", "#7BAFDE", "#B17BA6", "#F1932D",
 +                                       "#4EB265", "#CAEDAB", "#777777", "#E8601C",
 +                                       "#1965B0", "#882E72", "#F6C141", "#F7EE55",
 +                                       "#90C987")[seq_len(length(unique(jcovscaled$method)))]))
 Warning message:
-Removed 245 rows containing non-finite values (stat_boxplot). 
+Removed 88199 rows containing non-finite values (stat_ydensity). 
+> print(ggplot(gene_plot, 
++              aes(x = group, y = score, color = method)) + geom_violin() + theme_bw() + 
++         theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) + 
++         ggtitle("Score distribution") + facet_wrap(~ method) +  
++         scale_color_manual(values = c("#DC050C", "#7BAFDE", "#B17BA6", "#F1932D",
++                                       "#4EB265", "#CAEDAB", "#777777", "#E8601C",
++                                       "#1965B0", "#882E72", "#F6C141", "#F7EE55",
++                                       "#90C987")[seq_len(length(unique(jcovscaled$method)))]))
+Warning message:
+Removed 88199 rows containing non-finite values (stat_ydensity). 
 > ## Rank distribution (1 is best)
-> print(ggplot(tmp1 %>% dplyr::select(gene, method, score) %>% dplyr::distinct() %>% 
+> print(ggplot(gene_plot %>% 
 +                dplyr::mutate(score = replace(score, is.na(score), 10)) %>% 
-+                dplyr::group_by(gene) %>% dplyr::mutate(rank = rank(score)) %>%
++                dplyr::group_by(gene, group) %>% dplyr::mutate(rank = rank(score)) %>%
 +                dplyr::mutate(keep = !(var(rank) == 0)) %>% dplyr::filter(keep), 
-+              aes(x = rank)) + geom_bar() + facet_wrap(~method) + theme_bw() + 
-+         ggtitle("Rank distribution, max nbr exons > 1, count > 1000, max length > 350"))
++              aes(x = rank)) + geom_bar() + 
++         facet_grid(group ~ method, scales = "free_y") + theme_bw() + 
++         ggtitle("Rank distribution"))
 > 
 > dev.off()
 null device 
@@ -97,14 +124,16 @@ other attached packages:
 [1] bindrcpp_0.2  ggplot2_2.2.1 dplyr_0.7.4  
 
 loaded via a namespace (and not attached):
- [1] Rcpp_0.12.13     digest_0.6.12    assertthat_0.2.0 plyr_1.8.4      
- [5] grid_3.4.0       R6_2.2.2         gtable_0.2.0     magrittr_1.5    
- [9] scales_0.5.0     rlang_0.1.2      lazyeval_0.2.0   labeling_0.3    
-[13] glue_1.1.1       munsell_0.4.3    compiler_3.4.0   pkgconfig_2.0.1 
-[17] colorspace_1.3-2 bindr_0.1        tibble_1.3.4    
+ [1] Rcpp_0.12.13     bindr_0.1        magrittr_1.5     tidyselect_0.2.0
+ [5] munsell_0.4.3    colorspace_1.3-2 R6_2.2.2         rlang_0.1.2     
+ [9] stringr_1.2.0    plyr_1.8.4       tools_3.4.0      grid_3.4.0      
+[13] gtable_0.2.0     lazyeval_0.2.0   assertthat_0.2.0 digest_0.6.12   
+[17] tibble_1.3.4     purrr_0.2.3      reshape2_1.4.2   tidyr_0.7.1     
+[21] glue_1.1.1       labeling_0.3     stringi_1.1.5    compiler_3.4.0  
+[25] scales_0.5.0     pkgconfig_2.0.1 
 > date()
-[1] "Mon Nov 20 20:44:04 2017"
+[1] "Tue Nov 28 11:57:08 2017"
 > 
 > proc.time()
    user  system elapsed 
- 42.591   0.651  43.368 
+ 60.651   2.004  62.715 

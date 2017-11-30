@@ -241,6 +241,7 @@ define rsemrule
 $(3)/$(notdir $(1))/$(notdir $(1)).isoforms.results: $(2).n2g.idx.fa $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
 	bash -c '$(RSEM)/rsem-calculate-expression -p 10 --bowtie-path /usr/bin --paired-end <(gunzip -c $(1)_R1.fastq.gz) <(gunzip -c $(1)_R2.fastq.gz) $(2) $(3)/$(notdir $(1))/$(notdir $(1))'
+	rm -f $(3)/$(notdir $(1))/$(notdir $(1)).transcript.bam
 endef
 $(foreach F,$(fastqfiles),$(eval $(call rsemrule,$(F),$(rsemcdnancrnaindex),RSEM/cDNAncRNA)))
 

@@ -22,17 +22,74 @@ Type 'q()' to quit R.
 +   eval(parse(text = args[[i]]))
 + }
 > 
-> print(inrds)
-[1] "gene_selection/20170918.A-WT_4/gene_characteristics.rds"
+> print(inrds)  ## output from alpine_get_predicted_coverage.R
+[1] "alpine/20170918.A-WT_4/alpine_predicted_coverage.rds"
+> print(tx2gene)
+[1] "reference/Homo_sapiens.GRCh38.90_tx2gene_ext.rds"
 > print(outtxt)
 [1] "gene_selection/20170918.A-WT_4/genes_to_run.txt"
 > 
 > suppressPackageStartupMessages(library(dplyr))
 > 
-> x <- readRDS(inrds) %>% dplyr::filter(maxnbrex > 1 & 
-+                                         count > 1000 & 
-+                                         maxlength > 350)
-> write.table(x$gene, file = outtxt, row.names = FALSE, col.names = FALSE, 
+> x <- readRDS(inrds)
+> ## Keep only transcripts with at least one junction
+> x <- x[sapply(x, function(w) length(w$junctions)) > 0]
+Loading required package: GenomicRanges
+Loading required package: stats4
+Loading required package: BiocGenerics
+Loading required package: parallel
+
+Attaching package: ‘BiocGenerics’
+
+The following objects are masked from ‘package:parallel’:
+
+    clusterApply, clusterApplyLB, clusterCall, clusterEvalQ,
+    clusterExport, clusterMap, parApply, parCapply, parLapply,
+    parLapplyLB, parRapply, parSapply, parSapplyLB
+
+The following objects are masked from ‘package:dplyr’:
+
+    combine, intersect, setdiff, union
+
+The following objects are masked from ‘package:stats’:
+
+    IQR, mad, sd, var, xtabs
+
+The following objects are masked from ‘package:base’:
+
+    anyDuplicated, append, as.data.frame, cbind, colMeans, colnames,
+    colSums, do.call, duplicated, eval, evalq, Filter, Find, get, grep,
+    grepl, intersect, is.unsorted, lapply, lengths, Map, mapply, match,
+    mget, order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
+    rbind, Reduce, rowMeans, rownames, rowSums, sapply, setdiff, sort,
+    table, tapply, union, unique, unsplit, which, which.max, which.min
+
+Loading required package: S4Vectors
+
+Attaching package: ‘S4Vectors’
+
+The following objects are masked from ‘package:dplyr’:
+
+    first, rename
+
+The following object is masked from ‘package:base’:
+
+    expand.grid
+
+Loading required package: IRanges
+
+Attaching package: ‘IRanges’
+
+The following objects are masked from ‘package:dplyr’:
+
+    collapse, desc, slice
+
+Loading required package: GenomeInfoDb
+> tx2gene <- readRDS(tx2gene) %>% dplyr::mutate(tx = gsub("\\.[0-9]+$", "", tx),
++                                               gene = gsub("\\.[0-9]+$", "", gene))
+> genes <- unique(tx2gene$gene[match(names(x), tx2gene$tx)])
+> 
+> write.table(genes, file = outtxt, row.names = FALSE, col.names = FALSE, 
 +             sep = "\t", quote = FALSE)
 > 
 > sessionInfo()
@@ -53,18 +110,23 @@ locale:
 [11] LC_MEASUREMENT=en_CA.UTF-8 LC_IDENTIFICATION=C       
 
 attached base packages:
-[1] stats     graphics  grDevices utils     datasets  methods   base     
+[1] parallel  stats4    stats     graphics  grDevices utils     datasets 
+[8] methods   base     
 
 other attached packages:
-[1] bindrcpp_0.2 dplyr_0.7.4 
+[1] bindrcpp_0.2         GenomicRanges_1.28.5 GenomeInfoDb_1.12.2 
+[4] IRanges_2.10.3       S4Vectors_0.14.5     BiocGenerics_0.22.0 
+[7] dplyr_0.7.4         
 
 loaded via a namespace (and not attached):
- [1] compiler_3.4.0   magrittr_1.5     assertthat_0.2.0 R6_2.2.2        
- [5] glue_1.1.1       tibble_1.3.4     Rcpp_0.12.13     pkgconfig_2.0.1 
- [9] rlang_0.1.2      bindr_0.1       
+ [1] Rcpp_0.12.13            assertthat_0.2.0        bitops_1.0-6           
+ [4] R6_2.2.2                magrittr_1.5            zlibbioc_1.22.0        
+ [7] rlang_0.1.2             XVector_0.16.0          glue_1.1.1             
+[10] RCurl_1.95-4.8          compiler_3.4.0          pkgconfig_2.0.1        
+[13] bindr_0.1               GenomeInfoDbData_0.99.0 tibble_1.3.4           
 > date()
-[1] "Sun Nov 19 20:14:19 2017"
+[1] "Wed Nov 29 04:05:16 2017"
 > 
 > proc.time()
    user  system elapsed 
-  1.047   0.108   1.138 
+ 57.466  12.112  70.105 

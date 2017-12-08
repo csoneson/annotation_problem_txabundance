@@ -11,6 +11,7 @@ stringtie := /home/charlotte/software/stringtie-1.3.3b.Linux_x86_64/stringtie
 bwa := /home/charlotte/software/bwa/bwa
 hera := /home/charlotte/software/hera/build/hera
 hera_build := /home/charlotte/software/hera/build/hera_build
+strawberry := /home/charlotte/software/strawberry
 
 ## Reference files
 refdir := /home/Shared/data/annotation/Human/Ensembl_GRCh38.90
@@ -232,6 +233,25 @@ stringtie_onlyref/$(notdir $(1))/$(notdir $(1)).gtf: HISAT2/$(notdir $(1))/$(not
 	$(stringtie) $$< -o $$@ -p 10 -G $(gtf) -e -A $$@.tab
 endef
 $(foreach F,$(fastqfiles),$(eval $(call stringtierefrule,$(F))))
+
+## ==================================================================================== ##
+##                                  strawberry                                          ##
+## ==================================================================================== ##
+## Run strawberry
+# define strawberryrule
+# strawberry/$(notdir $(1))/assembled_transcripts.gtf: HISAT2/$(notdir $(1))/$(notdir $(1)).bam
+# 	mkdir -p $$(@D)
+# 	$(strawberry) $$< -o $$(@D) -g $(gtf) -p 10
+# endef
+# $(foreach F,$(fastqfiles),$(eval $(call strawberryrule,$(F))))
+
+## Run strawberry without assembly of new transcripts
+# define strawberryrefrule
+# strawberry_onlyref/$(notdir $(1))/assembled_transcripts.gtf: HISAT2/$(notdir $(1))/$(notdir $(1)).bam
+# 	mkdir -p $$(@D)
+# 	$(strawberry) $$< -o $$(@D) -g $(gtf) -r -p 10
+# endef
+# $(foreach F,$(fastqfiles),$(eval $(call strawberryrefrule,$(F))))
 
 ## ==================================================================================== ##
 ##                                     RSEM                                             ##

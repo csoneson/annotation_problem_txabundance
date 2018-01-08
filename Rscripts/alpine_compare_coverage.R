@@ -9,6 +9,7 @@ print(genemodels)  ## gene models
 print(combcovrds)  ## combined junction coverages
 print(ncores)  ## number of cores for parallel computations
 print(outdir)  ## output directory
+print(libid)  ## string that will be added to the beginning of all output files (library ID)
 print(checkdir)  ## directory to write (empty) rds files (time stamps)
 
 suppressPackageStartupMessages(library(dplyr))
@@ -32,9 +33,13 @@ if (file.exists(gene)) {
 
 ## Investigate each gene
 mclapply(genes, function(currgene) {
-  jl <- combcov$jcovscaled %>% dplyr::filter(gene == currgene)
+  jl <- combcov$jcovscaled %>% dplyr::filter(gene == currgene) %>%
+    dplyr::mutate(junctionid2 = junctionid) %>%
+    dplyr::mutate(junctionid2 = replace(junctionid2, 
+                                        abs(scaledcoverage - uniqreads) < mean(uniqreads), 
+                                        ""))
 
-  pdf(paste0(outdir, "/plots/", currgene, ".pdf"), width = 12, height = 10)
+  pdf(paste0(outdir, "/plots/", libid, currgene, ".pdf"), width = 12, height = 10)
   tryCatch({
     plot_tracks(mygene = currgene, genemodels = genemodels$genemodels_exon, 
                 genemodels2 = genemodels$genemodels_cds, 
@@ -51,27 +56,35 @@ mclapply(genes, function(currgene) {
           xlab("Scaled predicted coverage") + 
           ylab("Number of uniquely mapped reads") + 
           theme_bw())
+  
+  print(ggplot(jl, aes(x = scaledcoverage, y = uniqreads, label = junctionid2)) + 
+          geom_point(size = 4) + geom_label_repel() +
+          facet_wrap(~ methodscore) + 
+          geom_abline(intercept = 0, slope = 1) + 
+          xlab("Scaled predicted coverage") + 
+          ylab("Number of uniquely mapped reads") + 
+          theme_bw())
   dev.off()
   
   write.table(jl %>% dplyr::select(-score, -pred.cov, -method) %>%
                 dplyr::mutate(scaledcoverage = round(scaledcoverage, 2)) %>% 
                 tidyr::spread(methodscore, scaledcoverage) %>%
                 dplyr::arrange(start),
-              file = paste0(outdir, "/jcov/", currgene, "_jscaledcov.txt"),
+              file = paste0(outdir, "/jcov/", libid, currgene, "_jscaledcov.txt"),
               quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
   
   write.table(combcov$allquants %>% dplyr::filter(gene == currgene) %>% 
                 dplyr::select(transcript, method, TPM) %>%
                 dplyr::mutate(TPM = round(TPM, 2)) %>% 
                 tidyr::spread(method, TPM),
-              file = paste0(outdir, "/tpm/", currgene, "_tpm.txt"),
+              file = paste0(outdir, "/tpm/", libid, currgene, "_tpm.txt"),
               quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
   
   write.table(combcov$allquants %>% dplyr::filter(gene == currgene) %>% 
                 dplyr::select(transcript, method, count) %>%
                 dplyr::mutate(count = round(count, 2)) %>% 
                 tidyr::spread(method, count),
-              file = paste0(outdir, "/count/", currgene, "_count.txt"),
+              file = paste0(outdir, "/count/", libid, currgene, "_count.txt"),
               quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
   
   saveRDS(jl, paste0(checkdir, "/", currgene, ".rds"))

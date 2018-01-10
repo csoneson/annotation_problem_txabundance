@@ -17,6 +17,8 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+During startup - Warning message:
+Setting LC_CTYPE failed, using "C" 
 > args <- (commandArgs(trailingOnly = TRUE))
 > for (i in 1:length(args)) {
 +   eval(parse(text = args[[i]]))
@@ -34,6 +36,8 @@ Type 'q()' to quit R.
 [1] 25
 > print(outdir)  ## output directory
 [1] "alpine_out/20170918.A-WT_4"
+> print(libid)  ## string that will be added to the beginning of all output files (library ID)
+[1] "20170918.A-WT_4_"
 > print(checkdir)  ## directory to write (empty) rds files (time stamps)
 [1] "alpine_check/20170918.A-WT_4"
 > 
@@ -58,9 +62,13 @@ Type 'q()' to quit R.
 > 
 > ## Investigate each gene
 > mclapply(genes, function(currgene) {
-+   jl <- combcov$jcovscaled %>% dplyr::filter(gene == currgene)
++   jl <- combcov$jcovscaled %>% dplyr::filter(gene == currgene) %>%
++     dplyr::mutate(junctionid2 = junctionid) %>%
++     dplyr::mutate(junctionid2 = replace(junctionid2, 
++                                         abs(scaledcoverage - uniqreads) < mean(uniqreads), 
++                                         ""))
 + 
-+   pdf(paste0(outdir, "/plots/", currgene, ".pdf"), width = 12, height = 10)
++   pdf(paste0(outdir, "/plots/", libid, currgene, ".pdf"), width = 12, height = 10)
 +   tryCatch({
 +     plot_tracks(mygene = currgene, genemodels = genemodels$genemodels_exon, 
 +                 genemodels2 = genemodels$genemodels_cds, 
@@ -77,27 +85,35 @@ Type 'q()' to quit R.
 +           xlab("Scaled predicted coverage") + 
 +           ylab("Number of uniquely mapped reads") + 
 +           theme_bw())
++   
++   print(ggplot(jl, aes(x = scaledcoverage, y = uniqreads, label = junctionid2)) + 
++           geom_point(size = 4) + geom_label_repel() +
++           facet_wrap(~ methodscore) + 
++           geom_abline(intercept = 0, slope = 1) + 
++           xlab("Scaled predicted coverage") + 
++           ylab("Number of uniquely mapped reads") + 
++           theme_bw())
 +   dev.off()
 +   
-+   write.table(jl %>% dplyr::select(-score, -pred.cov, -method) %>%
++   write.table(jl %>% dplyr::select(-score, -pred.cov, -method, -junctionid2) %>%
 +                 dplyr::mutate(scaledcoverage = round(scaledcoverage, 2)) %>% 
 +                 tidyr::spread(methodscore, scaledcoverage) %>%
 +                 dplyr::arrange(start),
-+               file = paste0(outdir, "/jcov/", currgene, "_jscaledcov.txt"),
++               file = paste0(outdir, "/jcov/", libid, currgene, "_jscaledcov.txt"),
 +               quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
 +   
 +   write.table(combcov$allquants %>% dplyr::filter(gene == currgene) %>% 
 +                 dplyr::select(transcript, method, TPM) %>%
 +                 dplyr::mutate(TPM = round(TPM, 2)) %>% 
 +                 tidyr::spread(method, TPM),
-+               file = paste0(outdir, "/tpm/", currgene, "_tpm.txt"),
++               file = paste0(outdir, "/tpm/", libid, currgene, "_tpm.txt"),
 +               quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
 +   
 +   write.table(combcov$allquants %>% dplyr::filter(gene == currgene) %>% 
 +                 dplyr::select(transcript, method, count) %>%
 +                 dplyr::mutate(count = round(count, 2)) %>% 
 +                 tidyr::spread(method, count),
-+               file = paste0(outdir, "/count/", currgene, "_count.txt"),
++               file = paste0(outdir, "/count/", libid, currgene, "_count.txt"),
 +               quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
 +   
 +   saveRDS(jl, paste0(checkdir, "/", currgene, ".rds"))
@@ -90607,7 +90623,7 @@ BLAS: /usr/local/R/R-3.4.0/lib/libRblas.so
 LAPACK: /usr/local/R/R-3.4.0/lib/libRlapack.so
 
 locale:
- [1] LC_CTYPE=en_CA.UTF-8       LC_NUMERIC=C              
+ [1] LC_CTYPE=C                 LC_NUMERIC=C              
  [3] LC_TIME=en_CA.UTF-8        LC_COLLATE=en_CA.UTF-8    
  [5] LC_MONETARY=en_CA.UTF-8    LC_MESSAGES=en_CA.UTF-8   
  [7] LC_PAPER=en_CA.UTF-8       LC_NAME=C                 
@@ -90668,9 +90684,9 @@ loaded via a namespace (and not attached):
 [81] Rcpp_0.12.13                  rpart_4.1-11                 
 [83] acepack_1.4.1                
 > date()
-[1] "Wed Nov 29 12:39:02 2017"
+[1] "Tue Jan  9 20:55:37 2018"
 > 
 > 
 > proc.time()
      user    system   elapsed 
-419655.64 129057.47  30824.52 
+341177.28  82827.74  17115.54 

@@ -66,7 +66,7 @@ mclapply(genes, function(currgene) {
           theme_bw())
   dev.off()
   
-  write.table(jl %>% dplyr::select(-score, -pred.cov, -method) %>%
+  write.table(jl %>% dplyr::select(-score, -pred.cov, -method, -junctionid2) %>%
                 dplyr::mutate(scaledcoverage = round(scaledcoverage, 2)) %>% 
                 tidyr::spread(methodscore, scaledcoverage) %>%
                 dplyr::arrange(start),

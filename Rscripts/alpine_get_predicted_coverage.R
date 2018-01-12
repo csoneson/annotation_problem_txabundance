@@ -37,31 +37,36 @@ res <- mclapply(transcripts, function(tx) {
   txmod <- ebt0[[tx]]
   txmods <- sort(ebt0[[tx]])
   
-  tryCatch({
-    m <- predictCoverage(gene = txmod,
+  m <- tryCatch({
+    a <- predictCoverage(gene = txmod,
                          bam.files = bam.files,
                          fitpar = fitpar,
                          genome = Hsapiens,
                          model.names = "all")
-    m <- m$`1`$pred.cov$all
-    
-    junctions <- GenomicRanges::setdiff(range(txmods), txmods)
-    if (all(strand(txmods) == "+")) {
-      junctionpos <- cumsum(width(txmods))
-      junctionpos <- junctionpos[-length(junctionpos)]
-      mcols(junctions)$pred.cov <- as.numeric(m)[junctionpos]
-      strand <- "+"
-    } else if (all(strand(txmods) == "-")) {
-      junctionpos <- cumsum(width(rev(txmods)))
-      junctionpos <- junctionpos[-length(junctionpos)]
-      mcols(junctions)$pred.cov <- rev(as.numeric(m)[junctionpos])
-      strand <- "-"
-    } 
-    
-    list(pred.cov = m, strand = strand, junctions = junctions, 
-         avefraglength = avefraglength)
+    a$`1`$pred.cov$all
   }, 
-  error = function(e) NULL)
+  error = function(e) {
+    ## Assume uniform coverage
+    Rle(rep(1, sum(width(txmod)) - 1))
+  })
+  
+  junctions <- GenomicRanges::setdiff(range(txmods), txmods)
+  if (all(strand(txmods) == "+")) {
+    junctionpos <- cumsum(width(txmods))
+    junctionpos <- junctionpos[-length(junctionpos)]
+    mcols(junctions)$pred.cov <- as.numeric(m)[junctionpos]
+    strand <- "+"
+  } else if (all(strand(txmods) == "-")) {
+    junctionpos <- cumsum(width(rev(txmods)))
+    junctionpos <- junctionpos[-length(junctionpos)]
+    mcols(junctions)$pred.cov <- rev(as.numeric(m)[junctionpos])
+    strand <- "-"
+  } else {
+    strand <- "mixed"
+  }
+  
+  list(pred.cov = m, strand = strand, junctions = junctions, 
+       avefraglength = avefraglength)
   
 }, mc.preschedule = FALSE, mc.cores = ncores)
 

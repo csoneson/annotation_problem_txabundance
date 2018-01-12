@@ -334,7 +334,7 @@ STAR/$(1)/$(1)_Aligned.sortedByCoord.out.bam Rscripts/alpine_get_predicted_cover
 	mkdir -p $$(@D)
 	$(R) "--args bam='$$(word 2,$$^)' biasmodels='$$(word 1,$$^)' ncores=$(2) outrds='$$@'" Rscripts/alpine_get_predicted_coverage.R Rout/alpine_get_predicted_coverage_$(1).Rout
 endef
-$(foreach F,$(fastqfiles),$(eval $(call predcovrule,$(notdir $(F)),32)))
+$(foreach F,$(fastqfiles),$(eval $(call predcovrule,$(notdir $(F)),22)))
 
 ## Scale junction coverage by transcript abundance estimates for each method
 define juncscalerule

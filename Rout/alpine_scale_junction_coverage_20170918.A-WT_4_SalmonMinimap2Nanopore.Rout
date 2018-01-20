@@ -17,6 +17,8 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+During startup - Warning message:
+Setting LC_CTYPE failed, using "C" 
 > args <- (commandArgs(trailingOnly = TRUE))
 > for (i in 1:length(args)) {
 +   eval(parse(text = args[[i]]))
@@ -39,7 +41,7 @@ Type 'q()' to quit R.
 > 
 > suppressPackageStartupMessages(library(alpine))
 Warning message:
-package ‘alpine’ was built under R version 3.4.2 
+package 'alpine' was built under R version 3.4.2 
 > suppressPackageStartupMessages(library(parallel))
 > suppressPackageStartupMessages(library(dplyr))
 > 
@@ -105,7 +107,7 @@ BLAS: /usr/local/R/R-3.4.0/lib/libRblas.so
 LAPACK: /usr/local/R/R-3.4.0/lib/libRlapack.so
 
 locale:
- [1] LC_CTYPE=en_CA.UTF-8       LC_NUMERIC=C              
+ [1] LC_CTYPE=C                 LC_NUMERIC=C              
  [3] LC_TIME=en_CA.UTF-8        LC_COLLATE=en_CA.UTF-8    
  [5] LC_MONETARY=en_CA.UTF-8    LC_MESSAGES=en_CA.UTF-8   
  [7] LC_PAPER=en_CA.UTF-8       LC_NAME=C                 
@@ -147,8 +149,8 @@ loaded via a namespace (and not attached):
 [49] assertthat_0.2.0           SummarizedExperiment_1.6.5
 [51] stringi_1.1.5              RCurl_1.95-4.8            
 > date()
-[1] "Tue Nov 28 21:33:23 2017"
+[1] "Wed Jan 17 23:40:56 2018"
 > 
 > proc.time()
     user   system  elapsed 
-5421.388  131.282 5571.365 
+5333.766   90.202 5439.863 

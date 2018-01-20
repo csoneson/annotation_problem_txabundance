@@ -17,9 +17,17 @@ geneinfo <- readRDS(geneinfords)
 
 jcovscaled <- cov$jcovscaled
 
+## Calculate the fraction of multimapping junction reads for each gene
+mmfrac <- jcovscaled %>% dplyr::select(junctionid, gene, uniqreads, mmreads) %>%
+  dplyr::distinct() %>% dplyr::group_by(gene) %>% 
+  dplyr::summarize(mmreads = sum(mmreads), uniqreads = sum(uniqreads)) %>% 
+  dplyr::mutate(mmfraction = mmreads/(mmreads + uniqreads)) %>%
+  dplyr::select(gene, mmfraction)
+
 ## Get the score for each gene
 gene_scores <- jcovscaled %>% dplyr::select(gene, method, score) %>% 
   dplyr::distinct() %>%
+  dplyr::left_join(mmfrac, by = "gene") %>%
   dplyr::left_join(geneinfo, by = c("gene" = "gene_id")) %>%
   dplyr::left_join(gex) %>%
   dplyr::group_by(gene) %>%
@@ -28,15 +36,17 @@ gene_scores <- jcovscaled %>% dplyr::select(gene, method, score) %>%
 
 ## Create gene categories
 gene_scores <- gene_scores %>% dplyr::mutate(all_genes = 1) %>%
+  dplyr::mutate(many_multimap = as.numeric(mmfraction > 0.5)) %>%
+  dplyr::mutate(high_expr_few_multimap = as.numeric(salmon_count > 1000 & 
+                                                      mmfraction < 0.5)) %>%
   dplyr::mutate(high_expression = as.numeric(salmon_count > 1000)) %>%
   dplyr::mutate(high_expr_length_diff_utr = as.numeric(salmon_count > 1000 & 
                                                          length_diff_3putrs_samestart > 1000)) %>%
-  dplyr::mutate(high_expr_many_isoforms = as.numeric(salmon_count > 1000 & nbr_transcripts > 10)) %>%
   dplyr::mutate(high_expr_many_junctions = as.numeric(salmon_count > 1000 & ave_nbr_exons > 8))
 
 gene_plot <- gene_scores %>% dplyr::select(gene, method, score, all_genes, high_expression,
-                                           high_expr_length_diff_utr, high_expr_many_isoforms, 
-                                           high_expr_many_junctions) %>%
+                                           high_expr_length_diff_utr, high_expr_few_multimap, 
+                                           high_expr_many_junctions, many_multimap) %>%
   tidyr::gather(group, included, -gene, -score, -method) %>% dplyr::filter(included == 1)
 
 

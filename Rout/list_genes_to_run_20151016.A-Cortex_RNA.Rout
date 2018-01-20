@@ -17,6 +17,8 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+During startup - Warning message:
+Setting LC_CTYPE failed, using "C" 
 > args <- (commandArgs(trailingOnly = TRUE))
 > for (i in 1:length(args)) {
 +   eval(parse(text = args[[i]]))
@@ -39,23 +41,23 @@ Loading required package: stats4
 Loading required package: BiocGenerics
 Loading required package: parallel
 
-Attaching package: ‘BiocGenerics’
+Attaching package: 'BiocGenerics'
 
-The following objects are masked from ‘package:parallel’:
+The following objects are masked from 'package:parallel':
 
     clusterApply, clusterApplyLB, clusterCall, clusterEvalQ,
     clusterExport, clusterMap, parApply, parCapply, parLapply,
     parLapplyLB, parRapply, parSapply, parSapplyLB
 
-The following objects are masked from ‘package:dplyr’:
+The following objects are masked from 'package:dplyr':
 
     combine, intersect, setdiff, union
 
-The following objects are masked from ‘package:stats’:
+The following objects are masked from 'package:stats':
 
     IQR, mad, sd, var, xtabs
 
-The following objects are masked from ‘package:base’:
+The following objects are masked from 'package:base':
 
     anyDuplicated, append, as.data.frame, cbind, colMeans, colnames,
     colSums, do.call, duplicated, eval, evalq, Filter, Find, get, grep,
@@ -66,21 +68,21 @@ The following objects are masked from ‘package:base’:
 
 Loading required package: S4Vectors
 
-Attaching package: ‘S4Vectors’
+Attaching package: 'S4Vectors'
 
-The following objects are masked from ‘package:dplyr’:
+The following objects are masked from 'package:dplyr':
 
     first, rename
 
-The following object is masked from ‘package:base’:
+The following object is masked from 'package:base':
 
     expand.grid
 
 Loading required package: IRanges
 
-Attaching package: ‘IRanges’
+Attaching package: 'IRanges'
 
-The following objects are masked from ‘package:dplyr’:
+The following objects are masked from 'package:dplyr':
 
     collapse, desc, slice
 
@@ -102,7 +104,7 @@ BLAS: /usr/local/R/R-3.4.0/lib/libRblas.so
 LAPACK: /usr/local/R/R-3.4.0/lib/libRlapack.so
 
 locale:
- [1] LC_CTYPE=en_CA.UTF-8       LC_NUMERIC=C              
+ [1] LC_CTYPE=C                 LC_NUMERIC=C              
  [3] LC_TIME=en_CA.UTF-8        LC_COLLATE=en_CA.UTF-8    
  [5] LC_MONETARY=en_CA.UTF-8    LC_MESSAGES=en_CA.UTF-8   
  [7] LC_PAPER=en_CA.UTF-8       LC_NAME=C                 
@@ -125,8 +127,8 @@ loaded via a namespace (and not attached):
 [10] RCurl_1.95-4.8          compiler_3.4.0          pkgconfig_2.0.1        
 [13] bindr_0.1               GenomeInfoDbData_0.99.0 tibble_1.3.4           
 > date()
-[1] "Tue Nov 28 21:31:57 2017"
+[1] "Sun Jan 14 10:35:20 2018"
 > 
 > proc.time()
    user  system elapsed 
- 69.577   7.997  77.680 
+ 64.877   4.637  69.587 

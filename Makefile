@@ -1,7 +1,7 @@
 ## Software paths
 R := R_LIBS=/home/Shared/Rlib/release-3.5-lib/ /usr/local/R/R-3.4.0/bin/R CMD BATCH --no-restore --no-save
-salmon := /home/charlotte/software/Salmon-0.8.2_linux_x86_64/bin/salmon
-kallisto := /home/charlotte/software/kallisto_linux-v0.43.1/kallisto
+salmon := /home/charlotte/software/Salmon-0.9.1_linux_x86_64/bin/salmon
+kallisto := /home/charlotte/software/kallisto_linux-v0.44.0/kallisto
 RSEM := /home/charlotte/software/RSEM-1.3.0
 STAR := /home/Shared_penticton/software/STAR/source/STAR
 samtools := /usr/local/bin/samtools
@@ -25,9 +25,9 @@ txome := reference/Homo_sapiens.GRCh38.cdna.ncrna.fa
 ## Indexes
 STARindex := $(refdir)/genome/Homo_sapiens.GRCh38.dna.primary_assembly_STAR_sjdbOverlap150
 hisat2index := $(refdir)/genome/hisat2idx/Homo_sapiens.GRCh38.dna.primary_assembly
-salmoncdnancrnaindex := $(refdir)/cDNA/Homo_sapiens.GRCh38.cdna.ncrna_sidx_v0.8.2
-salmoncdsindex := $(refdir)/cds/Homo_sapiens.GRCh38.cds.all_sidx_v0.8.2
-kallistocdnancrnaindex := $(refdir)/cDNA/Homo_sapiens.GRCh38.cdna.ncrna.all_kidx
+salmoncdnancrnaindex := $(refdir)/cDNA/Homo_sapiens.GRCh38.cdna.ncrna_sidx_v0.9.1
+salmoncdsindex := $(refdir)/cds/Homo_sapiens.GRCh38.cds.all_sidx_v0.9.1
+kallistocdnancrnaindex := $(refdir)/cDNA/Homo_sapiens.GRCh38.cdna.ncrna.all_kidx_v0.44.0
 rsemcdnancrnaindex := reference/RSEM/Homo_sapiens.GRCh38.rsem.cdna.ncrna
 bwacdnancrnaindex := $(txome).sa
 heraindex := reference/hera/Homo_sapiens.GRCh38

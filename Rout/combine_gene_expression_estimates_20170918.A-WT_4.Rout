@@ -17,8 +17,6 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
-During startup - Warning message:
-Setting LC_CTYPE failed, using "C" 
 > args <- (commandArgs(trailingOnly = TRUE))
 > for (i in 1:length(args)) {
 +   eval(parse(text = args[[i]]))
@@ -57,12 +55,10 @@ BLAS: /usr/local/R/R-3.4.0/lib/libRblas.so
 LAPACK: /usr/local/R/R-3.4.0/lib/libRlapack.so
 
 locale:
- [1] LC_CTYPE=C                 LC_NUMERIC=C              
- [3] LC_TIME=en_CA.UTF-8        LC_COLLATE=en_CA.UTF-8    
- [5] LC_MONETARY=en_CA.UTF-8    LC_MESSAGES=en_CA.UTF-8   
- [7] LC_PAPER=en_CA.UTF-8       LC_NAME=C                 
- [9] LC_ADDRESS=C               LC_TELEPHONE=C            
-[11] LC_MEASUREMENT=en_CA.UTF-8 LC_IDENTIFICATION=C       
+ [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
+ [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
+ [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
+[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
 
 attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
@@ -75,8 +71,8 @@ loaded via a namespace (and not attached):
  [5] glue_1.1.1       tibble_1.3.4     Rcpp_0.12.13     pkgconfig_2.0.1 
  [9] rlang_0.1.2      bindr_0.1       
 > date()
-[1] "Thu Jan 18 05:44:55 2018"
+[1] "Wed Jan 31 23:35:01 2018"
 > 
 > proc.time()
    user  system elapsed 
- 89.226   0.516  89.864 
+100.062   0.501 100.688 

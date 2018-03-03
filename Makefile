@@ -12,6 +12,7 @@ bwa := /home/charlotte/software/bwa/bwa
 hera := /home/charlotte/software/hera/build/hera
 hera_build := /home/charlotte/software/hera/build/hera_build
 strawberry := /home/charlotte/software/strawberry
+gffread := /home/charlotte/software/gffread-0.9.12.Linux_x86_64/gffread
 
 ## Reference files
 refdir := /home/Shared/data/annotation/Human/Ensembl_GRCh38.90
@@ -24,6 +25,7 @@ txome := reference/Homo_sapiens.GRCh38.cdna.ncrna.fa
 
 ## Indexes
 STARindex := $(refdir)/genome/Homo_sapiens.GRCh38.dna.primary_assembly_STAR_sjdbOverlap150
+STARindexnogtf := $(refdir)/genome/Homo_sapiens.GRCh38.dna.primary_assembly_STAR_nogtf
 hisat2index := $(refdir)/genome/hisat2idx/Homo_sapiens.GRCh38.dna.primary_assembly
 salmoncdnancrnaindex := $(refdir)/cDNA/Homo_sapiens.GRCh38.cdna.ncrna_sidx_v0.9.1
 salmoncdsindex := $(refdir)/cds/Homo_sapiens.GRCh38.cds.all_sidx_v0.9.1
@@ -85,6 +87,9 @@ scalecov: $(foreach M,$(quantmethods),$(foreach F,$(fastqfiles),alpine/$(notdir 
 ## subset_genes_to_run.txt is a manually created file, which can be used to test a few genes
 sumsub: $(foreach F,$(fastqfiles),alpine_check/$(notdir $(F))/subset_genes_to_run.txt.rds)
 
+tmp: $(foreach F,$(fastqfiles),STAR_stringtie_tx/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoord.out.bam) \
+$(foreach F,$(fastqfiles),kallisto_stringtie_tx/$(notdir $(F))/abundance.tsv)
+
 ## ==================================================================================== ##
 ##                                   Reference files                                    ##
 ## ==================================================================================== ##
@@ -126,6 +131,14 @@ $(STARindex)/SA: $(genome) $(gtf)
 
 $(STARindex)/chrNameLength.txt: $(STARindex)/SA
 
+## STAR index without annotation gtf
+$(STARindexnogtf)/SA: $(genome)
+	mkdir -p $(STARindexnogtf)
+	$(STAR) --runMode genomeGenerate --runThreadN 10 --genomeDir $(STARindexnogtf) \
+	--genomeFastaFiles $(genome)
+
+$(STARindexnogtf)/chrNameLength.txt: $(STARindexnogtf)/SA
+
 ## Build genome index for HISAT2
 $(hisat2index).1.ht2: $(genome)
 	mkdir -p $(@D)
@@ -152,13 +165,87 @@ $(heraindex)/index: $(genome) $(gtf)
 $(gvizgenemodels): $(gtf) Rscripts/generate_genemodels.R Rscripts/plot_tracks.R
 	$(R) "--args gtf='$(gtf)' outrds='$@'" Rscripts/generate_genemodels.R Rout/generate_genemodels.Rout
 
+## ==================================================================================== ##
+##                     Reference files for extended annotation                          ##
+## ==================================================================================== ##
+## We run StringTie below with the option of detecting unannotated transcripts. 
+## The output is a gtf file that we also convert to a transcript fasta file. 
+## We then generate indexes for the other methods based on this annotation.
+## Note that this annotation is different between the different input samples
+
+## Generate tx2gene
+## TODO: FIX
+#$(tx2gene): $(cdna) $(cds) $(ncrna) Rscripts/generate_tx2gene.R
+#	$(R) "--args cdna='$(word 1,$^)' cds='$(word 2,$^)' ncrna='$(word 3,$^)' outrds='$@'" Rscripts/generate_tx2gene.R Rout/generate_tx2gene.Rout 
+
+## TODO: FIX
+#$(rsemgene2tx): $(tx2gene) Rscripts/generate_rsemgene2tx.R
+#	$(R) "--args tx2gene='$(tx2gene)' rsemgene2tx='$@'" Rscripts/generate_rsemgene2tx.R Rout/generate_rsemgene2tx.Rout
+
+## Build Salmon index for cDNA/ncRNA and CDS sequences
+define salmonindexrule
+reference/salmon/$(notdir $(1))_stringtie_tx_sidx_v0.9.1/hash.bin: \
+stringtie/$(notdir $(1))/$(notdir $(1))_stringtie_tx.fa
+	$(salmon) index -t $$< -k 25 -i $$(@D) -p 10 --type quasi
+endef
+$(foreach F,$(fastqfiles),$(eval $(call salmonindexrule,$(F))))
+
+## Build kallisto index for cDNA/ncRNA sequences
+define kallistoindexrule
+reference/kallisto/$(notdir $(1))_stringtie_tx_kidx_v0.44.0: \
+stringtie/$(notdir $(1))/$(notdir $(1))_stringtie_tx.fa
+	mkdir -p $$(@D)
+	$(kallisto) index -i $$@ -k 25 $$<
+endef
+$(foreach F,$(fastqfiles),$(eval $(call kallistoindexrule,$(F))))
+
+## Build RSEM index
+define rsemindexrule
+reference/RSEM_extended/$(notdir $(1))_stringtie_tx/$(notdir $(1))_stringtie_tx.n2g.idx.fa: \
+stringtie/$(notdir $(1))/$(notdir $(1))_stringtie_tx.fa \
+## TODO: Add appropriate rsemgene2tx as dependency and in the recipe
+	mkdir -p $$(@D)
+	$(RSEM)/rsem-prepare-reference --transcript-to-gene-map XXXXXXX --bowtie --bowtie-path /usr/bin \
+	stringtie/$$(notdir $(1))/$$(notdir $(1))_stringtie_tx.fa \
+	reference/RSEM_extended/$$(notdir $(1))_stringtie_tx/$$(notdir $(1))_stringtie_tx
+endef
+$(foreach F,$(fastqfiles),$(eval $(call rsemindexrule,$(F))))
+
+## BWA index
+define bwaindexrule
+reference/bwa/$(notdir $(1))_stringtie_tx/$(notdir $(1))_stringtie_tx.fa.sa: \
+stringtie/$(notdir $(1))/$(notdir $(1))_stringtie_tx.fa
+	mkdir -p $$(@D)
+	scp $$< reference/bwa/$$(notdir $(1))_stringtie_tx/$$(notdir $(1))_stringtie_tx.fa
+	$(bwa) index reference/bwa/$$(notdir $(1))_stringtie_tx/$$(notdir $(1))_stringtie_tx.fa
+endef
+$(foreach F,$(fastqfiles),$(eval $(call bwaindexrule,$(F))))
+
+## hera index
+## TODO: FIX
+#define heraindexrule
+#reference/hera/$(notdir $(1))_stringtie_tx/index: $(genome) stringtie/$(notdir $(1))/$(notdir $(1)).gtf
+#	mkdir -p $$(@D)
+#	$(hera_build) --fasta $$(genome) --gtf stringtie/$$(notdir $(1))/$$(notdir $(1)).gtf --outdir $$(@D)/
+#endef
+#$(foreach F,$(fastqfiles),$(eval $(call heraindexrule,$(F))))
+
+## Gene models for Gviz
+## TODO: Fix generate_genemodels.R (exon_id column doesn't exist in the StringTie gtf, but it has exon_number
+define gvizgmrule
+reference/Gviz/$(notdir $(1))_stringtie_tx_gviz_genemodels.rds: stringtie/$(notdir $(1))/$(notdir $(1)).gtf \
+Rscripts/generate_genemodels.R Rscripts/plot_tracks.R
+	mkdir -p $$(@D)
+	$$(R) "--args gtf='stringtie/$$(notdir $(1))/$$(notdir $(1)).gtf' outrds='$$@'" Rscripts/generate_genemodels.R Rout/generate_genemodels_$$(notdir $(1)).Rout
+endef
+$(foreach F,$(fastqfiles),$(eval $(call gvizgmrule,$(F))))
 
 ## ==================================================================================== ##
 ##                                      HERA                                            ##
 ## ==================================================================================== ##
 ## Run hera
 define herarule
-hera/$(notdir $(1))/abundance.tsv: $(heraindex)/index $(1)_R1.fastq.gz $(1)_R2.fastq.gz
+hera/$(notdir $(1))/abundance.tsv: $(heraindex)/index# $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
 	$(hera) quant -i $(heraindex) -o $$(@D) -w 1 -t 10 $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 endef
@@ -169,7 +256,7 @@ $(foreach F,$(fastqfiles),$(eval $(call herarule,$(F))))
 ## ==================================================================================== ##
 ## Run BWA
 define bwarule
-$(3)/$(notdir $(1))/$(notdir $(1)).bam: $(2) $(1)_R1.fastq.gz $(1)_R2.fastq.gz
+$(3)/$(notdir $(1))/$(notdir $(1)).bam: $(2)# $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
 	$(bwa) mem $(txome) $(1)_R1.fastq.gz $(1)_R2.fastq.gz | $(samtools) view -b -F 0x0800 -@ 10 - > $$@
 endef
@@ -188,12 +275,13 @@ $(foreach F,$(fastqfiles),$(eval $(call salmonbwarule,$(F),salmonbwa/cDNAncRNA))
 ## ==================================================================================== ##
 ## Run Salmon
 define salmonrule
-$(3)/$(notdir $(1))/quant.sf: $(2)/hash.bin $(1)_R1.fastq.gz $(1)_R2.fastq.gz
+$(3)/$(notdir $(1))/quant.sf: $(2)/hash.bin# $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
-	$(salmon) quant -i $$(word 1,$$(^D)) -l A -p 10 -1 $$(word 2,$$^) -2 $$(word 3,$$^) -o $$(@D) --seqBias --gcBias --posBias
+	$(salmon) quant -i $$(word 1,$$(^D)) -l A -p 10 -1 $(1)_R1.fastq.gz -2 $(1)_R2.fastq.gz -o $$(@D) --seqBias --gcBias --posBias
 endef
 $(foreach F,$(fastqfiles),$(eval $(call salmonrule,$(F),$(salmoncdnancrnaindex),salmon/cDNAncRNA)))
 $(foreach F,$(fastqfiles),$(eval $(call salmonrule,$(F),$(salmoncdsindex),salmon/cds)))
+$(foreach F,$(fastqfiles),$(eval $(call salmonrule,$(F),reference/salmon/$(notdir $(F))_stringtie_tx_sidx_v0.9.1,salmon_stringtie_tx)))
 
 ## Compare Salmon quants from cDNA/ncRNA and CDS
 define salmoncomprule
@@ -210,7 +298,7 @@ $(foreach F,$(fastqfiles),$(eval $(call salmoncomprule,$(F))))
 ## ==================================================================================== ##
 ## Run HISAT2
 define hisat2rule
-HISAT2/$(notdir $(1))/$(notdir $(1)).bam: $(hisat2index).1.ht2 $(1)_R1.fastq.gz $(1)_R2.fastq.gz $(hisat2ss)
+HISAT2/$(notdir $(1))/$(notdir $(1)).bam: $(hisat2index).1.ht2 $(hisat2ss)# $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
 	$(hisat2)/hisat2 -p 10 -x $(hisat2index) --dta -1 $(1)_R1.fastq.gz -2 $(1)_R2.fastq.gz \
 	--known-splicesite-infile $(hisat2ss) --summary-file $$@_summary.txt | \
@@ -234,31 +322,20 @@ stringtie_onlyref/$(notdir $(1))/$(notdir $(1)).gtf: HISAT2/$(notdir $(1))/$(not
 endef
 $(foreach F,$(fastqfiles),$(eval $(call stringtierefrule,$(F))))
 
-## ==================================================================================== ##
-##                                  strawberry                                          ##
-## ==================================================================================== ##
-## Run strawberry
-# define strawberryrule
-# strawberry/$(notdir $(1))/assembled_transcripts.gtf: HISAT2/$(notdir $(1))/$(notdir $(1)).bam
-# 	mkdir -p $$(@D)
-# 	$(strawberry) $$< -o $$(@D) -g $(gtf) -p 10
-# endef
-# $(foreach F,$(fastqfiles),$(eval $(call strawberryrule,$(F))))
-
-## Run strawberry without assembly of new transcripts
-# define strawberryrefrule
-# strawberry_onlyref/$(notdir $(1))/assembled_transcripts.gtf: HISAT2/$(notdir $(1))/$(notdir $(1)).bam
-# 	mkdir -p $$(@D)
-# 	$(strawberry) $$< -o $$(@D) -g $(gtf) -r -p 10
-# endef
-# $(foreach F,$(fastqfiles),$(eval $(call strawberryrefrule,$(F))))
+## Get transcript fasta from the StringTie gtf with assembled+reference features
+define gffreadrule
+stringtie/$(notdir $(1))/$(notdir $(1))_stringtie_tx.fa: stringtie/$(notdir $(1))/$(notdir $(1)).gtf \
+$(genome)
+	$(gffread) -w $$@ -g $(genome) $$<
+endef
+$(foreach F,$(fastqfiles),$(eval $(call gffreadrule,$(F))))
 
 ## ==================================================================================== ##
 ##                                     RSEM                                             ##
 ## ==================================================================================== ##
 ## Run RSEM
 define rsemrule
-$(3)/$(notdir $(1))/$(notdir $(1)).isoforms.results: $(2).n2g.idx.fa $(1)_R1.fastq.gz $(1)_R2.fastq.gz
+$(3)/$(notdir $(1))/$(notdir $(1)).isoforms.results: $(2).n2g.idx.fa# $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
 	bash -c '$(RSEM)/rsem-calculate-expression -p 10 --bowtie-path /usr/bin --paired-end <(gunzip -c $(1)_R1.fastq.gz) <(gunzip -c $(1)_R2.fastq.gz) $(2) $(3)/$(notdir $(1))/$(notdir $(1))'
 	rm -f $(3)/$(notdir $(1))/$(notdir $(1)).transcript.bam
@@ -270,18 +347,19 @@ $(foreach F,$(fastqfiles),$(eval $(call rsemrule,$(F),$(rsemcdnancrnaindex),RSEM
 ## ==================================================================================== ##
 ## Run kallisto
 define kallistorule
-$(3)/$(notdir $(1))/abundance.tsv: $(2) $(1)_R1.fastq.gz $(1)_R2.fastq.gz
+$(3)/$(notdir $(1))/abundance.tsv: $(2)# $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
 	$(kallisto) quant -i $(2) -o $$(@D) --bias -t 10 $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 endef
 $(foreach F,$(fastqfiles),$(eval $(call kallistorule,$(F),$(kallistocdnancrnaindex),kallisto/cDNAncRNA)))
+$(foreach F,$(fastqfiles),$(eval $(call kallistorule,$(F),reference/kallisto/$(notdir $(F))_stringtie_tx_kidx_v0.44.0,kallisto_stringtie_tx)))
 
 ## ==================================================================================== ##
 ##                                     STAR                                             ##
 ## ==================================================================================== ##
 ## Align to the genome with STAR
 define starrule
-STAR/$(notdir $(1))/$(notdir $(1))_Aligned.sortedByCoord.out.bam: $(STARindex)/SA $(1)_R1.fastq.gz $(1)_R2.fastq.gz
+STAR/$(notdir $(1))/$(notdir $(1))_Aligned.sortedByCoord.out.bam: $(STARindex)/SA# $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
 	$(STAR) --genomeDir $(STARindex) \
 	--readFilesIn $(1)_R1.fastq.gz $(1)_R2.fastq.gz \
@@ -289,6 +367,18 @@ STAR/$(notdir $(1))/$(notdir $(1))_Aligned.sortedByCoord.out.bam: $(STARindex)/S
 	--outSAMtype BAM SortedByCoordinate --readFilesCommand gunzip -c
 endef
 $(foreach F,$(fastqfiles),$(eval $(call starrule,$(F))))
+
+## Align with StringTie-derived gtf files
+define starrule2
+STAR_stringtie_tx/$(notdir $(1))/$(notdir $(1))_Aligned.sortedByCoord.out.bam: $(STARindexnogtf)/SA $(2)
+	mkdir -p $$(@D)
+	$(STAR) --genomeDir $(STARindexnogtf) \
+	--readFilesIn $(1)_R1.fastq.gz $(1)_R2.fastq.gz \
+	--runThreadN 10 --outFileNamePrefix STAR_stringtie_tx/$(notdir $(1))/$(notdir $(1))_ \
+	--outSAMtype BAM SortedByCoordinate --readFilesCommand gunzip -c \
+	--sjdbGTFfile $(2) --sjdbOverhang $(3)
+endef
+$(foreach F,$(fastqfiles),$(eval $(call starrule2,$(F),stringtie/$(notdir $(F))/$(notdir $(F)).gtf,150)))
 
 ## Index STAR bam file
 define starindexrule

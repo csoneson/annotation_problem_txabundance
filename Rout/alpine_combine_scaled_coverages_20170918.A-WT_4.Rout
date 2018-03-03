@@ -146,8 +146,8 @@ loaded via a namespace (and not attached):
 [13] compiler_3.4.0   pkgconfig_2.0.1  colorspace_1.3-2 bindr_0.1       
 [17] tibble_1.3.4    
 > date()
-[1] "Wed Jan 31 16:10:18 2018"
+[1] "Fri Feb  2 17:08:23 2018"
 > 
 > proc.time()
    user  system elapsed 
-291.515   2.363 294.539 
+290.457   2.155 293.051 

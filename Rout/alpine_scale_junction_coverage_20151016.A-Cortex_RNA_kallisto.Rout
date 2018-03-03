@@ -17,8 +17,6 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
-During startup - Warning message:
-Setting LC_CTYPE failed, using "C" 
 > args <- (commandArgs(trailingOnly = TRUE))
 > for (i in 1:length(args)) {
 +   eval(parse(text = args[[i]]))
@@ -41,7 +39,7 @@ Setting LC_CTYPE failed, using "C"
 > 
 > suppressPackageStartupMessages(library(alpine))
 Warning message:
-package 'alpine' was built under R version 3.4.2 
+package ‘alpine’ was built under R version 3.4.2 
 > suppressPackageStartupMessages(library(parallel))
 > suppressPackageStartupMessages(library(dplyr))
 > 
@@ -107,12 +105,10 @@ BLAS: /usr/local/R/R-3.4.0/lib/libRblas.so
 LAPACK: /usr/local/R/R-3.4.0/lib/libRlapack.so
 
 locale:
- [1] LC_CTYPE=C                 LC_NUMERIC=C              
- [3] LC_TIME=en_CA.UTF-8        LC_COLLATE=en_CA.UTF-8    
- [5] LC_MONETARY=en_CA.UTF-8    LC_MESSAGES=en_CA.UTF-8   
- [7] LC_PAPER=en_CA.UTF-8       LC_NAME=C                 
- [9] LC_ADDRESS=C               LC_TELEPHONE=C            
-[11] LC_MEASUREMENT=en_CA.UTF-8 LC_IDENTIFICATION=C       
+ [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
+ [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
+ [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
+[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
 
 attached base packages:
 [1] parallel  stats     graphics  grDevices utils     datasets  methods  
@@ -149,8 +145,8 @@ loaded via a namespace (and not attached):
 [49] assertthat_0.2.0           SummarizedExperiment_1.6.5
 [51] stringi_1.1.5              RCurl_1.95-4.8            
 > date()
-[1] "Wed Jan 17 16:07:12 2018"
+[1] "Fri Feb  2 05:23:05 2018"
 > 
 > proc.time()
     user   system  elapsed 
-6041.506  249.708 6324.081 
+5544.392  107.724 5669.113 

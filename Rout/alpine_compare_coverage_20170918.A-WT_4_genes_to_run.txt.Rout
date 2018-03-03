@@ -106841,9 +106841,9 @@ loaded via a namespace (and not attached):
 [81] Rcpp_0.12.13                  rpart_4.1-11                 
 [83] acepack_1.4.1                
 > date()
-[1] "Wed Jan 31 23:33:20 2018"
+[1] "Sat Feb  3 00:13:38 2018"
 > 
 > 
 > proc.time()
      user    system   elapsed 
-493170.64 129002.87  25634.59 
+489894.77 128877.10  25514.21 

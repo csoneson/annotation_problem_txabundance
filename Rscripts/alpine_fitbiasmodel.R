@@ -30,13 +30,23 @@ txdb <-
                  genomeVersion = genomeVersion, version = version)
     EnsDb(paste0(outdir, "/", gsub("gtf", "sqlite", basename(gtf))))
   }, error = function(e) {
-    makeTxDbFromGFF(gtf, format = "gtf", organism = gsub("_", " ", organism))
+    GenomicFeatures::makeTxDbFromGFF(gtf, format = "gtf", organism = gsub("_", " ", organism))
   })
 txdb
 
 ## Get list of transcripts
-(txdf <- transcripts(txdb, return.type = "DataFrame"))  ## data frame format
-(txps <- transcripts(txdb))  ## GRanges format
+if (class(txdb) == "EnsDb") {
+  txdf <- transcripts(txdb, return.type = "DataFrame")  ## data frame format
+  txps <- transcripts(txdb)  ## GRanges format
+} else {
+  txps <- GenomicFeatures::transcripts(txdb, columns = c("tx_name", "gene_id"), use.names = TRUE)
+  txps$gene_id <- unlist(txps$gene_id)
+  txdf <- DataFrame(tx_id = as.character(txps$tx_name), gene_id = as.character(unlist(txps$gene_id)),
+                    tx_seq_start = as.integer(start(txps)), tx_seq_end = as.integer(end(txps)),
+                    tx_name = as.character(txps$tx_name))
+}
+txdf
+txps
 
 ## Select genes with a single isoform
 tab <- table(txdf$gene_id)
@@ -45,7 +55,11 @@ length(one.iso.genes)
 length(tab)
 
 ## Get list of exons by transcript
-(ebt0 <- exonsBy(txdb, by = "tx"))
+if (class(txdb) == "EnsDb") {
+  (ebt0 <- exonsBy(txdb, by = "tx"))
+} else { 
+  (ebt0 <- exonsBy(txdb, by = "tx", use.names = TRUE))
+}
 
 ## Get transcript names for genes with a single isoform
 one.iso.txs <- txdf$tx_id[txdf$gene_id %in% one.iso.genes]
@@ -63,7 +77,7 @@ summary(gene.lengths)
 ebt.fit <- ebt.fit[gene.lengths > min.bp & gene.lengths < max.bp]
 length(ebt.fit)
 
-## Sample 500 genes to use for the fitting of the bias model
+## Sample 1000 genes to use for the fitting of the bias model
 set.seed(1)
 ebt.fit <- ebt.fit[sample(length(ebt.fit), 1000)]
 

@@ -8,10 +8,12 @@ print(biasmodels)  ## bias model object (output of alpine_fitbiasmodel.R)
 print(ncores)  ## number of cores for parallel computations
 print(outrds)  ## output file
 
-suppressPackageStartupMessages(library(alpine))
-suppressPackageStartupMessages(library(GenomicAlignments))
-suppressPackageStartupMessages(library(BSgenome.Hsapiens.NCBI.GRCh38))
-suppressPackageStartupMessages(library(parallel))
+suppressPackageStartupMessages({
+  library(alpine)
+  library(GenomicAlignments)
+  library(BSgenome.Hsapiens.NCBI.GRCh38)
+  library(parallel)
+})
 
 ## Read bias model parameters and exon-by-transcript objects
 biasmodels <- readRDS(biasmodels)

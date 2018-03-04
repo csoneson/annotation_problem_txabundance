@@ -87,8 +87,9 @@ scalecov: $(foreach M,$(quantmethods),$(foreach F,$(fastqfiles),alpine/$(notdir 
 ## subset_genes_to_run.txt is a manually created file, which can be used to test a few genes
 sumsub: $(foreach F,$(fastqfiles),alpine_check/$(notdir $(F))/subset_genes_to_run.txt.rds)
 
-tmp: $(foreach F,$(fastqfiles),STAR_stringtie_tx/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoord.out.bam) \
+tmp: $(foreach F,$(fastqfiles),salmon_stringtie_tx/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),kallisto_stringtie_tx/$(notdir $(F))/abundance.tsv)
+#$(foreach F,$(fastqfiles),alpine/$(notdir $(F))_stringtie_tx/alpine_predicted_coverage.rds)
 
 ## ==================================================================================== ##
 ##                                   Reference files                                    ##
@@ -314,6 +315,18 @@ stringtie/$(notdir $(1))/$(notdir $(1)).gtf: HISAT2/$(notdir $(1))/$(notdir $(1)
 endef
 $(foreach F,$(fastqfiles),$(eval $(call stringtierule,$(F))))
 
+## Filter StringTie output gtf. For assembled single-exon transcripts, StringTie can not 
+## derive the strand (since there are no reads spanning junctions). This will prevent the 
+## gtf from being read with e.g. GenomicFeatures::makeTxDbFromGff. Thus, here we filter 
+## out such transcripts. We also change the transcript_id to the reference_id, and the 
+## gene_id to ref_gene_id, whenever the latter are available (annotated genes/transcripts)
+define stringtiefilterrule
+stringtie/$(notdir $(1))/$(notdir $(1))_filtered.gtf: stringtie/$(notdir $(1))/$(notdir $(1)).gtf \
+Rscripts/filter_stringtie_gtf.R
+	$(R) "--args ingtf='$$<' outgtf='$$@'" Rscripts/filter_stringtie_gtf.R Rout/filter_stringtie_gtf_$(notdir $(1)).Rout
+endef
+$(foreach F,$(fastqfiles),$(eval $(call stringtiefilterrule,$(F))))
+
 ## Run StringTie without assembly of new transcripts
 define stringtierefrule
 stringtie_onlyref/$(notdir $(1))/$(notdir $(1)).gtf: HISAT2/$(notdir $(1))/$(notdir $(1)).bam $(gtf)
@@ -324,7 +337,7 @@ $(foreach F,$(fastqfiles),$(eval $(call stringtierefrule,$(F))))
 
 ## Get transcript fasta from the StringTie gtf with assembled+reference features
 define gffreadrule
-stringtie/$(notdir $(1))/$(notdir $(1))_stringtie_tx.fa: stringtie/$(notdir $(1))/$(notdir $(1)).gtf \
+stringtie/$(notdir $(1))/$(notdir $(1))_stringtie_tx.fa: stringtie/$(notdir $(1))/$(notdir $(1))_filtered.gtf \
 $(genome)
 	$(gffread) -w $$@ -g $(genome) $$<
 endef
@@ -408,23 +421,26 @@ $(foreach F,$(fastqfiles),$(eval $(call bwrule,$(F))))
 ## ==================================================================================== ##
 ## Fit bias model
 define fitbiasrule
-alpine/$(1)/alpine_fitbiasmodel.rds: $(gtf) STAR/$(1)/$(1)_Aligned.sortedByCoord.out.bam \
+alpine/$(1)$(2)/alpine_fitbiasmodel.rds: $(3) STAR$(2)/$(1)/$(1)_Aligned.sortedByCoord.out.bam \
 Rscripts/alpine_fitbiasmodel.R
 	mkdir -p $$(@D)
-	$(R) "--args gtf='$(gtf)' bam='$$(word 2,$$^)' readlength=$(2) minsize=$(3) maxsize=$(4) outdir='$$(@D)'" Rscripts/alpine_fitbiasmodel.R Rout/alpine_fitbiasmodel_$(1).Rout
+	$(R) "--args gtf='$(3)' bam='$$(word 2,$$^)' readlength=$(4) minsize=$(5) maxsize=$(6) organism='$(7)' genomeVersion='$(8)' version=$(9) outdir='$$(@D)'" Rscripts/alpine_fitbiasmodel.R Rout/alpine_fitbiasmodel_$(1)$(2).Rout
 endef
-$(eval $(call fitbiasrule,20151016.A-Cortex_RNA,126,100,300))
-$(eval $(call fitbiasrule,20170918.A-WT_4,151,140,450))
+$(eval $(call fitbiasrule,20151016.A-Cortex_RNA,,$(gtf),126,100,300,Homo_sapiens,GRCh38,90))
+$(eval $(call fitbiasrule,20170918.A-WT_4,,$(gtf),151,140,450,Homo_sapiens,GRCh38,90))
+$(eval $(call fitbiasrule,20151016.A-Cortex_RNA,_stringtie_tx,stringtie/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA.gtf,126,100,300,Homo_sapiens,GRCh38,90))
+$(eval $(call fitbiasrule,20170918.A-WT_4,_stringtie_tx,stringtie/20170918.A-WT_4/20170918.A-WT_4.gtf,151,140,450,Homo_sapiens,GRCh38,90))
 
 ## Predict transcript and junction coverage profiles for all transcripts that have at least one 
 ## junction and are longer than the fragment length
 define predcovrule
-alpine/$(1)/alpine_predicted_coverage.rds: alpine/$(1)/alpine_fitbiasmodel.rds \
-STAR/$(1)/$(1)_Aligned.sortedByCoord.out.bam Rscripts/alpine_get_predicted_coverage.R
+alpine/$(1)$(2)/alpine_predicted_coverage.rds: alpine/$(1)$(2)/alpine_fitbiasmodel.rds \
+STAR$(2)/$(1)/$(1)_Aligned.sortedByCoord.out.bam Rscripts/alpine_get_predicted_coverage.R
 	mkdir -p $$(@D)
-	$(R) "--args bam='$$(word 2,$$^)' biasmodels='$$(word 1,$$^)' ncores=$(2) outrds='$$@'" Rscripts/alpine_get_predicted_coverage.R Rout/alpine_get_predicted_coverage_$(1).Rout
+	$(R) "--args bam='$$(word 2,$$^)' biasmodels='$$(word 1,$$^)' ncores=$(3) outrds='$$@'" Rscripts/alpine_get_predicted_coverage.R Rout/alpine_get_predicted_coverage_$(1)$(2).Rout
 endef
-$(foreach F,$(fastqfiles),$(eval $(call predcovrule,$(notdir $(F)),22)))
+$(foreach F,$(fastqfiles),$(eval $(call predcovrule,$(notdir $(F)),,22)))
+$(foreach F,$(fastqfiles),$(eval $(call predcovrule,$(notdir $(F)),_stringtie_tx,11)))
 
 ## Scale junction coverage by transcript abundance estimates for each method
 define juncscalerule

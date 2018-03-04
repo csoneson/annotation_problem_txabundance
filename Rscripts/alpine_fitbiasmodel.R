@@ -8,20 +8,33 @@ print(bam)  ## used to extract "medium to highly expressed genes" to fit the bia
 print(readlength)
 print(minsize)
 print(maxsize)
+print(organism)
+print(genomeVersion)
+print(version)
 print(outdir)
 
-suppressPackageStartupMessages(library(ensembldb))
-suppressPackageStartupMessages(library(alpine))
-suppressPackageStartupMessages(library(Rsamtools))
-suppressPackageStartupMessages(library(GenomicAlignments))
-suppressPackageStartupMessages(library(BSgenome.Hsapiens.NCBI.GRCh38))
-suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages({
+  library(ensembldb)
+  library(alpine)
+  library(Rsamtools)
+  library(GenomicFeatures)
+  library(GenomicAlignments)
+  library(BSgenome.Hsapiens.NCBI.GRCh38)
+  library(dplyr)
+})
 
-## Construct ensembldb object from gtf file
-ensDbFromGtf(gtf, path = outdir)
+## Construct ensembldb object from gtf file and get TxDb
+txdb <- 
+  tryCatch({
+    ensDbFromGtf(gtf, path = outdir, organism = organism, 
+                 genomeVersion = genomeVersion, version = version)
+    EnsDb(paste0(outdir, "/", gsub("gtf", "sqlite", basename(gtf))))
+  }, error = function(e) {
+    makeTxDbFromGFF(gtf, format = "gtf", organism = gsub("_", " ", organism))
+  })
+txdb
 
 ## Get list of transcripts
-(txdb <- EnsDb(paste0(outdir, "/", gsub("gtf", "sqlite", basename(gtf)))))
 (txdf <- transcripts(txdb, return.type = "DataFrame"))  ## data frame format
 (txps <- transcripts(txdb))  ## GRanges format
 

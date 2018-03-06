@@ -14,6 +14,7 @@ hera := /home/charlotte/software/hera/build/hera
 hera_build := /home/charlotte/software/hera/build/hera_build
 strawberry := /home/charlotte/software/strawberry
 gffread := /home/charlotte/software/gffread-0.9.12.Linux_x86_64/gffread
+featurecounts := /home/charlotte/software/subread-1.6.0-Linux-x86_64/bin/featureCounts
 
 ## Reference files
 refdir := /home/Shared/data/annotation/Human/Ensembl_GRCh38.90
@@ -41,6 +42,9 @@ tx2gene := reference/Homo_sapiens.GRCh38.90_tx2gene.rds
 rsemgene2tx := reference/Homo_sapiens.GRCh38.90_gene2tx.txt
 tx2geneext := reference/Homo_sapiens.GRCh38.90_tx2gene_ext.rds
 gvizgenemodels := reference/Homo_sapiens.GRCh38.90_gviz_genemodels.rds
+
+flatgtfexons := reference/Homo_sapiens.GRCh38.90.reduced.exons.gtf
+flatgtfintrons := reference/Homo_sapiens.GRCh38.90.introns.gtf
 
 ## List FASTQ files (without the _{R1,R2}.fastq.gz part)
 fastqfiles := \
@@ -184,6 +188,13 @@ $(heraindex)/index: $(genome) $(gtf)
 ## Gene models for Gviz
 $(gvizgenemodels): $(gtf) Rscripts/generate_genemodels.R Rscripts/plot_tracks.R
 	$(R) "--args gtf='$(gtf)' outrds='$@'" Rscripts/generate_genemodels.R Rout/generate_genemodels.Rout
+
+## Flatten the gtf file and generate a separate gtf file with introns (gene range\union of exons)
+$(flatgtfintrons): $(gtf)
+	$(R) "--args ingtf='$(gtf)' outexongtf='$(flatgtfexons)' outintrongtf='$(flatgtfintrons)'" Rscripts/generate_exon_and_intron_gtfs.R Rout/generate_exon_and_intron_gtfs.Rout
+
+$(flatgtfexons): $(flatgtfintrons)
+	touch $(flatgtfexons)
 
 ## ==================================================================================== ##
 ##                     Reference files for extended annotation                          ##
@@ -428,6 +439,17 @@ STAR$(2)/$(notdir $(1))/$(notdir $(1))_Aligned.sortedByCoord.out.bam
 endef
 $(foreach F,$(fastqfiles),$(eval $(call starindexrule,$(F),)))
 $(foreach F,$(fastqfiles),$(eval $(call starindexrule,$(F),_stringtie_tx)))
+
+## Count reads mapping to exons and introns with featureCounts
+define featurecountsrule
+featureCounts$(2)/$(notdir $(1))/$(notdir $(1))_STAR_$(3).txt: \
+STAR$(2)/$(notdir $(1))/$(notdir $(1))_Aligned.sortedByCoord.out.bam \
+$(flatgtf$(3))
+	mkdir -p $$(@D)
+	$(featurecounts) -F GTF -t exon -g gene_id -O -s $(4) -p -T 2 -a $$(word 2,$$^) -o $$@ $$(word 1,$$^)
+endef
+$(foreach F,$(fastqfiles),$(eval $(call featurecountsrule,$(F),,exons,2)))
+$(foreach F,$(fastqfiles),$(eval $(call featurecountsrule,$(F),,introns,2)))
 
 ## Convert BAM files to bigWig
 define bwrule

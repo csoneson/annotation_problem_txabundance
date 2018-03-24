@@ -566,8 +566,11 @@ $(foreach F,$(fastqfiles),$(eval $(call combgexrule,$(notdir $(F)))))
 ## TODO: FIX FOR STRINGTIE_TX
 define plotscorerule
 alpine/$(1)/$(1)_gene_scores.rds: alpine/$(1)/alpine_gene_expression.rds \
-output/characterize_genes.rds alpine/$(1)/alpine_combined_coverages.rds Rscripts/plot_score_distribution.R
-	$(R) "--args covrds='$$(word 3,$$^)' gexrds='$$(word 1,$$^)' geneinfords='$$(word 2,$$^)' outrds='$$@'" Rscripts/plot_score_distribution.R Rout/plot_score_distribution_$(1).Rout
+output/characterize_genes.rds alpine/$(1)/alpine_combined_coverages.rds \
+featureCounts/$(1)/$(1)_STAR_exons.txt \
+featureCounts/$(1)/$(1)_STAR_introns.txt \
+Rscripts/plot_score_distribution.R
+	$(R) "--args covrds='$$(word 3,$$^)' gexrds='$$(word 1,$$^)' geneinfords='$$(word 2,$$^)' exoncountstxt='$$(word 4,$$^)' introncountstxt='$$(word 5,$$^)' outrds='$$@'" Rscripts/plot_score_distribution.R Rout/plot_score_distribution_$(1).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call plotscorerule,$(notdir $(F)))))
 

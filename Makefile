@@ -55,6 +55,8 @@ fastqfiles := \
 quantmethods := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS
 quantmethods2 := $(quantmethods) SalmonMinimap2Nanopore
 
+nthreads := 16
+
 ## ==================================================================================== ##
 ##                                    Main rules                                        ##
 ## ==================================================================================== ##
@@ -94,7 +96,6 @@ scalecov: $(foreach M,$(quantmethods),$(foreach F,$(fastqfiles),alpine/$(notdir 
 sumsub: $(foreach F,$(fastqfiles),alpine_check/$(notdir $(F))/subset_genes_to_run.txt.rds)
 
 ## Run methods on extended annotation from StringTie
-## TODO: Fix Hera indexing
 stringtietx: $(foreach F,$(fastqfiles),reference/$(notdir $(F))_stringtie_tx_tx2gene.rds) \
 $(foreach F,$(fastqfiles),reference/$(notdir $(F))_stringtie_tx_rsemgene2tx.txt) \
 $(foreach F,$(fastqfiles),reference/RSEM_stringtie_tx/$(notdir $(F))_stringtie_tx/$(notdir $(F))_stringtie_tx.n2g.idx.fa) \
@@ -102,11 +103,14 @@ $(foreach F,$(fastqfiles),reference/bwa/$(notdir $(F))_stringtie_tx/$(notdir $(F
 $(foreach F,$(fastqfiles),salmon_stringtie_tx/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),kallisto_stringtie_tx/$(notdir $(F))/abundance.tsv) \
 $(foreach F,$(fastqfiles),STAR_stringtie_tx/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoord.out.bam.bai) \
-$(foreach F,$(fastqfiles),alpine/$(notdir $(F))_stringtie_tx/alpine_predicted_coverage.rds) \
 $(foreach F,$(fastqfiles),RSEM_stringtie_tx/$(notdir $(F))/$(notdir $(F)).isoforms.results) \
+$(foreach F,$(fastqfiles),salmonbwa_stringtie_tx/$(notdir $(F))/quant.sf) \
+$(foreach F,$(fastqfiles),reference/hera/$(notdir $(F))_stringtie_tx/index) \
+$(foreach F,$(fastqfiles),hera_stringtie_tx/$(notdir $(F))/abundance.tsv)
+#$(foreach F,$(fastqfiles),alpine/$(notdir $(F))_stringtie_tx/alpine_predicted_coverage.rds) \
+
+tmp3: $(foreach F,$(fastqfiles),RSEM_stringtie_tx/$(notdir $(F))/$(notdir $(F)).isoforms.results) \
 $(foreach F,$(fastqfiles),salmonbwa_stringtie_tx/$(notdir $(F))/quant.sf)
-#$(foreach F,$(fastqfiles),reference/hera/$(notdir $(F))_stringtie_tx/index) \
-#$(foreach F,$(fastqfiles),hera_stringtie_tx/$(notdir $(F))/abundance.tsv)
 
 tmp2: $(foreach F,$(fastqfiles),STAR_stringtie_tx/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoord.out.bam.bai)
 
@@ -222,7 +226,7 @@ $(foreach F,$(fastqfiles),$(eval $(call gene2txrule,$(notdir $(F)),_stringtie_tx
 define salmonindexrule
 reference/salmon/$(notdir $(1))_stringtie_tx_sidx_v0.9.1/hash.bin: \
 stringtie/$(notdir $(1))/$(notdir $(1))_stringtie_tx.fa
-	$(salmon) index -t $$< -k 25 -i $$(@D) -p 10 --type quasi
+	$(salmon) index -t $$< -k 25 -i $$(@D) -p $(nthreads) --type quasi
 endef
 $(foreach F,$(fastqfiles),$(eval $(call salmonindexrule,$(F))))
 
@@ -259,9 +263,9 @@ $(foreach F,$(fastqfiles),$(eval $(call bwaindexrule,$(F),_stringtie_tx)))
 
 ## hera index
 define heraindexrule
-reference/hera/$(notdir $(1))$(2)/index: $(genome) stringtie/$(notdir $(1))/$(notdir $(1))_filtered.gtf
+reference/hera/$(notdir $(1))$(2)/index: $(genome) stringtie/$(notdir $(1))/$(notdir $(1))_filtered_withgene.gtf
 	mkdir -p $$(@D)
-	$(hera_build) --fasta $$(genome) --gtf stringtie/$$(notdir $(1))/$$(notdir $(1))_filtered.gtf --outdir $$(@D)/
+	$(hera_build) --fasta $$(genome) --gtf stringtie/$$(notdir $(1))/$$(notdir $(1))_filtered_withgene.gtf --outdir $$(@D)/
 endef
 $(foreach F,$(fastqfiles),$(eval $(call heraindexrule,$(F),_stringtie_tx)))
 
@@ -294,7 +298,7 @@ $(foreach F,$(fastqfiles),$(eval $(call herarule,$(F),_stringtie_tx,reference/he
 define bwarule
 $(3)/$(notdir $(1))/$(notdir $(1)).bam: $(2).sa# $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
-	$(bwa) mem $(2) $(1)_R1.fastq.gz $(1)_R2.fastq.gz | $(samtools) view -b -F 0x0800 -@ 10 - > $$@
+	$(bwa) mem -t $(nthreads) $(2) $(1)_R1.fastq.gz $(1)_R2.fastq.gz | $(samtools) view -b -F 0x0800 -@ $(nthreads) - > $$@
 endef
 $(foreach F,$(fastqfiles),$(eval $(call bwarule,$(F),$(txome),bwa/cDNAncRNA)))
 $(foreach F,$(fastqfiles),$(eval $(call bwarule,$(F),reference/bwa/$(notdir $(F))_stringtie_tx/$(notdir $(F))_stringtie_tx.fa,bwa_stringtie_tx)))
@@ -303,7 +307,7 @@ $(foreach F,$(fastqfiles),$(eval $(call bwarule,$(F),reference/bwa/$(notdir $(F)
 define salmonbwarule
 $(2)/$(notdir $(1))/quant.sf: $(3)/$(notdir $(1))/$(notdir $(1)).bam $(4)
 	mkdir -p $$(@D)
-	$(salmon) quant -l A -a $$(word 1,$$^) -t $(4) -p 10 --seqBias --gcBias -o $$(@D) 
+	$(salmon) quant -l A -a $$(word 1,$$^) -t $(4) -p $(nthreads) --seqBias --gcBias -o $$(@D) 
 endef
 $(foreach F,$(fastqfiles),$(eval $(call salmonbwarule,$(F),salmonbwa/cDNAncRNA,bwa/cDNAncRNA,$(txome))))
 $(foreach F,$(fastqfiles),$(eval $(call salmonbwarule,$(F),salmonbwa_stringtie_tx,bwa_stringtie_tx,reference/bwa/$(notdir $(F))_stringtie_tx/$(notdir $(F))_stringtie_tx.fa)))
@@ -315,7 +319,7 @@ $(foreach F,$(fastqfiles),$(eval $(call salmonbwarule,$(F),salmonbwa_stringtie_t
 define salmonrule
 $(3)/$(notdir $(1))/quant.sf: $(2)/hash.bin# $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
-	$(salmon) quant -i $$(word 1,$$(^D)) -l A -p 10 -1 $(1)_R1.fastq.gz -2 $(1)_R2.fastq.gz -o $$(@D) --seqBias --gcBias --posBias
+	$(salmon) quant -i $$(word 1,$$(^D)) -l A -p $(nthreads) -1 $(1)_R1.fastq.gz -2 $(1)_R2.fastq.gz -o $$(@D) --seqBias --gcBias --posBias
 endef
 $(foreach F,$(fastqfiles),$(eval $(call salmonrule,$(F),$(salmoncdnancrnaindex),salmon/cDNAncRNA)))
 $(foreach F,$(fastqfiles),$(eval $(call salmonrule,$(F),$(salmoncdsindex),salmon/cds)))
@@ -338,9 +342,9 @@ $(foreach F,$(fastqfiles),$(eval $(call salmoncomprule,$(F))))
 define hisat2rule
 HISAT2/$(notdir $(1))/$(notdir $(1)).bam: $(hisat2index).1.ht2 $(hisat2ss)# $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
-	$(hisat2)/hisat2 -p 10 -x $(hisat2index) --dta -1 $(1)_R1.fastq.gz -2 $(1)_R2.fastq.gz \
+	$(hisat2)/hisat2 -p $(nthreads) -x $(hisat2index) --dta -1 $(1)_R1.fastq.gz -2 $(1)_R2.fastq.gz \
 	--known-splicesite-infile $(hisat2ss) --summary-file $$@_summary.txt | \
-	$(samtools) view -b -@ 10 - | $(samtools) sort -o $$@ -T $(notdir $(1))tmp -@ 10 - 
+	$(samtools) view -b -@ $(nthreads) - | $(samtools) sort -o $$@ -T $(notdir $(1))tmp -@ $(nthreads) - 
 endef
 $(foreach F,$(fastqfiles),$(eval $(call hisat2rule,$(F))))
 
@@ -348,7 +352,7 @@ $(foreach F,$(fastqfiles),$(eval $(call hisat2rule,$(F))))
 define stringtierule
 stringtie/$(notdir $(1))/$(notdir $(1)).gtf: HISAT2/$(notdir $(1))/$(notdir $(1)).bam $(gtf)
 	mkdir -p $$(@D)
-	$(stringtie) $$< -o $$@ -p 10 -G $(gtf) -A $$@.tab
+	$(stringtie) $$< -o $$@ -p $(nthreads) -G $(gtf) -A $$@.tab
 endef
 $(foreach F,$(fastqfiles),$(eval $(call stringtierule,$(F))))
 
@@ -364,11 +368,17 @@ Rscripts/filter_stringtie_gtf.R
 endef
 $(foreach F,$(fastqfiles),$(eval $(call stringtiefilterrule,$(F))))
 
+define stringtiegenerule
+stringtie/$(notdir $(1))/$(notdir $(1))_filtered_withgene.gtf: stringtie/$(notdir $(1))/$(notdir $(1))_filtered.gtf Rscripts/add_gene_to_stringtie_gtf.R
+	$(R) "--args ingtf='$$<' outgtf='$$@'" Rscripts/add_gene_to_stringtie_gtf.R Rout/add_gene_to_stringtie_gtf_$(notdir $(1)).Rout
+endef
+$(foreach F,$(fastqfiles),$(eval $(call stringtiegenerule,$(F))))
+
 ## Run StringTie without assembly of new transcripts
 define stringtierefrule
 stringtie_onlyref/$(notdir $(1))/$(notdir $(1)).gtf: HISAT2/$(notdir $(1))/$(notdir $(1)).bam $(gtf)
 	mkdir -p $$(@D)
-	$(stringtie) $$< -o $$@ -p 10 -G $(gtf) -e -A $$@.tab
+	$(stringtie) $$< -o $$@ -p $(nthreads) -G $(gtf) -e -A $$@.tab
 endef
 $(foreach F,$(fastqfiles),$(eval $(call stringtierefrule,$(F))))
 
@@ -387,7 +397,7 @@ $(foreach F,$(fastqfiles),$(eval $(call gffreadrule,$(F))))
 define rsemrule
 $(3)/$(notdir $(1))/$(notdir $(1)).isoforms.results: $(2).n2g.idx.fa# $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
-	bash -c '$(RSEM)/rsem-calculate-expression -p 10 --bowtie-path /usr/bin --paired-end <(gunzip -c $(1)_R1.fastq.gz) <(gunzip -c $(1)_R2.fastq.gz) $(2) $(3)/$(notdir $(1))/$(notdir $(1))'
+	bash -c '$(RSEM)/rsem-calculate-expression -p $(nthreads) --bowtie-path /usr/bin --paired-end <(gunzip -c $(1)_R1.fastq.gz) <(gunzip -c $(1)_R2.fastq.gz) $(2) $(3)/$(notdir $(1))/$(notdir $(1))'
 	rm -f $(3)/$(notdir $(1))/$(notdir $(1)).transcript.bam
 endef
 $(foreach F,$(fastqfiles),$(eval $(call rsemrule,$(F),$(rsemcdnancrnaindex),RSEM/cDNAncRNA)))
@@ -400,7 +410,7 @@ $(foreach F,$(fastqfiles),$(eval $(call rsemrule,$(F),reference/RSEM_stringtie_t
 define kallistorule
 $(3)/$(notdir $(1))/abundance.tsv: $(2)# $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
-	$(kallisto) quant -i $(2) -o $$(@D) --bias -t 10 $(1)_R1.fastq.gz $(1)_R2.fastq.gz
+	$(kallisto) quant -i $(2) -o $$(@D) --bias -t $(nthreads) $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 endef
 $(foreach F,$(fastqfiles),$(eval $(call kallistorule,$(F),$(kallistocdnancrnaindex),kallisto/cDNAncRNA)))
 $(foreach F,$(fastqfiles),$(eval $(call kallistorule,$(F),reference/kallisto/$(notdir $(F))_stringtie_tx_kidx_v0.44.0,kallisto_stringtie_tx)))
@@ -414,7 +424,7 @@ STAR/$(notdir $(1))/$(notdir $(1))_Aligned.sortedByCoord.out.bam: $(STARindex)/S
 	mkdir -p $$(@D)
 	$(STAR) --genomeDir $(STARindex) \
 	--readFilesIn $(1)_R1.fastq.gz $(1)_R2.fastq.gz \
-	--runThreadN 10 --outFileNamePrefix STAR/$(notdir $(1))/$(notdir $(1))_ \
+	--runThreadN $(nthreads) --outFileNamePrefix STAR/$(notdir $(1))/$(notdir $(1))_ \
 	--outSAMtype BAM SortedByCoordinate --readFilesCommand gunzip -c
 endef
 $(foreach F,$(fastqfiles),$(eval $(call starrule,$(F))))
@@ -425,7 +435,7 @@ STAR_stringtie_tx/$(notdir $(1))/$(notdir $(1))_Aligned.sortedByCoord.out.bam: $
 	mkdir -p $$(@D)
 	$(STAR) --genomeDir $(STARindexnogtf) \
 	--readFilesIn $(1)_R1.fastq.gz $(1)_R2.fastq.gz \
-	--runThreadN 10 --outFileNamePrefix STAR_stringtie_tx/$(notdir $(1))/$(notdir $(1))_ \
+	--runThreadN $(nthreads) --outFileNamePrefix STAR_stringtie_tx/$(notdir $(1))/$(notdir $(1))_ \
 	--outSAMtype BAM SortedByCoordinate --readFilesCommand gunzip -c \
 	--sjdbGTFfile $(2) --sjdbOverhang $(3)
 endef
@@ -446,7 +456,7 @@ featureCounts$(2)/$(notdir $(1))/$(notdir $(1))_STAR_$(3).txt: \
 STAR$(2)/$(notdir $(1))/$(notdir $(1))_Aligned.sortedByCoord.out.bam \
 $(flatgtf$(3))
 	mkdir -p $$(@D)
-	$(featurecounts) -F GTF -t exon -g gene_id -O -s $(4) -p -T 2 -a $$(word 2,$$^) -o $$@ $$(word 1,$$^)
+	$(featurecounts) -F GTF -t exon -g gene_id -O -s $(4) -p -T $(nthreads) -a $$(word 2,$$^) -o $$@ $$(word 1,$$^)
 endef
 $(foreach F,$(fastqfiles),$(eval $(call featurecountsrule,$(F),,exons,2)))
 $(foreach F,$(fastqfiles),$(eval $(call featurecountsrule,$(F),,introns,2)))

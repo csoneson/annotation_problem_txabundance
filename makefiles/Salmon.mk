@@ -16,9 +16,9 @@ $(foreach F,$(fastqfiles),$(eval $(call salmonindexrule,reference/salmon/$(notdi
 define salmonrule
 $(4)/$(2)/quant.sf: $(3)/hash.bin# $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
-	$(salmon) quant -i $$(word 1,$$(^D)) -l A -p $(nthreads) -1 $(1)_R1.fastq.gz -2 $(1)_R2.fastq.gz -o $$(@D) --seqBias --gcBias --posBias
+	$(salmon) quant -i $$(word 1,$$(^D)) -l A -p $(nthreads) -1 $(1)_R1.fastq.gz -2 $(1)_R2.fastq.gz -o $$(@D) --seqBias --gcBias --posBias $(5)
 endef
-$(foreach F,$(fastqfiles),$(eval $(call salmonrule,$(F),$(notdir $(F)),$(salmoncdnancrnaindex),salmon/cDNAncRNA)))
-$(foreach F,$(fastqfiles),$(eval $(call salmonrule,$(F),$(notdir $(F)),$(salmoncdsindex),salmon/cds)))
-$(foreach F,$(fastqfiles),$(eval $(call salmonrule,$(F),$(notdir $(F)),reference/salmon/$(notdir $(F))_stringtie_tx_sidx_v0.9.1,salmon_stringtie_tx)))
+$(foreach F,$(fastqfiles),$(eval $(call salmonrule,$(F),$(notdir $(F)),$(salmoncdnancrnaindex),salmon/cDNAncRNA,--numBootstraps 100)))
+$(foreach F,$(fastqfiles),$(eval $(call salmonrule,$(F),$(notdir $(F)),$(salmoncdsindex),salmon/cds,)))
+$(foreach F,$(fastqfiles),$(eval $(call salmonrule,$(F),$(notdir $(F)),reference/salmon/$(notdir $(F))_stringtie_tx_sidx_v0.9.1,salmon_stringtie_tx,)))
 

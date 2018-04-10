@@ -55,7 +55,7 @@ quantmethods := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS
 quantmethods2 := $(quantmethods) SalmonMinimap2Nanopore
 quantmethods3 := Salmon SalmonBWA kallisto RSEM StringTie hera
 
-nthreads := 24
+nthreads := 12
 
 ## ==================================================================================== ##
 ##                                    Main rules                                        ##
@@ -86,6 +86,8 @@ $(foreach F,$(fastqfiles),STAR/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoo
 $(foreach K,exons introns,$(foreach F,$(fastqfiles),featureCounts/$(notdir $(F))/$(notdir $(F))_STAR_$(K).txt)) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_fitbiasmodel.rds) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_predicted_coverage.rds)
+
+salmontmp: $(foreach F,$(fastqfiles),salmon/cDNAncRNA/$(notdir $(F))/quant.sf)
 
 ## Prepare reference files and indexes
 prepref: $(txome) $(salmoncdnancrnaindex)/hash.bin $(salmoncdsindex)/hash.bin \

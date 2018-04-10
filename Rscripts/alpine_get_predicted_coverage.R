@@ -48,6 +48,7 @@ res <- mclapply(transcripts, function(tx) {
     a$`1`$pred.cov$all
   }, 
   error = function(e) {
+    print(paste(c(tx, e), collapse = ": "))
     ## Assume uniform coverage
     Rle(rep(1, sum(width(txmod)) - 1))
   })

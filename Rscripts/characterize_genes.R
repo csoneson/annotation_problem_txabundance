@@ -7,10 +7,12 @@ print(gtf)
 print(txome)
 print(outrds)
 
-suppressPackageStartupMessages(library(rtracklayer))
-suppressPackageStartupMessages(library(Biostrings))
-suppressPackageStartupMessages(library(dplyr))
-suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages({
+  library(rtracklayer)
+  library(Biostrings)
+  library(dplyr)
+  library(ggplot2)
+})
 
 gtf <- rtracklayer::import(gtf, format = "gtf")
 txome <- readDNAStringSet(txome)
@@ -19,6 +21,10 @@ txome <- readDNAStringSet(txome)
 exons <- as.data.frame(gtf) %>% dplyr::filter(type == "exon") %>% 
   dplyr::group_by(transcript_id) %>%
   dplyr::summarize(nbr_exons = length(exon_id),
+                   mean_exon_length = mean(width),
+                   longest_exon = max(width),
+                   shortest_exon = min(width),
+                   median_exon_length = median(width),
                    tx_length = sum(width),
                    gene_id = gene_id[1])
 
@@ -52,10 +58,10 @@ gene_char <- dplyr::full_join(
                      min_transcript_length_gtf = min(tx_length),
                      max_transcript_length_gtf = max(tx_length),
                      median_transcript_length_gtf = median(tx_length),
-                     ave_nbr_exons = mean(nbr_exons),
-                     min_nbr_exons = min(nbr_exons),
-                     max_nbr_exons = max(nbr_exons),
-                     median_nbr_exons = median(nbr_exons)),
+                     ave_nbr_exons_per_tx = mean(nbr_exons),
+                     min_nbr_exons_per_tx = min(nbr_exons),
+                     max_nbr_exons_per_tx = max(nbr_exons),
+                     median_nbr_exons_per_tx = median(nbr_exons)),
   utrs %>% dplyr::select(-transcript_id) %>% dplyr::distinct() %>% 
     dplyr::group_by(gene_id) %>% 
     dplyr::summarize(nbr_distinct_3putrs = length(unique(paste0(start, ".", end))),
@@ -63,7 +69,8 @@ gene_char <- dplyr::full_join(
                      min_3putr_length = min(width),
                      ave_3putr_length = mean(width),
                      median_3putr_length = median(width))
-) %>% dplyr::full_join(data.frame(gene_id = names(tmp2), length_diff_3putrs_samestart = tmp2,
+) %>% dplyr::full_join(data.frame(gene_id = names(tmp2), 
+                                  length_diff_3putrs_samestart = tmp2,
                                   stringsAsFactors = FALSE))
 
 ## Add information about the genes that are not present in the gtf
@@ -102,7 +109,7 @@ ggplot(gene_info, aes(x = nbr_transcripts)) + geom_histogram(bins = 100) +
   theme_bw() + xlab("Number of transcripts per gene") + scale_x_sqrt()
 ggplot(gene_info, aes(x = ave_transcript_length)) + geom_histogram(bins = 100) + 
   theme_bw() + xlab("Average transcript length per gene") + scale_x_sqrt()
-ggplot(gene_info, aes(x = ave_nbr_exons)) + geom_histogram(bins = 100) + 
+ggplot(gene_info, aes(x = ave_nbr_exons_per_tx)) + geom_histogram(bins = 100) + 
   theme_bw() + xlab("Average number of exons in a transcript per gene") + scale_x_sqrt()
 ggplot(gene_info, aes(x = nbr_distinct_3putrs)) + geom_histogram(bins = 100) + 
   theme_bw() + xlab("Number of distinct 3'UTRs per gene") + scale_x_sqrt()

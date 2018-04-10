@@ -23,9 +23,9 @@ Type 'q()' to quit R.
 + }
 > 
 > print(tx2gene)
-[1] "reference/Homo_sapiens.GRCh38.90_tx2gene.rds"
+[1] "reference/20170918.A-WT_4_stringtie_tx_tx2gene.rds"
 > print(rsemgene2tx)
-[1] "reference/Homo_sapiens.GRCh38.90_rsemgene2tx.txt"
+[1] "reference/20170918.A-WT_4_stringtie_tx_rsemgene2tx.txt"
 > 
 > x <- readRDS(tx2gene)
 > 
@@ -42,12 +42,10 @@ BLAS: /usr/local/R/R-3.4.0/lib/libRblas.so
 LAPACK: /usr/local/R/R-3.4.0/lib/libRlapack.so
 
 locale:
- [1] LC_CTYPE=en_CA.UTF-8       LC_NUMERIC=C              
- [3] LC_TIME=en_CA.UTF-8        LC_COLLATE=en_CA.UTF-8    
- [5] LC_MONETARY=en_CA.UTF-8    LC_MESSAGES=en_CA.UTF-8   
- [7] LC_PAPER=en_CA.UTF-8       LC_NAME=C                 
- [9] LC_ADDRESS=C               LC_TELEPHONE=C            
-[11] LC_MEASUREMENT=en_CA.UTF-8 LC_IDENTIFICATION=C       
+ [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
+ [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
+ [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
+[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
 
 attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
@@ -55,8 +53,8 @@ attached base packages:
 loaded via a namespace (and not attached):
 [1] compiler_3.4.0
 > date()
-[1] "Tue Nov  7 13:48:21 2017"
+[1] "Sun Mar  4 15:20:23 2018"
 > 
 > proc.time()
    user  system elapsed 
-  1.382   0.100   1.459 
+  0.924   0.098   1.000 

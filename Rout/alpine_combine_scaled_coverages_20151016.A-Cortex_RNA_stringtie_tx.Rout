@@ -1,0 +1,157 @@
+
+R Under development (unstable) (2017-12-14 r73916) -- "Unsuffered Consequences"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> args <- (commandArgs(trailingOnly = TRUE))
+> for (i in 1:length(args)) {
++   eval(parse(text = args[[i]]))
++ }
+> 
+> print(junctioncovSTAR) ## Junction reads from STAR
+[1] "STAR_stringtie_tx/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_SJ.out.tab"
+> print(junctioncovSalmon) ## Salmon quantifications
+[1] "alpine/20151016.A-Cortex_RNA_stringtie_tx/scaled_junction_coverage_Salmon.rds"
+> print(junctioncovSalmonBWA) ## Salmon quantifications in alignment mode (after BWA)
+[1] "alpine/20151016.A-Cortex_RNA_stringtie_tx/scaled_junction_coverage_SalmonBWA.rds"
+> print(junctioncovSalmonCDS) ## Salmon quantifications based on CDSs only
+[1] ""
+> print(junctioncovhera) ## Hera quantifications
+[1] "alpine/20151016.A-Cortex_RNA_stringtie_tx/scaled_junction_coverage_hera.rds"
+> print(junctioncovkallisto) ## kallisto quantifications
+[1] "alpine/20151016.A-Cortex_RNA_stringtie_tx/scaled_junction_coverage_kallisto.rds"
+> print(junctioncovRSEM) ## RSEM quantifications
+[1] "alpine/20151016.A-Cortex_RNA_stringtie_tx/scaled_junction_coverage_RSEM.rds"
+> print(junctioncovStringTie) ## StringTie quantifications
+[1] "alpine/20151016.A-Cortex_RNA_stringtie_tx/scaled_junction_coverage_StringTie.rds"
+> print(junctioncovNanopore) ## If present, nanopore results
+[1] ""
+> print(outrds)
+[1] "alpine/20151016.A-Cortex_RNA_stringtie_tx/alpine_combined_coverages.rds"
+> 
+> suppressPackageStartupMessages(library(dplyr))
+> suppressPackageStartupMessages(library(ggplot2))
+> 
+> jcov <- read.delim(junctioncovSTAR, 
++                    header = FALSE, as.is = TRUE)
+> colnames(jcov) <- c("seqnames", "start", "end", "strand", "motif", "annot", 
++                     "uniqreads", "mmreads", "maxoverhang")
+> jcov <- jcov %>% dplyr::mutate(strand = replace(strand, strand == 1, "+")) %>%
++   dplyr::mutate(strand = replace(strand, strand == 2, "-")) %>%
++   dplyr::select(seqnames, start, end, strand, uniqreads, mmreads)
+> 
+> jcovnostrand <- jcov %>% group_by(seqnames, start, end) %>%
++   dplyr::summarize(uniqreads = sum(uniqreads), 
++                    mmreads = sum(mmreads)) %>%
++   dplyr::mutate(strand = "*") %>% dplyr::ungroup() %>%
++   dplyr::select(seqnames, start, end, strand, uniqreads, mmreads) %>%
++   as.data.frame()
+> jcov <- rbind(jcov, jcovnostrand)
+> 
+> ## Read and merge junction coverages predicted by each method
+> jcovscaled <- do.call(rbind, list(readRDS(junctioncovSalmon)$allcovs,
++                                   readRDS(junctioncovSalmonBWA)$allcovs,
++                                   readRDS(junctioncovhera)$allcovs,
++                                   readRDS(junctioncovkallisto)$allcovs,
++                                   readRDS(junctioncovRSEM)$allcovs,
++                                   readRDS(junctioncovStringTie)$allcovs))
+> if (junctioncovNanopore != "") {
++   jcovscaled <- rbind(jcovscaled, readRDS(junctioncovNanopore)$allcovs)
++ }
+> if (junctioncovSalmonCDS != "") {
++   jcovscaled <- rbind(jcovscaled, readRDS(junctioncovSalmonCDS)$allcovs)
++ }
+> 
+> jcovscaled <- jcovscaled %>%
++   dplyr::group_by(seqnames, start, end, gene) %>%
++   dplyr::mutate(transcript = paste(unique(strsplit(paste(unique(transcript), collapse = ","), 
++                                                    ",")[[1]]), collapse = ",")) %>% 
++   dplyr::ungroup() %>% 
++   dplyr::mutate(pred.cov = replace(pred.cov, is.na(pred.cov), 0)) %>%
++   dplyr::left_join(jcov, by = c("seqnames", "start", "end", "strand")) %>%
++   dplyr::mutate(uniqreads = replace(uniqreads, is.na(uniqreads), 0),
++                 mmreads = replace(mmreads, is.na(mmreads), 0)) %>%
++   dplyr::group_by(gene, method) %>% 
++   dplyr::mutate(scaledcoverage = pred.cov/sum(pred.cov, na.rm = TRUE) * 
++                   sum(uniqreads, na.rm = TRUE)) %>%
++   dplyr::mutate(scaledcoverage = replace(scaledcoverage, is.na(scaledcoverage), 0)) %>% 
++   dplyr::mutate(score = round(sum(abs(uniqreads - scaledcoverage), na.rm = TRUE)/
++                                 sum(uniqreads, na.rm = TRUE), 2)) %>% 
++   dplyr::mutate(methodscore = paste0(method, " (", score, ")")) %>%
++   dplyr::ungroup()
+Warning messages:
+1: Column `seqnames` joining factor and character vector, coercing into character vector 
+2: Column `strand` joining factor and character vector, coercing into character vector 
+> 
+> j0 <- jcovscaled %>% dplyr::select(seqnames, start, end, gene) %>%
++   dplyr::distinct() %>% dplyr::group_by(gene) %>% dplyr::arrange(start) %>%
++   dplyr::mutate(junctionid = paste0("J", seq_len(length(start)))) %>%
++   dplyr::ungroup()
+> 
+> jcovscaled <- jcovscaled %>% dplyr::left_join(j0) %>%
++   dplyr::select(junctionid, everything(), transcript)
+Joining, by = c("seqnames", "start", "end", "gene")
+> 
+> allquants <- do.call(rbind, list(readRDS(junctioncovSalmon)$quants,
++                                  readRDS(junctioncovSalmonBWA)$quants,
++                                  readRDS(junctioncovhera)$quants,
++                                  readRDS(junctioncovkallisto)$quants,
++                                  readRDS(junctioncovRSEM)$quants,
++                                  readRDS(junctioncovStringTie)$quants))
+> 
+> if (junctioncovNanopore != "") {
++   allquants <- rbind(allquants, readRDS(junctioncovNanopore)$quants)
++ }
+> if (junctioncovSalmonCDS != "") {
++   allquants <- rbind(allquants, readRDS(junctioncovSalmonCDS)$quants)
++ }
+> 
+> saveRDS(list(jcov = jcov, jcovscaled = jcovscaled, allquants = allquants), file = outrds)
+> 
+> sessionInfo()
+R Under development (unstable) (2017-12-14 r73916)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 16.04.4 LTS
+
+Matrix products: default
+BLAS: /usr/local/R/R-devel/lib/libRblas.so
+LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
+ [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
+ [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
+[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] bindrcpp_0.2  ggplot2_2.2.1 dplyr_0.7.4  
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_0.12.16     assertthat_0.2.0 plyr_1.8.4       grid_3.5.0      
+ [5] R6_2.2.2         gtable_0.2.0     magrittr_1.5     scales_0.5.0    
+ [9] pillar_1.2.1     rlang_0.2.0      lazyeval_0.2.1   glue_1.2.0      
+[13] munsell_0.4.3    compiler_3.5.0   colorspace_1.3-2 pkgconfig_2.0.1 
+[17] bindr_0.1.1      tibble_1.4.2    
+> date()
+[1] "Mon Apr  2 08:41:08 2018"
+> 
+> proc.time()
+   user  system elapsed 
+213.528   1.764 215.771 

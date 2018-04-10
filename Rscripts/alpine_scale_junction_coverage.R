@@ -20,8 +20,12 @@ source(quantreadscript)
 predcovs <- readRDS(predcovrds)
 quants <- read_quant(file = txquants, avefraglength = predcovs[[1]]$avefraglength)
 tx2gene <- readRDS(tx2gene)
-tx2gene$tx <- gsub("\\.[0-9]+", "", tx2gene$tx)
-tx2gene$gene <- gsub("\\.[0-9]+", "", tx2gene$gene)
+
+idxtx <- grep("^STRG\\.", tx2gene$tx, invert = TRUE)
+tx2gene$tx[idxtx] <- gsub("\\.[0-9]+$", "", tx2gene$tx[idxtx])
+
+idxgene <- grep("^STRG\\.", tx2gene$gene, invert = TRUE)
+tx2gene$gene[idxgene] <- gsub("\\.[0-9]+$", "", tx2gene$gene[idxgene])
 
 transcripts <- names(predcovs)
 names(transcripts) <- transcripts

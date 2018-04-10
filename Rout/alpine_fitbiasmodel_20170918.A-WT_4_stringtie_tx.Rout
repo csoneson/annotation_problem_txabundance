@@ -1,0 +1,373 @@
+
+R Under development (unstable) (2017-12-14 r73916) -- "Unsuffered Consequences"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> args <- (commandArgs(trailingOnly = TRUE))
+> for (i in 1:length(args)) {
++   eval(parse(text = args[[i]]))
++ }
+> 
+> print(gtf)
+[1] "stringtie/20170918.A-WT_4/20170918.A-WT_4_filtered.gtf"
+> print(bam)  ## used to extract "medium to highly expressed genes" to fit the bias model
+[1] "STAR_stringtie_tx/20170918.A-WT_4/20170918.A-WT_4_Aligned.sortedByCoord.out.bam"
+> print(readlength)
+[1] 151
+> print(minsize)
+[1] 140
+> print(maxsize)
+[1] 450
+> print(organism)
+[1] "Homo_sapiens"
+> print(genomeVersion)
+[1] "GRCh38"
+> print(version)
+[1] 90
+> print(outdir)
+[1] "alpine/20170918.A-WT_4_stringtie_tx"
+> 
+> suppressPackageStartupMessages({
++   library(ensembldb)
++   library(alpine)
++   library(Rsamtools)
++   library(GenomicFeatures)
++   library(GenomicAlignments)
++   library(BSgenome.Hsapiens.NCBI.GRCh38)
++   library(dplyr)
++ })
+> 
+> ## Construct ensembldb object from gtf file and get TxDb
+> txdb <- 
++   tryCatch({
++     ensDbFromGtf(gtf, path = outdir, organism = organism, 
++                  genomeVersion = genomeVersion, version = version)
++     EnsDb(paste0(outdir, "/", gsub("gtf", "sqlite", basename(gtf))))
++   }, error = function(e) {
++     GenomicFeatures::makeTxDbFromGFF(gtf, format = "gtf", organism = gsub("_", " ", organism))
++   })
+Importing GTF file ... OK
+Processing metadata ... OK
+Processing genes ... 
+ Attribute availability:
+  o gene_id ... OK
+  o gene_name ... Nope
+  o entrezid ... Nope
+  o gene_biotype ... Nope
+OK
+Processing transcripts ... 
+ Attribute availability:
+  o transcript_id ... OK
+  o gene_id ... OK
+  o source ... OK
+ I can't find type=='CDS'! The resulting database will lack CDS information!
+Import genomic features from the file as a GRanges object ... OK
+Prepare the 'metadata' data frame ... OK
+Make the TxDb object ... OK
+Warning messages:
+1: In ensDbFromGRanges(GTF, outfile = outfile, path = path, organism = organism,  :
+   I'm missing column(s): 'gene_name','entrezid','gene_biotype'. The corresponding database column(s) will be empty!
+2: In ensDbFromGRanges(GTF, outfile = outfile, path = path, organism = organism,  :
+   I can't find type=='CDS'! The resulting database will lack CDS information!
+> txdb
+TxDb object:
+# Db type: TxDb
+# Supporting package: GenomicFeatures
+# Data source: stringtie/20170918.A-WT_4/20170918.A-WT_4_filtered.gtf
+# Organism: Homo sapiens
+# Taxonomy ID: 9606
+# miRBase build ID: NA
+# Genome: NA
+# transcript_nrow: 109155
+# exon_nrow: 318981
+# cds_nrow: 0
+# Db created by: GenomicFeatures package from Bioconductor
+# Creation time: 2018-03-05 10:29:36 +0100 (Mon, 05 Mar 2018)
+# GenomicFeatures version at creation time: 1.31.10
+# RSQLite version at creation time: 2.0
+# DBSCHEMAVERSION: 1.2
+> 
+> ## Get list of transcripts
+> if (class(txdb) == "EnsDb") {
++   txdf <- transcripts(txdb, return.type = "DataFrame")  ## data frame format
++   txps <- transcripts(txdb)  ## GRanges format
++ } else {
++   txps <- GenomicFeatures::transcripts(txdb, columns = c("tx_name", "gene_id"), use.names = TRUE)
++   txps$gene_id <- unlist(txps$gene_id)
++   txdf <- DataFrame(tx_id = as.character(txps$tx_name), gene_id = as.character(unlist(txps$gene_id)),
++                     tx_seq_start = as.integer(start(txps)), tx_seq_end = as.integer(end(txps)),
++                     tx_name = as.character(txps$tx_name))
++ }
+> txdf
+DataFrame with 109155 rows and 5 columns
+                 tx_id         gene_id tx_seq_start tx_seq_end         tx_name
+           <character>     <character>    <integer>  <integer>     <character>
+1            STRG.49.1         STRG.49        24913     199502       STRG.49.1
+2      ENST00000473358 ENSG00000243485        29554      31097 ENST00000473358
+3      ENST00000469289 ENSG00000243485        30267      31109 ENST00000469289
+4      ENST00000607096 ENSG00000284332        30366      30503 ENST00000607096
+5      ENST00000442987 ENSG00000233750       131025     134836 ENST00000442987
+...                ...             ...          ...        ...             ...
+109151    STRG.68154.3      STRG.68154       118087     140946    STRG.68154.3
+109152    STRG.68154.4      STRG.68154       124368     140946    STRG.68154.4
+109153    STRG.68243.1      STRG.68243         5779       6231    STRG.68243.1
+109154    STRG.68250.1      STRG.68250        39164      39633    STRG.68250.1
+109155    STRG.68217.1      STRG.68217        76855      85703    STRG.68217.1
+> txps
+GRanges object with 109155 ranges and 2 metadata columns:
+                    seqnames        ranges strand |         tx_name
+                       <Rle>     <IRanges>  <Rle> |     <character>
+        STRG.49.1          1  24913-199502      + |       STRG.49.1
+  ENST00000473358          1   29554-31097      + | ENST00000473358
+  ENST00000469289          1   30267-31109      + | ENST00000469289
+  ENST00000607096          1   30366-30503      + | ENST00000607096
+  ENST00000442987          1 131025-134836      + | ENST00000442987
+              ...        ...           ...    ... .             ...
+     STRG.68154.3 KI270744.1 118087-140946      - |    STRG.68154.3
+     STRG.68154.4 KI270744.1 124368-140946      - |    STRG.68154.4
+     STRG.68243.1 KI270745.1     5779-6231      + |    STRG.68243.1
+     STRG.68250.1 KI270745.1   39164-39633      + |    STRG.68250.1
+     STRG.68217.1 KI270748.1   76855-85703      + |    STRG.68217.1
+                          gene_id
+                      <character>
+        STRG.49.1         STRG.49
+  ENST00000473358 ENSG00000243485
+  ENST00000469289 ENSG00000243485
+  ENST00000607096 ENSG00000284332
+  ENST00000442987 ENSG00000233750
+              ...             ...
+     STRG.68154.3      STRG.68154
+     STRG.68154.4      STRG.68154
+     STRG.68243.1      STRG.68243
+     STRG.68250.1      STRG.68250
+     STRG.68217.1      STRG.68217
+  -------
+  seqinfo: 49 sequences (1 circular) from an unspecified genome; no seqlengths
+> 
+> ## Select genes with a single isoform
+> tab <- table(txdf$gene_id)
+> one.iso.genes <- names(tab)[tab == 1]
+> length(one.iso.genes)
+[1] 22217
+> length(tab)
+[1] 37705
+> 
+> ## Get list of exons by transcript
+> if (class(txdb) == "EnsDb") {
++   (ebt0 <- exonsBy(txdb, by = "tx"))
++ } else { 
++   (ebt0 <- exonsBy(txdb, by = "tx", use.names = TRUE))
++ }
+GRangesList object of length 109155:
+$STRG.49.1 
+GRanges object with 2 ranges and 3 metadata columns:
+      seqnames        ranges strand |   exon_id   exon_name exon_rank
+         <Rle>     <IRanges>  <Rle> | <integer> <character> <integer>
+  [1]        1   24913-25458      + |         1        <NA>         1
+  [2]        1 195984-199502      + |         9        <NA>         2
+
+$ENST00000473358 
+GRanges object with 3 ranges and 3 metadata columns:
+      seqnames      ranges strand | exon_id exon_name exon_rank
+  [1]        1 29554-30039      + |       2      <NA>         1
+  [2]        1 30564-30667      + |       5      <NA>         2
+  [3]        1 30976-31097      + |       6      <NA>         3
+
+$ENST00000469289 
+GRanges object with 2 ranges and 3 metadata columns:
+      seqnames      ranges strand | exon_id exon_name exon_rank
+  [1]        1 30267-30667      + |       3      <NA>         1
+  [2]        1 30976-31109      + |       7      <NA>         2
+
+...
+<109152 more elements>
+-------
+seqinfo: 49 sequences (1 circular) from an unspecified genome; no seqlengths
+> 
+> ## Get transcript names for genes with a single isoform
+> one.iso.txs <- txdf$tx_id[txdf$gene_id %in% one.iso.genes]
+> 
+> ## Extract these transcripts for use in fitting bias model
+> ebt.fit <- ebt0[one.iso.txs]
+> ebt.fit <- keepStandardChromosomes(ebt.fit, pruning.mode = "coarse")
+> 
+> ## Filter small genes and long genes
+> min.bp <- 600
+> max.bp <- 7000
+> gene.lengths <- sum(width(ebt.fit))
+> summary(gene.lengths)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+     28     393     773    1479    1827  205012 
+> 
+> ebt.fit <- ebt.fit[gene.lengths > min.bp & gene.lengths < max.bp]
+> length(ebt.fit)
+[1] 12682
+> 
+> ## Sample 1000 genes to use for the fitting of the bias model
+> set.seed(1)
+> ebt.fit <- ebt.fit[sample(length(ebt.fit), 1000)]
+> 
+> ## Read bam file
+> bam.files <- bam
+> names(bam.files) <- "1"
+> 
+> ## Subset to medium-to-high expressed genes
+> txps.fit <- sort(txps[names(ebt.fit)])
+> cts <- countBam(BamFile(bam.files), param = ScanBamParam(which = txps.fit))
+> mcols(txps.fit)$cts <- cts$records
+> txps.fit <- txps.fit[names(ebt.fit)]
+> sum(txps.fit$cts > 500 & txps.fit$cts < 10000)
+[1] 322
+> ebt.fit <- ebt.fit[txps.fit$cts > 500 & txps.fit$cts < 10000]
+> length(ebt.fit)
+[1] 322
+> 
+> ## Get fragment width and read length
+> w <- getFragmentWidths(bam.files, ebt.fit[[min(which(sapply(ebt.fit, length) > 1))]])
+Warning message:
+In .make_GAlignmentPairs_from_GAlignments(gal, strandMode = strandMode,  :
+    15 alignments with ambiguous pairing were dumped.
+    Use 'getDumpedAlignments()' to retrieve them from the dump environment.
+> quantile(w, c(.025, .975))
+  2.5%  97.5% 
+137.75 456.00 
+> getReadLength(bam.files)
+  1 
+151 
+> 
+> ## Names of genes to retain
+> gene.names <- names(ebt.fit)
+> names(gene.names) <- gene.names
+> 
+> ## Build fragment types for selected genes
+> system.time({
++   fragtypes <- lapply(gene.names, function(gene.name) {
++     buildFragtypes(exons = ebt.fit[[gene.name]],
++                    genome = Hsapiens,
++                    readlength = readlength,
++                    minsize = minsize,
++                    maxsize = maxsize,
++                    gc.str = FALSE)
++   })
++ })
+    user   system  elapsed 
+1076.248   74.741 1156.116 
+> object.size(fragtypes)/1e6
+19568.5 bytes
+> 
+> ## Define models to fit
+> models <- list(
++   "all" = list(
++     formula = "count ~ ns(gc,knots=gc.knots,Boundary.knots=gc.bk) + 
++     ns(relpos,knots=relpos.knots,Boundary.knots=relpos.bk) + gene",
++     offset = c("fraglen", "vlmm")
++   )
++ )
+> 
+> ## Fit bias model
+> system.time({
++   fitpar <- lapply(bam.files, function(bf) {
++     fitBiasModels(genes = ebt.fit,
++                   bam.file = bf,
++                   fragtypes = fragtypes,
++                   genome = Hsapiens,
++                   models = models,
++                   readlength = readlength,
++                   minsize = minsize,
++                   maxsize = maxsize)
++   })
++ })
+    user   system  elapsed 
+1840.493  313.960 2172.345 
+> 
+> ## Diagnostic plots
+> pdf(paste0(outdir, "/alpine_fitbiasmodel_plots.pdf"))
+> plotFragLen(fitpar)
+> plotGC(fitpar, model = "all")
+> dev.off()
+null device 
+          1 
+> 
+> ## Save bias model
+> saveRDS(list(fitpar = fitpar, ebt0 = ebt0, txps = txps), 
++         file = paste0(outdir, "/alpine_fitbiasmodel.rds"))
+> 
+> date()
+[1] "Mon Mar  5 11:26:01 2018"
+> sessionInfo()
+R Under development (unstable) (2017-12-14 r73916)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 14.04.5 LTS
+
+Matrix products: default
+BLAS: /usr/local/R/R-devel/lib/libRblas.so
+LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
+ [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
+ [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
+[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+
+attached base packages:
+[1] stats4    parallel  stats     graphics  grDevices utils     datasets 
+[8] methods   base     
+
+other attached packages:
+ [1] dplyr_0.7.4                           
+ [2] BSgenome.Hsapiens.NCBI.GRCh38_1.3.1000
+ [3] BSgenome_1.47.5                       
+ [4] rtracklayer_1.39.9                    
+ [5] GenomicAlignments_1.15.12             
+ [6] SummarizedExperiment_1.9.15           
+ [7] DelayedArray_0.5.22                   
+ [8] BiocParallel_1.13.1                   
+ [9] matrixStats_0.53.1                    
+[10] Rsamtools_1.31.3                      
+[11] Biostrings_2.47.9                     
+[12] XVector_0.19.9                        
+[13] alpine_1.5.3                          
+[14] ensembldb_2.3.12                      
+[15] AnnotationFilter_1.3.2                
+[16] GenomicFeatures_1.31.10               
+[17] AnnotationDbi_1.41.4                  
+[18] Biobase_2.39.2                        
+[19] GenomicRanges_1.31.22                 
+[20] GenomeInfoDb_1.15.5                   
+[21] IRanges_2.13.28                       
+[22] S4Vectors_0.17.36                     
+[23] BiocGenerics_0.25.3                   
+
+loaded via a namespace (and not attached):
+ [1] progress_1.1.2         splines_3.5.0          lattice_0.20-35       
+ [4] blob_1.1.0             XML_3.98-1.10          RBGL_1.55.1           
+ [7] rlang_0.2.0            pillar_1.2.1           glue_1.2.0            
+[10] DBI_0.8                bit64_0.9-7            bindrcpp_0.2          
+[13] speedglm_0.3-2         bindr_0.1              GenomeInfoDbData_1.1.0
+[16] stringr_1.3.0          zlibbioc_1.25.0        ProtGenerics_1.11.0   
+[19] memoise_1.1.0          biomaRt_2.35.12        curl_3.1              
+[22] Rcpp_0.12.15           graph_1.57.1           bit_1.1-12            
+[25] digest_0.6.15          stringi_1.1.6          grid_3.5.0            
+[28] tools_3.5.0            bitops_1.0-6           magrittr_1.5          
+[31] RCurl_1.95-4.10        lazyeval_0.2.1         tibble_1.4.2          
+[34] RSQLite_2.0            pkgconfig_2.0.1        MASS_7.3-47           
+[37] Matrix_1.2-12          prettyunits_1.0.2      assertthat_0.2.0      
+[40] httr_1.3.1             R6_2.2.2               compiler_3.5.0        
+> 
+> proc.time()
+    user   system  elapsed 
+3051.047  396.168 3482.596 

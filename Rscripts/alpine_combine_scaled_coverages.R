@@ -36,13 +36,15 @@ jcov <- rbind(jcov, jcovnostrand)
 ## Read and merge junction coverages predicted by each method
 jcovscaled <- do.call(rbind, list(readRDS(junctioncovSalmon)$allcovs,
                                   readRDS(junctioncovSalmonBWA)$allcovs,
-                                  readRDS(junctioncovSalmonCDS)$allcovs,
                                   readRDS(junctioncovhera)$allcovs,
                                   readRDS(junctioncovkallisto)$allcovs,
                                   readRDS(junctioncovRSEM)$allcovs,
                                   readRDS(junctioncovStringTie)$allcovs))
 if (junctioncovNanopore != "") {
   jcovscaled <- rbind(jcovscaled, readRDS(junctioncovNanopore)$allcovs)
+}
+if (junctioncovSalmonCDS != "") {
+  jcovscaled <- rbind(jcovscaled, readRDS(junctioncovSalmonCDS)$allcovs)
 }
 
 jcovscaled <- jcovscaled %>%
@@ -73,7 +75,6 @@ jcovscaled <- jcovscaled %>% dplyr::left_join(j0) %>%
 
 allquants <- do.call(rbind, list(readRDS(junctioncovSalmon)$quants,
                                  readRDS(junctioncovSalmonBWA)$quants,
-                                 readRDS(junctioncovSalmonCDS)$quants, 
                                  readRDS(junctioncovhera)$quants,
                                  readRDS(junctioncovkallisto)$quants,
                                  readRDS(junctioncovRSEM)$quants,
@@ -81,6 +82,9 @@ allquants <- do.call(rbind, list(readRDS(junctioncovSalmon)$quants,
 
 if (junctioncovNanopore != "") {
   allquants <- rbind(allquants, readRDS(junctioncovNanopore)$quants)
+}
+if (junctioncovSalmonCDS != "") {
+  allquants <- rbind(allquants, readRDS(junctioncovSalmonCDS)$quants)
 }
 
 saveRDS(list(jcov = jcov, jcovscaled = jcovscaled, allquants = allquants), file = outrds)

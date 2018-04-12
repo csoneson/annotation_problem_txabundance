@@ -78,3 +78,10 @@ alpine/20170918.A-WT_4/alpine_combined_coverages.rds Rscripts/deviation_predicte
 	mkdir -p $(@D)
 	$(R) "--args combcovrds1='$(word 1,$^)' combcovrds2='$(word 2,$^)' outrds='$@'" Rscripts/deviation_predicted_observed_coverage_across_datasets.R Rout/deviation_predicted_observed_coverage_across_datasets.Rout
 
+## Correlation between scores from different methods
+define corrmethodrule
+figures/score_correlation_between_methods_$(1).rds: alpine/$(1)/alpine_combined_coverages.rds Rscripts/score_correlation_between_methods.R
+	mkdir -p $$(@D)
+	$(R) "--args combcovrds='$$(word 1,$$^)' outrds='$$@'" Rscripts/score_correlation_between_methods.R Rout/score_correlation_between_methods_$(1).Rout
+endef
+$(foreach F,$(fastqfiles),$(eval $(call corrmethodrule,$(notdir $(F)))))

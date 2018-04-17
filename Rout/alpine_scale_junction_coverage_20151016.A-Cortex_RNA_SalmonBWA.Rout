@@ -23,19 +23,19 @@ Type 'q()' to quit R.
 + }
 > 
 > print(predcovrds)  ## predicted transcript and junction coverage
-[1] "alpine/20151016.A-Cortex_RNA_stringtie_tx/alpine_predicted_coverage.rds"
+[1] "alpine/20151016.A-Cortex_RNA/alpine_predicted_coverage.rds"
 > print(txquants)  ## transcript quantification file
-[1] "salmonbwa_stringtie_tx/20151016.A-Cortex_RNA/quant.sf"
+[1] "salmonbwa/cDNAncRNA/20151016.A-Cortex_RNA/quant.sf"
 > print(quantreadscript)  ## script containing a function "read_quant()"
 [1] "Rscripts/read_quant_salmon.R"
 > print(strandspec)  ## "yes" or "no"
 [1] "yes"
 > print(tx2gene)  ## link transcripts to genes
-[1] "reference/20151016.A-Cortex_RNA_stringtie_tx_tx2gene_withsymbol.rds"
+[1] "reference/Homo_sapiens.GRCh38.90_tx2gene_ext.rds"
 > print(method)  ## method ID to add to the quantification table
 [1] "SalmonBWA"
 > print(outrds)  ## output file
-[1] "alpine/20151016.A-Cortex_RNA_stringtie_tx/scaled_junction_coverage_SalmonBWA.rds"
+[1] "alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_SalmonBWA.rds"
 > 
 > suppressPackageStartupMessages(library(alpine))
 > suppressPackageStartupMessages(library(parallel))
@@ -149,8 +149,8 @@ loaded via a namespace (and not attached):
 [53] assertthat_0.2.0            SummarizedExperiment_1.9.15
 [55] stringi_1.1.7               RCurl_1.95-4.10            
 > date()
-[1] "Sun Apr  1 23:02:18 2018"
+[1] "Tue Apr 17 12:26:13 2018"
 > 
 > proc.time()
     user   system  elapsed 
-2309.044   35.148 2350.238 
+8789.548  377.356 9224.016 

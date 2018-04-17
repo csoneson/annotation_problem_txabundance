@@ -74,7 +74,7 @@ Type 'q()' to quit R.
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
-Running under: Ubuntu 14.04.5 LTS
+Running under: Ubuntu 16.04.4 LTS
 
 Matrix products: default
 BLAS: /usr/local/R/R-devel/lib/libRblas.so
@@ -112,8 +112,8 @@ loaded via a namespace (and not attached):
 [27] Rsamtools_1.31.3            XML_3.98-1.10              
 [29] pkgconfig_2.0.1            
 > date()
-[1] "Wed Mar 28 22:35:32 2018"
+[1] "Tue Apr 17 22:41:46 2018"
 > 
 > proc.time()
    user  system elapsed 
-179.024   4.183 183.913 
+214.556   2.568 217.328 

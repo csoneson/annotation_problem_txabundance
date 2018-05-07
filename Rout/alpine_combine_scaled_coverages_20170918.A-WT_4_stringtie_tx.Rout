@@ -40,14 +40,17 @@ Type 'q()' to quit R.
 [1] "alpine/20170918.A-WT_4_stringtie_tx/scaled_junction_coverage_StringTie.rds"
 > print(junctioncovNanopore) ## If present, nanopore results
 [1] ""
+> print(mmfracthreshold) ## Only junctions with mm fraction below this threshold will be used for calculating scaled.cov.MM
+[1] 0.25
 > print(outrds)
 [1] "alpine/20170918.A-WT_4_stringtie_tx/alpine_combined_coverages.rds"
 > 
-> suppressPackageStartupMessages(library(dplyr))
-> suppressPackageStartupMessages(library(ggplot2))
+> suppressPackageStartupMessages({
++   library(dplyr)
++ })
 > 
-> jcov <- read.delim(junctioncovSTAR, 
-+                    header = FALSE, as.is = TRUE)
+> ## Read junction coverages
+> jcov <- read.delim(junctioncovSTAR, header = FALSE, as.is = TRUE)
 > colnames(jcov) <- c("seqnames", "start", "end", "strand", "motif", "annot", 
 +                     "uniqreads", "mmreads", "maxoverhang")
 > jcov <- jcov %>% dplyr::mutate(strand = replace(strand, strand == 1, "+")) %>%
@@ -85,13 +88,15 @@ Type 'q()' to quit R.
 +   dplyr::left_join(jcov, by = c("seqnames", "start", "end", "strand")) %>%
 +   dplyr::mutate(uniqreads = replace(uniqreads, is.na(uniqreads), 0),
 +                 mmreads = replace(mmreads, is.na(mmreads), 0)) %>%
++   dplyr::mutate(include.junction = as.numeric(mmreads/(uniqreads + mmreads) < mmfracthreshold)) %>% 
++   dplyr::mutate(include.junction = replace(include.junction, is.na(include.junction), 1)) %>%
 +   dplyr::group_by(gene, method) %>% 
-+   dplyr::mutate(scaledcoverage = pred.cov/sum(pred.cov, na.rm = TRUE) * 
++   dplyr::mutate(scaled.cov = pred.cov/sum(pred.cov, na.rm = TRUE) * 
 +                   sum(uniqreads, na.rm = TRUE)) %>%
-+   dplyr::mutate(scaledcoverage = replace(scaledcoverage, is.na(scaledcoverage), 0)) %>% 
-+   dplyr::mutate(score = round(sum(abs(uniqreads - scaledcoverage), na.rm = TRUE)/
-+                                 sum(uniqreads, na.rm = TRUE), 2)) %>% 
-+   dplyr::mutate(methodscore = paste0(method, " (", score, ")")) %>%
++   dplyr::mutate(scaled.cov = replace(scaled.cov, is.na(scaled.cov), 0)) %>% 
++   dplyr::mutate(scaled.cov.mm = pred.cov/sum(pred.cov * include.junction, na.rm = TRUE) * 
++                   sum(uniqreads * include.junction, na.rm = TRUE)) %>%
++   dplyr::mutate(scaled.cov.mm = replace(scaled.cov.mm, is.na(scaled.cov.mm), 0)) %>% 
 +   dplyr::ungroup()
 Warning messages:
 1: Column `seqnames` joining factor and character vector, coercing into character vector 
@@ -141,17 +146,15 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] bindrcpp_0.2  ggplot2_2.2.1 dplyr_0.7.4  
+[1] bindrcpp_0.2.2 dplyr_0.7.4   
 
 loaded via a namespace (and not attached):
- [1] Rcpp_0.12.16     assertthat_0.2.0 plyr_1.8.4       grid_3.5.0      
- [5] R6_2.2.2         gtable_0.2.0     magrittr_1.5     scales_0.5.0    
- [9] pillar_1.2.1     rlang_0.2.0      lazyeval_0.2.1   glue_1.2.0      
-[13] munsell_0.4.3    compiler_3.5.0   colorspace_1.3-2 pkgconfig_2.0.1 
-[17] bindr_0.1.1      tibble_1.4.2    
+ [1] compiler_3.5.0   magrittr_1.5     assertthat_0.2.0 R6_2.2.2        
+ [5] pillar_1.2.1     glue_1.2.0       tibble_1.4.2     Rcpp_0.12.16    
+ [9] pkgconfig_2.0.1  rlang_0.2.0      bindr_0.1.1     
 > date()
-[1] "Mon Apr  2 08:40:35 2018"
+[1] "Mon May  7 21:09:51 2018"
 > 
 > proc.time()
    user  system elapsed 
-180.448   1.868 182.722 
+207.044   3.340 210.563 

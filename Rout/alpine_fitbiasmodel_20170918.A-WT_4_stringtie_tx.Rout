@@ -92,13 +92,13 @@ TxDb object:
 # Taxonomy ID: 9606
 # miRBase build ID: NA
 # Genome: NA
-# transcript_nrow: 109155
-# exon_nrow: 318981
+# transcript_nrow: 159037
+# exon_nrow: 370084
 # cds_nrow: 0
 # Db created by: GenomicFeatures package from Bioconductor
-# Creation time: 2018-03-05 10:29:36 +0100 (Mon, 05 Mar 2018)
+# Creation time: 2018-04-21 03:30:39 +0200 (Sat, 21 Apr 2018)
 # GenomicFeatures version at creation time: 1.31.10
-# RSQLite version at creation time: 2.0
+# RSQLite version at creation time: 2.1.0
 # DBSCHEMAVERSION: 1.2
 > 
 > ## Get list of transcripts
@@ -113,58 +113,58 @@ TxDb object:
 +                     tx_name = as.character(txps$tx_name))
 + }
 > txdf
-DataFrame with 109155 rows and 5 columns
+DataFrame with 159037 rows and 5 columns
                  tx_id         gene_id tx_seq_start tx_seq_end         tx_name
            <character>     <character>    <integer>  <integer>     <character>
-1            STRG.49.1         STRG.49        24913     199502       STRG.49.1
-2      ENST00000473358 ENSG00000243485        29554      31097 ENST00000473358
-3      ENST00000469289 ENSG00000243485        30267      31109 ENST00000469289
-4      ENST00000607096 ENSG00000284332        30366      30503 ENST00000607096
-5      ENST00000442987 ENSG00000233750       131025     134836 ENST00000442987
+1            STRG.43.1         STRG.43        21931     192732       STRG.43.1
+2            STRG.44.1         STRG.44        23976     194722       STRG.44.1
+3            STRG.42.1         STRG.42        25315     196088       STRG.42.1
+4      ENST00000473358 ENSG00000243485        29554      31097 ENST00000473358
+5      ENST00000469289 ENSG00000243485        30267      31109 ENST00000469289
 ...                ...             ...          ...        ...             ...
-109151    STRG.68154.3      STRG.68154       118087     140946    STRG.68154.3
-109152    STRG.68154.4      STRG.68154       124368     140946    STRG.68154.4
-109153    STRG.68243.1      STRG.68243         5779       6231    STRG.68243.1
-109154    STRG.68250.1      STRG.68250        39164      39633    STRG.68250.1
-109155    STRG.68217.1      STRG.68217        76855      85703    STRG.68217.1
+159033    STRG.77715.1      STRG.77715        30802      31362    STRG.77715.1
+159034    STRG.77717.1      STRG.77717        31926      33670    STRG.77717.1
+159035    STRG.77716.1      STRG.77716        34065      34521    STRG.77716.1
+159036    STRG.77718.1      STRG.77718        35234      35891    STRG.77718.1
+159037    STRG.77720.1      STRG.77720        71854      73426    STRG.77720.1
 > txps
-GRanges object with 109155 ranges and 2 metadata columns:
-                    seqnames        ranges strand |         tx_name
-                       <Rle>     <IRanges>  <Rle> |     <character>
-        STRG.49.1          1  24913-199502      + |       STRG.49.1
-  ENST00000473358          1   29554-31097      + | ENST00000473358
-  ENST00000469289          1   30267-31109      + | ENST00000469289
-  ENST00000607096          1   30366-30503      + | ENST00000607096
-  ENST00000442987          1 131025-134836      + | ENST00000442987
-              ...        ...           ...    ... .             ...
-     STRG.68154.3 KI270744.1 118087-140946      - |    STRG.68154.3
-     STRG.68154.4 KI270744.1 124368-140946      - |    STRG.68154.4
-     STRG.68243.1 KI270745.1     5779-6231      + |    STRG.68243.1
-     STRG.68250.1 KI270745.1   39164-39633      + |    STRG.68250.1
-     STRG.68217.1 KI270748.1   76855-85703      + |    STRG.68217.1
+GRanges object with 159037 ranges and 2 metadata columns:
+                    seqnames       ranges strand |         tx_name
+                       <Rle>    <IRanges>  <Rle> |     <character>
+        STRG.43.1          1 21931-192732      + |       STRG.43.1
+        STRG.44.1          1 23976-194722      + |       STRG.44.1
+        STRG.42.1          1 25315-196088      + |       STRG.42.1
+  ENST00000473358          1  29554-31097      + | ENST00000473358
+  ENST00000469289          1  30267-31109      + | ENST00000469289
+              ...        ...          ...    ... .             ...
+     STRG.77715.1 KI270751.1  30802-31362      - |    STRG.77715.1
+     STRG.77717.1 KI270751.1  31926-33670      - |    STRG.77717.1
+     STRG.77716.1 KI270751.1  34065-34521      - |    STRG.77716.1
+     STRG.77718.1 KI270751.1  35234-35891      - |    STRG.77718.1
+     STRG.77720.1 KI270751.1  71854-73426      - |    STRG.77720.1
                           gene_id
                       <character>
-        STRG.49.1         STRG.49
+        STRG.43.1         STRG.43
+        STRG.44.1         STRG.44
+        STRG.42.1         STRG.42
   ENST00000473358 ENSG00000243485
   ENST00000469289 ENSG00000243485
-  ENST00000607096 ENSG00000284332
-  ENST00000442987 ENSG00000233750
               ...             ...
-     STRG.68154.3      STRG.68154
-     STRG.68154.4      STRG.68154
-     STRG.68243.1      STRG.68243
-     STRG.68250.1      STRG.68250
-     STRG.68217.1      STRG.68217
+     STRG.77715.1      STRG.77715
+     STRG.77717.1      STRG.77717
+     STRG.77716.1      STRG.77716
+     STRG.77718.1      STRG.77718
+     STRG.77720.1      STRG.77720
   -------
-  seqinfo: 49 sequences (1 circular) from an unspecified genome; no seqlengths
+  seqinfo: 57 sequences (1 circular) from an unspecified genome; no seqlengths
 > 
 > ## Select genes with a single isoform
 > tab <- table(txdf$gene_id)
 > one.iso.genes <- names(tab)[tab == 1]
 > length(one.iso.genes)
-[1] 22217
+[1] 71730
 > length(tab)
-[1] 37705
+[1] 87249
 > 
 > ## Get list of exons by transcript
 > if (class(txdb) == "EnsDb") {
@@ -172,31 +172,30 @@ GRanges object with 109155 ranges and 2 metadata columns:
 + } else { 
 +   (ebt0 <- exonsBy(txdb, by = "tx", use.names = TRUE))
 + }
-GRangesList object of length 109155:
-$STRG.49.1 
+GRangesList object of length 159037:
+$STRG.43.1 
 GRanges object with 2 ranges and 3 metadata columns:
       seqnames        ranges strand |   exon_id   exon_name exon_rank
          <Rle>     <IRanges>  <Rle> | <integer> <character> <integer>
-  [1]        1   24913-25458      + |         1        <NA>         1
-  [2]        1 195984-199502      + |         9        <NA>         2
+  [1]        1   21931-22149      + |         1        <NA>         1
+  [2]        1 192675-192732      + |        10        <NA>         2
 
-$ENST00000473358 
-GRanges object with 3 ranges and 3 metadata columns:
-      seqnames      ranges strand | exon_id exon_name exon_rank
-  [1]        1 29554-30039      + |       2      <NA>         1
-  [2]        1 30564-30667      + |       5      <NA>         2
-  [3]        1 30976-31097      + |       6      <NA>         3
-
-$ENST00000469289 
+$STRG.44.1 
 GRanges object with 2 ranges and 3 metadata columns:
-      seqnames      ranges strand | exon_id exon_name exon_rank
-  [1]        1 30267-30667      + |       3      <NA>         1
-  [2]        1 30976-31109      + |       7      <NA>         2
+      seqnames        ranges strand | exon_id exon_name exon_rank
+  [1]        1   23976-24120      + |       2      <NA>         1
+  [2]        1 194646-194722      + |      11      <NA>         2
+
+$STRG.42.1 
+GRanges object with 2 ranges and 3 metadata columns:
+      seqnames        ranges strand | exon_id exon_name exon_rank
+  [1]        1   25315-25458      + |       3      <NA>         1
+  [2]        1 195984-196088      + |      12      <NA>         2
 
 ...
-<109152 more elements>
+<159034 more elements>
 -------
-seqinfo: 49 sequences (1 circular) from an unspecified genome; no seqlengths
+seqinfo: 57 sequences (1 circular) from an unspecified genome; no seqlengths
 > 
 > ## Get transcript names for genes with a single isoform
 > one.iso.txs <- txdf$tx_id[txdf$gene_id %in% one.iso.genes]
@@ -210,12 +209,12 @@ seqinfo: 49 sequences (1 circular) from an unspecified genome; no seqlengths
 > max.bp <- 7000
 > gene.lengths <- sum(width(ebt.fit))
 > summary(gene.lengths)
-   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-     28     393     773    1479    1827  205012 
+    Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+    28.0    277.0    418.0    807.6    796.0 205012.0 
 > 
 > ebt.fit <- ebt.fit[gene.lengths > min.bp & gene.lengths < max.bp]
 > length(ebt.fit)
-[1] 12682
+[1] 24052
 > 
 > ## Sample 1000 genes to use for the fitting of the bias model
 > set.seed(1)
@@ -231,20 +230,16 @@ seqinfo: 49 sequences (1 circular) from an unspecified genome; no seqlengths
 > mcols(txps.fit)$cts <- cts$records
 > txps.fit <- txps.fit[names(ebt.fit)]
 > sum(txps.fit$cts > 500 & txps.fit$cts < 10000)
-[1] 322
+[1] 178
 > ebt.fit <- ebt.fit[txps.fit$cts > 500 & txps.fit$cts < 10000]
 > length(ebt.fit)
-[1] 322
+[1] 178
 > 
 > ## Get fragment width and read length
 > w <- getFragmentWidths(bam.files, ebt.fit[[min(which(sapply(ebt.fit, length) > 1))]])
-Warning message:
-In .make_GAlignmentPairs_from_GAlignments(gal, strandMode = strandMode,  :
-    15 alignments with ambiguous pairing were dumped.
-    Use 'getDumpedAlignments()' to retrieve them from the dump environment.
 > quantile(w, c(.025, .975))
-  2.5%  97.5% 
-137.75 456.00 
+   2.5%   97.5% 
+145.875 480.375 
 > getReadLength(bam.files)
   1 
 151 
@@ -264,10 +259,10 @@ In .make_GAlignmentPairs_from_GAlignments(gal, strandMode = strandMode,  :
 +                    gc.str = FALSE)
 +   })
 + })
-    user   system  elapsed 
-1076.248   74.741 1156.116 
+   user  system elapsed 
+455.168  81.896 547.107 
 > object.size(fragtypes)/1e6
-19568.5 bytes
+10284 bytes
 > 
 > ## Define models to fit
 > models <- list(
@@ -291,8 +286,8 @@ In .make_GAlignmentPairs_from_GAlignments(gal, strandMode = strandMode,  :
 +                   maxsize = maxsize)
 +   })
 + })
-    user   system  elapsed 
-1840.493  313.960 2172.345 
+   user  system elapsed 
+676.000 106.404 783.551 
 > 
 > ## Diagnostic plots
 > pdf(paste0(outdir, "/alpine_fitbiasmodel_plots.pdf"))
@@ -307,11 +302,11 @@ null device
 +         file = paste0(outdir, "/alpine_fitbiasmodel.rds"))
 > 
 > date()
-[1] "Mon Mar  5 11:26:01 2018"
+[1] "Sat Apr 21 03:54:08 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
-Running under: Ubuntu 14.04.5 LTS
+Running under: Ubuntu 16.04.4 LTS
 
 Matrix products: default
 BLAS: /usr/local/R/R-devel/lib/libRblas.so
@@ -331,43 +326,43 @@ other attached packages:
  [1] dplyr_0.7.4                           
  [2] BSgenome.Hsapiens.NCBI.GRCh38_1.3.1000
  [3] BSgenome_1.47.5                       
- [4] rtracklayer_1.39.9                    
- [5] GenomicAlignments_1.15.12             
- [6] SummarizedExperiment_1.9.15           
- [7] DelayedArray_0.5.22                   
- [8] BiocParallel_1.13.1                   
+ [4] rtracklayer_1.39.12                   
+ [5] GenomicAlignments_1.15.13             
+ [6] SummarizedExperiment_1.9.16           
+ [7] DelayedArray_0.5.30                   
+ [8] BiocParallel_1.13.3                   
  [9] matrixStats_0.53.1                    
 [10] Rsamtools_1.31.3                      
-[11] Biostrings_2.47.9                     
+[11] Biostrings_2.47.12                    
 [12] XVector_0.19.9                        
 [13] alpine_1.5.3                          
-[14] ensembldb_2.3.12                      
+[14] ensembldb_2.3.15                      
 [15] AnnotationFilter_1.3.2                
 [16] GenomicFeatures_1.31.10               
-[17] AnnotationDbi_1.41.4                  
+[17] AnnotationDbi_1.41.5                  
 [18] Biobase_2.39.2                        
-[19] GenomicRanges_1.31.22                 
+[19] GenomicRanges_1.31.23                 
 [20] GenomeInfoDb_1.15.5                   
 [21] IRanges_2.13.28                       
-[22] S4Vectors_0.17.36                     
+[22] S4Vectors_0.17.42                     
 [23] BiocGenerics_0.25.3                   
 
 loaded via a namespace (and not attached):
  [1] progress_1.1.2         splines_3.5.0          lattice_0.20-35       
- [4] blob_1.1.0             XML_3.98-1.10          RBGL_1.55.1           
+ [4] blob_1.1.1             XML_3.98-1.11          RBGL_1.55.1           
  [7] rlang_0.2.0            pillar_1.2.1           glue_1.2.0            
-[10] DBI_0.8                bit64_0.9-7            bindrcpp_0.2          
-[13] speedglm_0.3-2         bindr_0.1              GenomeInfoDbData_1.1.0
+[10] DBI_0.8                bit64_0.9-7            bindrcpp_0.2.2        
+[13] speedglm_0.3-2         GenomeInfoDbData_1.1.0 bindr_0.1.1           
 [16] stringr_1.3.0          zlibbioc_1.25.0        ProtGenerics_1.11.0   
-[19] memoise_1.1.0          biomaRt_2.35.12        curl_3.1              
-[22] Rcpp_0.12.15           graph_1.57.1           bit_1.1-12            
-[25] digest_0.6.15          stringi_1.1.6          grid_3.5.0            
+[19] memoise_1.1.0          biomaRt_2.35.13        curl_3.2              
+[22] Rcpp_0.12.16           graph_1.57.1           bit_1.1-12            
+[25] digest_0.6.15          stringi_1.1.7          grid_3.5.0            
 [28] tools_3.5.0            bitops_1.0-6           magrittr_1.5          
-[31] RCurl_1.95-4.10        lazyeval_0.2.1         tibble_1.4.2          
-[34] RSQLite_2.0            pkgconfig_2.0.1        MASS_7.3-47           
-[37] Matrix_1.2-12          prettyunits_1.0.2      assertthat_0.2.0      
+[31] tibble_1.4.2           RCurl_1.95-4.10        lazyeval_0.2.1        
+[34] RSQLite_2.1.0          pkgconfig_2.0.1        MASS_7.3-49           
+[37] Matrix_1.2-14          prettyunits_1.0.2      assertthat_0.2.0      
 [40] httr_1.3.1             R6_2.2.2               compiler_3.5.0        
 > 
 > proc.time()
     user   system  elapsed 
-3051.047  396.168 3482.596 
+1236.496  193.792 1498.194 

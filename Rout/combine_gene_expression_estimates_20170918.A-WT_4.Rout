@@ -1,5 +1,5 @@
 
-R version 3.4.0 (2017-04-21) -- "You Stupid Darkness"
+R Under development (unstable) (2017-12-14 r73916) -- "Unsuffered Consequences"
 Copyright (C) 2017 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
@@ -46,13 +46,13 @@ Type 'q()' to quit R.
 > saveRDS(quants_gene, file = outrds)
 > 
 > sessionInfo()
-R version 3.4.0 (2017-04-21)
+R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
-Running under: Ubuntu 14.04.5 LTS
+Running under: Ubuntu 16.04.4 LTS
 
 Matrix products: default
-BLAS: /usr/local/R/R-3.4.0/lib/libRblas.so
-LAPACK: /usr/local/R/R-3.4.0/lib/libRlapack.so
+BLAS: /usr/local/R/R-devel/lib/libRblas.so
+LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
 
 locale:
  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
@@ -64,15 +64,15 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] bindrcpp_0.2 dplyr_0.7.4 
+[1] bindrcpp_0.2.2 dplyr_0.7.4   
 
 loaded via a namespace (and not attached):
- [1] compiler_3.4.0   magrittr_1.5     assertthat_0.2.0 R6_2.2.2        
- [5] glue_1.1.1       tibble_1.3.4     Rcpp_0.12.13     pkgconfig_2.0.1 
- [9] rlang_0.1.2      bindr_0.1       
+ [1] compiler_3.5.0   magrittr_1.5     assertthat_0.2.0 R6_2.2.2        
+ [5] pillar_1.2.1     glue_1.2.0       tibble_1.4.2     Rcpp_0.12.16    
+ [9] pkgconfig_2.0.1  rlang_0.2.0      bindr_0.1.1     
 > date()
-[1] "Sat Feb  3 00:17:43 2018"
+[1] "Mon May  7 21:13:19 2018"
 > 
 > proc.time()
    user  system elapsed 
- 95.040   0.554  95.693 
+ 94.376   0.656  95.109 

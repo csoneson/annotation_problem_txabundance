@@ -1,5 +1,5 @@
 
-R version 3.4.0 (2017-04-21) -- "You Stupid Darkness"
+R Under development (unstable) (2017-12-14 r73916) -- "Unsuffered Consequences"
 Copyright (C) 2017 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
@@ -33,13 +33,13 @@ Type 'q()' to quit R.
 +             row.names = FALSE, col.names = FALSE, quote = FALSE, sep = "\t")
 > 
 > sessionInfo()
-R version 3.4.0 (2017-04-21)
+R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
-Running under: Ubuntu 14.04.5 LTS
+Running under: Ubuntu 16.04.4 LTS
 
 Matrix products: default
-BLAS: /usr/local/R/R-3.4.0/lib/libRblas.so
-LAPACK: /usr/local/R/R-3.4.0/lib/libRlapack.so
+BLAS: /usr/local/R/R-devel/lib/libRblas.so
+LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
 
 locale:
  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
@@ -51,10 +51,10 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 loaded via a namespace (and not attached):
-[1] compiler_3.4.0
+[1] compiler_3.5.0
 > date()
-[1] "Sun Mar  4 15:20:22 2018"
+[1] "Wed Apr 18 08:25:26 2018"
 > 
 > proc.time()
    user  system elapsed 
-  1.110   0.093   1.181 
+  0.780   0.084   0.883 

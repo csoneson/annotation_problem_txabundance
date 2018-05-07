@@ -27,7 +27,7 @@ Type 'q()' to quit R.
 > print(predcov2)
 [1] "alpine/20170918.A-WT_4/alpine_predicted_coverage.rds"
 > print(outrds)
-[1] "figures/compare_predicted_coverage_patterns_20151016.A-Cortex_RNA_20170918.A-WT_4.rds"
+[1] "figures/predicted_coverage_pattern_comparison/predicted_coverage_pattern_comparison_20151016.A-Cortex_RNA_20170918.A-WT_4.rds"
 > 
 > suppressPackageStartupMessages({
 +   library(dplyr)
@@ -71,7 +71,7 @@ null device
 > 
 > saveRDS(df, file = outrds)
 > date()
-[1] "Thu Apr  5 12:27:48 2018"
+[1] "Mon May  7 15:47:47 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -92,8 +92,8 @@ attached base packages:
 [8] methods   base     
 
 other attached packages:
-[1] GenomicRanges_1.31.22 GenomeInfoDb_1.15.5   IRanges_2.13.28      
-[4] S4Vectors_0.17.37     BiocGenerics_0.25.3   ggplot2_2.2.1        
+[1] GenomicRanges_1.31.23 GenomeInfoDb_1.15.5   IRanges_2.13.28      
+[4] S4Vectors_0.17.42     BiocGenerics_0.25.3   ggplot2_2.2.1        
 [7] dplyr_0.7.4          
 
 loaded via a namespace (and not attached):
@@ -102,11 +102,11 @@ loaded via a namespace (and not attached):
  [7] colorspace_1.3-2       R6_2.2.2               rlang_0.2.0           
 [10] plyr_1.8.4             grid_3.5.0             gtable_0.2.0          
 [13] lazyeval_0.2.1         assertthat_0.2.0       tibble_1.4.2          
-[16] bindrcpp_0.2           GenomeInfoDbData_1.1.0 bitops_1.0-6          
+[16] bindrcpp_0.2.2         GenomeInfoDbData_1.1.0 bitops_1.0-6          
 [19] RCurl_1.95-4.10        glue_1.2.0             labeling_0.3          
 [22] compiler_3.5.0         pillar_1.2.1           scales_0.5.0          
 [25] pkgconfig_2.0.1       
 > 
 > proc.time()
     user   system  elapsed 
-1139.248   32.172 1174.462 
+1088.844   51.728 1145.605 

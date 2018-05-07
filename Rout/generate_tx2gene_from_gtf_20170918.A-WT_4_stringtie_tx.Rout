@@ -1,5 +1,5 @@
 
-R version 3.4.0 (2017-04-21) -- "You Stupid Darkness"
+R Under development (unstable) (2017-12-14 r73916) -- "Unsuffered Consequences"
 Copyright (C) 2017 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
@@ -43,13 +43,13 @@ Type 'q()' to quit R.
 > saveRDS(gtfsub, file = outrds)
 > 
 > sessionInfo()
-R version 3.4.0 (2017-04-21)
+R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
-Running under: Ubuntu 14.04.5 LTS
+Running under: Ubuntu 16.04.4 LTS
 
 Matrix products: default
-BLAS: /usr/local/R/R-3.4.0/lib/libRblas.so
-LAPACK: /usr/local/R/R-3.4.0/lib/libRlapack.so
+BLAS: /usr/local/R/R-devel/lib/libRblas.so
+LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
 
 locale:
  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
@@ -62,28 +62,29 @@ attached base packages:
 [8] methods   base     
 
 other attached packages:
-[1] bindrcpp_0.2         dplyr_0.7.4          rtracklayer_1.36.4  
-[4] GenomicRanges_1.28.5 GenomeInfoDb_1.12.2  IRanges_2.10.3      
-[7] S4Vectors_0.14.5     BiocGenerics_0.22.0 
+[1] bindrcpp_0.2          dplyr_0.7.4           rtracklayer_1.39.9   
+[4] GenomicRanges_1.31.22 GenomeInfoDb_1.15.5   IRanges_2.13.28      
+[7] S4Vectors_0.17.37     BiocGenerics_0.25.3  
 
 loaded via a namespace (and not attached):
- [1] Rcpp_0.12.13               magrittr_1.5              
- [3] bindr_0.1                  XVector_0.16.0            
- [5] zlibbioc_1.22.0            GenomicAlignments_1.12.2  
- [7] BiocParallel_1.10.1        lattice_0.20-35           
- [9] R6_2.2.2                   rlang_0.1.2               
-[11] tools_3.4.0                SummarizedExperiment_1.6.5
-[13] grid_3.4.0                 Biobase_2.36.2            
-[15] matrixStats_0.52.2         assertthat_0.2.0          
-[17] tibble_1.3.4               Matrix_1.2-11             
-[19] GenomeInfoDbData_0.99.0    bitops_1.0-6              
-[21] RCurl_1.95-4.8             glue_1.1.1                
-[23] DelayedArray_0.2.7         compiler_3.4.0            
-[25] Biostrings_2.44.2          Rsamtools_1.28.0          
-[27] XML_3.98-1.9               pkgconfig_2.0.1           
+ [1] Rcpp_0.12.16                magrittr_1.5               
+ [3] bindr_0.1.1                 XVector_0.19.9             
+ [5] zlibbioc_1.25.0             GenomicAlignments_1.15.12  
+ [7] BiocParallel_1.13.1         lattice_0.20-35            
+ [9] R6_2.2.2                    rlang_0.2.0                
+[11] tools_3.5.0                 SummarizedExperiment_1.9.15
+[13] grid_3.5.0                  Biobase_2.39.2             
+[15] matrixStats_0.53.1          assertthat_0.2.0           
+[17] tibble_1.4.2                Matrix_1.2-12              
+[19] GenomeInfoDbData_1.1.0      bitops_1.0-6               
+[21] RCurl_1.95-4.10             glue_1.2.0                 
+[23] DelayedArray_0.5.22         pillar_1.2.1               
+[25] compiler_3.5.0              Biostrings_2.47.11         
+[27] Rsamtools_1.31.3            XML_3.98-1.10              
+[29] pkgconfig_2.0.1            
 > date()
-[1] "Sun Mar  4 15:17:17 2018"
+[1] "Wed Apr 18 16:49:24 2018"
 > 
 > proc.time()
    user  system elapsed 
- 27.354   1.726  29.122 
+ 21.080   0.912  25.713 

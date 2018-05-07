@@ -5,7 +5,7 @@ reference/$(1)_rsemgene2tx.txt: $(2) Rscripts/generate_rsemgene2tx.R
 	$(R) "--args tx2gene='$(2)' rsemgene2tx='$$@'" Rscripts/generate_rsemgene2tx.R Rout/generate_rsemgene2tx_$(1).Rout
 endef
 $(eval $(call gene2txrule,Homo_sapiens.GRCh38.90,$(tx2gene)))
-$(foreach F,$(fastqfiles),$(eval $(call gene2tx2rule,$(notdir $(F))_stringtie_tx,reference/$(notdir $(F))_stringtie_tx_tx2gene.rds)))
+$(foreach F,$(fastqfiles),$(eval $(call gene2txrule,$(notdir $(F))_stringtie_tx,reference/$(notdir $(F))_stringtie_tx_tx2gene.rds)))
 
 define rsemindexrule
 reference/RSEM/$(1)/$(1).n2g.idx.fa: $(2) $(3)

@@ -11,21 +11,24 @@ fastqfiles := \
 /home/Shared/data/seq/hussain_bath_nanopore_rnaseq/Illumina/FASTQ/20170918.A-WT_4
 
 ## Abundance quantification methods
-quantmethods := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS
-quantmethods2 := $(quantmethods) SalmonMinimap2Nanopore
-quantmethods3 := Salmon SalmonBWA kallisto RSEM StringTie hera
+quantmethods20151016.A-Cortex_RNA := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS
+quantmethods20170918.A-WT_4 := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS SalmonMinimap2Nanopore
+quantmethodsstringtie := Salmon SalmonBWA kallisto RSEM StringTie hera
 
 nthreads := 24
+
+## Define the multimapping fraction threshold. Junctions with MM/(UM+MM)>mmfracthreshold will not be 
+## included when calculating the "MM-aware" score
+mmfracthreshold := 0.25
 
 ## ==================================================================================== ##
 ##                                    Main rules                                        ##
 ## ==================================================================================== ##
 .PHONY: all
 
-all: prepref quant \
-$(foreach F,$(fastqfiles),output/$(notdir $(F))_cdna_vs_cds.rds) \
-$(foreach F,$(fastqfiles),alpine_check/$(notdir $(F))/genes_to_run.txt.rds) \
-$(foreach F,$(fastqfiles),alpine/$(notdir $(F))/$(notdir $(F))_gene_scores.rds)
+all: prepref quant alpineprep scalecov \
+preprefstringtie quantstringtie alpineprepstringtie scalecovstringtie \
+plots stats
 
 ## Include makefiles. These need to be included after the definition of the "all" rule, 
 ## otherwise the default rule will be the first one from these makefiles
@@ -39,74 +42,105 @@ include makefiles/RSEM.mk
 include makefiles/STAR.mk
 include makefiles/alpine.mk
 include makefiles/plots.mk
+include makefiles/stats.mk
 
-startmp: $(STARindexnogtf)/SA \
-$(foreach F,$(fastqfiles),STARbigwig/$(notdir $(F))_Aligned.sortedByCoord.out.bw) \
-$(foreach F,$(fastqfiles),STAR/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoord.out.bam.bai) \
-$(foreach K,exons introns,$(foreach F,$(fastqfiles),featureCounts/$(notdir $(F))/$(notdir $(F))_STAR_$(K).txt)) \
-$(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_fitbiasmodel.rds) \
-$(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_predicted_coverage.rds)
-
-salmontmp: $(foreach F,$(fastqfiles),salmon/cDNAncRNA/$(notdir $(F))/quant.sf)
-
+########################################################################################################
+## Original annotation
+########################################################################################################
 ## Prepare reference files and indexes
-prepref: $(txome) $(salmoncdnancrnaindex)/hash.bin $(salmoncdsindex)/hash.bin \
-$(kallistocdnancrnaindex) $(rsemcdnancrnaindex).n2g.idx.fa $(STARindex)/SA $(tx2gene) \
-$(bwacdnancrnaindex) reference/hera/Homo_sapiens.GRCh38/index $(hisat2index).1.ht2 $(hisat2ss) $(rsemgene2tx)
+prepref: $(txome) \
+$(tx2gene) \
+$(tx2geneext) \
+$(flatgtfexons) \
+$(salmoncdnancrnaindex)/hash.bin \
+$(salmoncdsindex)/hash.bin \
+$(kallistocdnancrnaindex) \
+reference/bwa/Homo_sapiens.GRCh38.cdna.ncrna/Homo_sapiens.GRCh38.cdna.ncrna.fa.sa \
+reference/RSEM/Homo_sapiens.GRCh38.rsem.cdna.ncrna/Homo_sapiens.GRCh38.rsem.cdna.ncrna.n2g.idx.fa \
+$(STARindexnogtf)/chrNameLength.txt \
+reference/hera/Homo_sapiens.GRCh38/index \
+$(hisat2index).1.ht2 \
+$(hisat2ss)
 
 ## Align and quantify each sample
 quant: $(foreach F,$(fastqfiles),salmon/cDNAncRNA/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),salmon/cds/$(notdir $(F))/quant.sf) \
+$(foreach F,$(fastqfiles),kallisto/cDNAncRNA/$(notdir $(F))/abundance.tsv) \
+$(foreach F,$(fastqfiles),salmonbwa/cDNAncRNA/$(notdir $(F))/quant.sf) \
+$(foreach F,$(fastqfiles),RSEM/cDNAncRNA/$(notdir $(F))/$(notdir $(F)).isoforms.results) \
 $(foreach F,$(fastqfiles),STAR/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoord.out.bam.bai) \
 $(foreach F,$(fastqfiles),STARbigwig/$(notdir $(F))_Aligned.sortedByCoord.out.bw) \
-$(foreach F,$(fastqfiles),kallisto/cDNAncRNA/$(notdir $(F))/abundance.tsv) \
-$(foreach F,$(fastqfiles),RSEM/cDNAncRNA/$(notdir $(F))/$(notdir $(F)).isoforms.results) \
+$(foreach F,$(fastqfiles),$(foreach T,exons introns,featureCounts/$(notdir $(F))/$(notdir $(F))_STAR_$(T).txt)) \
+$(foreach F,$(fastqfiles),hera/$(notdir $(F))/abundance.tsv) \
 $(foreach F,$(fastqfiles),stringtie/$(notdir $(F))/$(notdir $(F)).gtf) \
-$(foreach F,$(fastqfiles),stringtie_onlyref/$(notdir $(F))/$(notdir $(F)).gtf) \
-$(foreach F,$(fastqfiles),salmonbwa/cDNAncRNA/$(notdir $(F))/quant.sf) \
-$(foreach F,$(fastqfiles),hera/$(notdir $(F))/abundance.tsv)
+$(foreach F,$(fastqfiles),stringtie_onlyref/$(notdir $(F))/$(notdir $(F)).gtf)
 
-## Prepare files for alpine
+## Fit bias models and predict junction coverages
 alpineprep: $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_fitbiasmodel.rds) \
-$(foreach F,$(fastqfiles),gene_selection/$(notdir $(F))/genes_to_run.txt) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_predicted_coverage.rds)
 
-## Scale coverage
-scalecov: $(foreach M,$(quantmethods),$(foreach F,$(fastqfiles),alpine/$(notdir $(F))/scaled_junction_coverage_$(M).rds))
+## Scale coverage and calculate scores
+scalecov: $(foreach F,$(fastqfiles),$(foreach M,$(quantmethods$(F)),alpine/$(notdir $(F))/scaled_junction_coverage_$(M).rds)) \
+$(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_combined_coverages.rds) \
+$(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_gene_expression.rds) \
+$(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_scores.rds)
 
-## subset_genes_to_run.txt is a manually created file, which can be used to test a few genes
-sumsub: $(foreach F,$(fastqfiles),alpine_check/$(notdir $(F))/subset_genes_to_run.txt.rds)
-
-## Run methods on extended annotation from StringTie
-stringtietx: $(foreach F,$(fastqfiles),reference/$(notdir $(F))_stringtie_tx_tx2gene.rds) \
-$(foreach F,$(fastqfiles),reference/$(notdir $(F))_stringtie_tx_rsemgene2tx.txt) \
-$(foreach F,$(fastqfiles),reference/RSEM_stringtie_tx/$(notdir $(F))_stringtie_tx/$(notdir $(F))_stringtie_tx.n2g.idx.fa) \
+########################################################################################################
+## Extended annotation (from StringTie)
+########################################################################################################
+## Prepare reference files and indexes
+preprefstringtie: $(foreach F,$(fastqfiles),reference/$(notdir $(F))_stringtie_tx_tx2gene.rds) \
+$(foreach F,$(fastqfiles),reference/$(notdir $(F))_stringtie_tx_tx2gene_withsymbol.rds) \
+$(foreach F,$(fastqfiles),reference/salmon/$(notdir $(F))_stringtie_tx_sidx_v0.9.1/hash.bin) \
+$(foreach F,$(fastqfiles),reference/kallisto/$(notdir $(F))_stringtie_tx_kidx_v0.44.0) \
 $(foreach F,$(fastqfiles),reference/bwa/$(notdir $(F))_stringtie_tx/$(notdir $(F))_stringtie_tx.fa.sa) \
-$(foreach F,$(fastqfiles),salmon_stringtie_tx/$(notdir $(F))/quant.sf) \
-$(foreach F,$(fastqfiles),kallisto_stringtie_tx/$(notdir $(F))/abundance.tsv) \
-$(foreach F,$(fastqfiles),STAR_stringtie_tx/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoord.out.bam.bai) \
-$(foreach F,$(fastqfiles),RSEM_stringtie_tx/$(notdir $(F))/$(notdir $(F)).isoforms.results) \
-$(foreach F,$(fastqfiles),salmonbwa_stringtie_tx/$(notdir $(F))/quant.sf) \
+$(foreach F,$(fastqfiles),reference/$(notdir $(F))_stringtie_tx_rsemgene2tx.txt) \
+$(foreach F,$(fastqfiles),reference/RSEM/$(notdir $(F))_stringtie_tx/$(notdir $(F))_stringtie_tx.n2g.idx.fa) \
 $(foreach F,$(fastqfiles),reference/hera/$(notdir $(F))_stringtie_tx/index) \
-$(foreach F,$(fastqfiles),hera_stringtie_tx/$(notdir $(F))/abundance.tsv) \
-$(foreach F,$(fastqfiles),alpine/$(notdir $(F))_stringtie_tx/alpine_predicted_coverage.rds) \
-$(foreach M,$(quantmethods3),$(foreach F,$(fastqfiles),alpine/$(notdir $(F))_stringtie_tx/scaled_junction_coverage_$(M).rds)) \
+$(foreach F,$(fastqfiles),stringtie/$(notdir $(F))/$(notdir $(F))_filtered.gtf) \
+$(foreach F,$(fastqfiles),stringtie/$(notdir $(F))/$(notdir $(F))_filtered_withgene.gtf) \
+$(foreach F,$(fastqfiles),stringtie/$(notdir $(F))/$(notdir $(F))_stringtie_tx.fa)
+
+## Align and quantify each sample
+quantstringtie: $(foreach F,$(fastqfiles),salmon_stringtie_tx/$(notdir $(F))/quant.sf) \
+$(foreach F,$(fastqfiles),kallisto_stringtie_tx/$(notdir $(F))/abundance.tsv) \
+$(foreach F,$(fastqfiles),salmonbwa_stringtie_tx/$(notdir $(F))/quant.sf) \
+$(foreach F,$(fastqfiles),RSEM_stringtie_tx/$(notdir $(F))/$(notdir $(F)).isoforms.results) \
+$(foreach F,$(fastqfiles),STAR_stringtie_tx/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoord.out.bam.bai) \
+$(foreach F,$(fastqfiles),hera_stringtie_tx/$(notdir $(F))/abundance.tsv)
+
+## Fit bias models and predict junction coverages
+alpineprepstringtie: $(foreach F,$(fastqfiles),alpine/$(notdir $(F))_stringtie_tx/alpine_fitbiasmodel.rds) \
+$(foreach F,$(fastqfiles),alpine/$(notdir $(F))_stringtie_tx/alpine_predicted_coverage.rds)
+
+## Scale coverage and calculate scores
+scalecovstringtie: $(foreach F,$(fastqfiles),$(foreach M,$(quantmethodsstringtie),alpine/$(notdir $(F))_stringtie_tx/scaled_junction_coverage_$(M).rds)) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))_stringtie_tx/alpine_combined_coverages.rds) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))_stringtie_tx/alpine_gene_expression.rds) \
-$(foreach F,$(fastqfiles),alpine/$(notdir $(F))_stringtie_tx/$(notdir $(F))_stringtie_tx_gene_scores.rds)
+$(foreach F,$(fastqfiles),alpine/$(notdir $(F))_stringtie_tx/alpine_scores.rds)
 
-tmp3: $(foreach F,$(fastqfiles),RSEM_stringtie_tx/$(notdir $(F))/$(notdir $(F)).isoforms.results) \
-$(foreach F,$(fastqfiles),salmonbwa_stringtie_tx/$(notdir $(F))/quant.sf)
+########################################################################################################
+## Plots
+########################################################################################################
+plots: figures/gene_characteristics/gene_characteristics.rds \
+$(foreach F,$(fastqfiles),figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F)).rds) \
+$(foreach F,$(fastqfiles),figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F))_stringtie_tx.rds) \
+figures/predicted_coverage_pattern_comparison/predicted_coverage_pattern_comparison_20151016.A-Cortex_RNA_20170918.A-WT_4.rds \
+$(foreach F,$(fastqfiles),figures/gene_scores/gene_scores_$(notdir $(F)).rds) \
+$(foreach F,$(fastqfiles),figures/gene_scores/gene_scores_$(notdir $(F))_stringtie_tx.rds)
 
-tmp2: $(foreach F,$(fastqfiles),STAR_stringtie_tx/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoord.out.bam.bai)
+########################################################################################################
+## Stats
+########################################################################################################
+stats: $(foreach F,$(fastqfiles),stats/alpine_coverage_prediction_summary_$(notdir $(F)).txt) \
+$(foreach F,$(fastqfiles),stats/alpine_coverage_prediction_summary_$(notdir $(F))_stringtie_tx.txt)
 
-tmp: $(foreach F,$(fastqfiles),alpine/$(notdir $(F))_stringtie_tx/alpine_predicted_coverage.rds)
-
-tmp4: $(foreach F,$(fastqfiles),STAR/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoord.out.bam.bai) \
-$(foreach F,$(fastqfiles),STAR_stringtie_tx/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoord.out.bam.bai) \
-$(foreach F,$(fastqfiles),salmonbwa_stringtie_tx/$(notdir $(F))/quant.sf) \
-$(foreach F,$(fastqfiles),salmon_stringtie_tx/$(notdir $(F))/quant.sf) \
-$(foreach F,$(fastqfiles),kallisto_stringtie_tx/$(notdir $(F))/abundance.tsv)
+########################################################################################################
+## Other
+########################################################################################################
+## List all packages
+listpackages:
+	$(R) Rscripts/list_packages.R Rout/list_packages.Rout
 
 ## Gene models for Gviz
 $(gvizgenemodels): $(gtf) Rscripts/generate_genemodels.R Rscripts/plot_tracks.R

@@ -1,0 +1,115 @@
+
+R Under development (unstable) (2017-12-14 r73916) -- "Unsuffered Consequences"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> args <- (commandArgs(trailingOnly = TRUE))
+> for (i in 1:length(args)) {
++   eval(parse(text = args[[i]]))
++ }
+> 
+> quantmethods <- strsplit(quantmethods, ",")[[1]]
+> 
+> print(combcovrds)
+[1] "alpine/20151016.A-Cortex_RNA_stringtie_tx/alpine_combined_coverages.rds"
+> print(quantmethods)
+[1] "hera"      "kallisto"  "RSEM"      "Salmon"    "SalmonBWA" "SalmonCDS"
+[7] "StringTie"
+> print(outrds)
+[1] "figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_20151016.A-Cortex_RNA_stringtie_tx.rds"
+> 
+> suppressPackageStartupMessages({
++   library(dplyr)
++   library(tidyr)
++   library(ggplot2)
++ })
+> 
+> ## Read combined coverage table
+> x <- readRDS(combcovrds)
+> x <- x$jcovscaled
+> 
+> ## Extract required information
+> y <- x %>% dplyr::select(gene, junctionid, method, pred.cov, scaled.cov, 
++                          uniqreads, mmreads) %>%
++   tidyr::gather(covtype, coverage, pred.cov, scaled.cov) %>%
++   dplyr::mutate(fracmm = mmreads/(uniqreads+mmreads)) %>%
++   dplyr::mutate(fracmm = replace(fracmm, is.na(fracmm), 0)) %>%
++   dplyr::mutate(covtype = replace(covtype, covtype == "pred.cov", "Predicted coverage"),
++                 covtype = replace(covtype, covtype == "scaled.cov", "Scaled predicted coverage")) %>%
++   dplyr::filter(method %in% quantmethods)
+> 
+> ## Calculate correlations
+> corrs <- y %>% dplyr::group_by(method, covtype) %>% 
++   dplyr::summarize(pearson = signif(cor(uniqreads, coverage, method = "pearson", 
++                                         use = "pairwise.complete.obs"), 3),
++                    spearman = signif(cor(uniqreads, coverage, method = "spearman", 
++                                          use = "pairwise.complete.obs"), 3))
+> 
+> png(gsub("rds$", "png", outrds), width = 7, height = 15, unit = "in", res = 300)
+> ggplot(y, aes(x = uniqreads, y = coverage)) + 
++   geom_abline(intercept = 0, slope = 1, color = "black") + 
++   geom_point(alpha = 0.3, size = 0.3, aes(color = (fracmm > 0.5))) + 
++   geom_label(data = corrs, x = -Inf, y = Inf, hjust = -0.05, vjust = 1.1, 
++              aes(label = paste0("Pearson: ", pearson, "\nSpearman: ", spearman))) + 
++   facet_grid(method ~ covtype) + 
++   xlab("Number of uniquely mapping reads spanning junction") + 
++   ylab("Predicted number of reads spanning junction") + 
++   scale_color_manual(name = "Fraction\nmultimapping\nreads > 0.5", 
++                      values = c(`TRUE` = "red", `FALSE` = "blue")) + 
++   guides(color = guide_legend(override.aes = list(size = 3, alpha = 1))) + 
++   theme_bw()
+> dev.off()
+null device 
+          1 
+> 
+> saveRDS(NULL, outrds)
+> 
+> date()
+[1] "Mon May  7 21:12:55 2018"
+> sessionInfo()
+R Under development (unstable) (2017-12-14 r73916)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 16.04.4 LTS
+
+Matrix products: default
+BLAS: /usr/local/R/R-devel/lib/libRblas.so
+LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
+ [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
+ [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
+[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] bindrcpp_0.2.2 ggplot2_2.2.1  tidyr_0.8.0    dplyr_0.7.4   
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_0.12.16     bindr_0.1.1      magrittr_1.5     tidyselect_0.2.4
+ [5] munsell_0.4.3    colorspace_1.3-2 R6_2.2.2         rlang_0.2.0     
+ [9] stringr_1.3.0    plyr_1.8.4       tools_3.5.0      grid_3.5.0      
+[13] gtable_0.2.0     digest_0.6.15    lazyeval_0.2.1   assertthat_0.2.0
+[17] tibble_1.4.2     purrr_0.2.4      reshape2_1.4.3   glue_1.2.0      
+[21] labeling_0.3     stringi_1.1.7    compiler_3.5.0   pillar_1.2.1    
+[25] scales_0.5.0     pkgconfig_2.0.1 
+> 
+> proc.time()
+   user  system elapsed 
+139.984   0.992 141.115 

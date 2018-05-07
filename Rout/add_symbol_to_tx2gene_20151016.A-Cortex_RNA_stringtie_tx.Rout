@@ -44,7 +44,7 @@ Type 'q()' to quit R.
 > saveRDS(tx2gene, outrds)
 > 
 > date()
-[1] "Sun Apr  1 22:13:55 2018"
+[1] "Wed Apr 18 22:57:52 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -64,7 +64,7 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] bindrcpp_0.2 dplyr_0.7.4 
+[1] bindrcpp_0.2.2 dplyr_0.7.4   
 
 loaded via a namespace (and not attached):
  [1] compiler_3.5.0   magrittr_1.5     assertthat_0.2.0 R6_2.2.2        
@@ -73,4 +73,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-  4.512   0.148   4.657 
+  5.572   0.416   6.134 

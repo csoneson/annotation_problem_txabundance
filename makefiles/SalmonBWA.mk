@@ -1,4 +1,5 @@
 bwa := /home/charlotte/software/bwa/bwa
+salmon := /home/charlotte/software/Salmon-0.9.1_linux_x86_64/bin/salmon
 
 define bwaindexrule
 $(1).sa: $(2)

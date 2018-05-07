@@ -64,15 +64,15 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] bindrcpp_0.2 dplyr_0.7.4 
+[1] bindrcpp_0.2.2 dplyr_0.7.4   
 
 loaded via a namespace (and not attached):
  [1] compiler_3.5.0   magrittr_1.5     assertthat_0.2.0 R6_2.2.2        
  [5] pillar_1.2.1     glue_1.2.0       tibble_1.4.2     Rcpp_0.12.16    
  [9] pkgconfig_2.0.1  rlang_0.2.0      bindr_0.1.1     
 > date()
-[1] "Mon Apr  2 10:19:18 2018"
+[1] "Mon May  7 21:10:47 2018"
 > 
 > proc.time()
    user  system elapsed 
- 41.276   0.408  41.716 
+ 55.088   0.516  55.653 

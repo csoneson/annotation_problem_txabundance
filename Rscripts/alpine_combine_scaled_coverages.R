@@ -12,13 +12,15 @@ print(junctioncovkallisto) ## kallisto quantifications
 print(junctioncovRSEM) ## RSEM quantifications
 print(junctioncovStringTie) ## StringTie quantifications
 print(junctioncovNanopore) ## If present, nanopore results
+print(mmfracthreshold) ## Only junctions with mm fraction below this threshold will be used for calculating scaled.cov.MM
 print(outrds)
 
-suppressPackageStartupMessages(library(dplyr))
-suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages({
+  library(dplyr)
+})
 
-jcov <- read.delim(junctioncovSTAR, 
-                   header = FALSE, as.is = TRUE)
+## Read junction coverages
+jcov <- read.delim(junctioncovSTAR, header = FALSE, as.is = TRUE)
 colnames(jcov) <- c("seqnames", "start", "end", "strand", "motif", "annot", 
                     "uniqreads", "mmreads", "maxoverhang")
 jcov <- jcov %>% dplyr::mutate(strand = replace(strand, strand == 1, "+")) %>%
@@ -56,13 +58,15 @@ jcovscaled <- jcovscaled %>%
   dplyr::left_join(jcov, by = c("seqnames", "start", "end", "strand")) %>%
   dplyr::mutate(uniqreads = replace(uniqreads, is.na(uniqreads), 0),
                 mmreads = replace(mmreads, is.na(mmreads), 0)) %>%
+  dplyr::mutate(include.junction = as.numeric(mmreads/(uniqreads + mmreads) < mmfracthreshold)) %>% 
+  dplyr::mutate(include.junction = replace(include.junction, is.na(include.junction), 1)) %>%
   dplyr::group_by(gene, method) %>% 
-  dplyr::mutate(scaledcoverage = pred.cov/sum(pred.cov, na.rm = TRUE) * 
+  dplyr::mutate(scaled.cov = pred.cov/sum(pred.cov, na.rm = TRUE) * 
                   sum(uniqreads, na.rm = TRUE)) %>%
-  dplyr::mutate(scaledcoverage = replace(scaledcoverage, is.na(scaledcoverage), 0)) %>% 
-  dplyr::mutate(score = round(sum(abs(uniqreads - scaledcoverage), na.rm = TRUE)/
-                                sum(uniqreads, na.rm = TRUE), 2)) %>% 
-  dplyr::mutate(methodscore = paste0(method, " (", score, ")")) %>%
+  dplyr::mutate(scaled.cov = replace(scaled.cov, is.na(scaled.cov), 0)) %>% 
+  dplyr::mutate(scaled.cov.mm = pred.cov/sum(pred.cov * include.junction, na.rm = TRUE) * 
+                  sum(uniqreads * include.junction, na.rm = TRUE)) %>%
+  dplyr::mutate(scaled.cov.mm = replace(scaled.cov.mm, is.na(scaled.cov.mm), 0)) %>% 
   dplyr::ungroup()
 
 j0 <- jcovscaled %>% dplyr::select(seqnames, start, end, gene) %>%

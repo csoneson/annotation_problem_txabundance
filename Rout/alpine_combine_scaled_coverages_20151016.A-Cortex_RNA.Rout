@@ -1,5 +1,5 @@
 
-R version 3.4.0 (2017-04-21) -- "You Stupid Darkness"
+R Under development (unstable) (2017-12-14 r73916) -- "Unsuffered Consequences"
 Copyright (C) 2017 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
@@ -40,14 +40,17 @@ Type 'q()' to quit R.
 [1] "alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_StringTie.rds"
 > print(junctioncovNanopore) ## If present, nanopore results
 [1] ""
+> print(mmfracthreshold) ## Only junctions with mm fraction below this threshold will be used for calculating scaled.cov.MM
+[1] 0.25
 > print(outrds)
 [1] "alpine/20151016.A-Cortex_RNA/alpine_combined_coverages.rds"
 > 
-> suppressPackageStartupMessages(library(dplyr))
-> suppressPackageStartupMessages(library(ggplot2))
+> suppressPackageStartupMessages({
++   library(dplyr)
++ })
 > 
-> jcov <- read.delim(junctioncovSTAR, 
-+                    header = FALSE, as.is = TRUE)
+> ## Read junction coverages
+> jcov <- read.delim(junctioncovSTAR, header = FALSE, as.is = TRUE)
 > colnames(jcov) <- c("seqnames", "start", "end", "strand", "motif", "annot", 
 +                     "uniqreads", "mmreads", "maxoverhang")
 > jcov <- jcov %>% dplyr::mutate(strand = replace(strand, strand == 1, "+")) %>%
@@ -65,13 +68,15 @@ Type 'q()' to quit R.
 > ## Read and merge junction coverages predicted by each method
 > jcovscaled <- do.call(rbind, list(readRDS(junctioncovSalmon)$allcovs,
 +                                   readRDS(junctioncovSalmonBWA)$allcovs,
-+                                   readRDS(junctioncovSalmonCDS)$allcovs,
 +                                   readRDS(junctioncovhera)$allcovs,
 +                                   readRDS(junctioncovkallisto)$allcovs,
 +                                   readRDS(junctioncovRSEM)$allcovs,
 +                                   readRDS(junctioncovStringTie)$allcovs))
 > if (junctioncovNanopore != "") {
 +   jcovscaled <- rbind(jcovscaled, readRDS(junctioncovNanopore)$allcovs)
++ }
+> if (junctioncovSalmonCDS != "") {
++   jcovscaled <- rbind(jcovscaled, readRDS(junctioncovSalmonCDS)$allcovs)
 + }
 > 
 > jcovscaled <- jcovscaled %>%
@@ -83,13 +88,15 @@ Type 'q()' to quit R.
 +   dplyr::left_join(jcov, by = c("seqnames", "start", "end", "strand")) %>%
 +   dplyr::mutate(uniqreads = replace(uniqreads, is.na(uniqreads), 0),
 +                 mmreads = replace(mmreads, is.na(mmreads), 0)) %>%
++   dplyr::mutate(include.junction = as.numeric(mmreads/(uniqreads + mmreads) < mmfracthreshold)) %>% 
++   dplyr::mutate(include.junction = replace(include.junction, is.na(include.junction), 1)) %>%
 +   dplyr::group_by(gene, method) %>% 
-+   dplyr::mutate(scaledcoverage = pred.cov/sum(pred.cov, na.rm = TRUE) * 
++   dplyr::mutate(scaled.cov = pred.cov/sum(pred.cov, na.rm = TRUE) * 
 +                   sum(uniqreads, na.rm = TRUE)) %>%
-+   dplyr::mutate(scaledcoverage = replace(scaledcoverage, is.na(scaledcoverage), 0)) %>% 
-+   dplyr::mutate(score = round(sum(abs(uniqreads - scaledcoverage), na.rm = TRUE)/
-+                                 sum(uniqreads, na.rm = TRUE), 2)) %>% 
-+   dplyr::mutate(methodscore = paste0(method, " (", score, ")")) %>%
++   dplyr::mutate(scaled.cov = replace(scaled.cov, is.na(scaled.cov), 0)) %>% 
++   dplyr::mutate(scaled.cov.mm = pred.cov/sum(pred.cov * include.junction, na.rm = TRUE) * 
++                   sum(uniqreads * include.junction, na.rm = TRUE)) %>%
++   dplyr::mutate(scaled.cov.mm = replace(scaled.cov.mm, is.na(scaled.cov.mm), 0)) %>% 
 +   dplyr::ungroup()
 Warning messages:
 1: Column `seqnames` joining factor and character vector, coercing into character vector 
@@ -106,7 +113,6 @@ Joining, by = c("seqnames", "start", "end", "gene")
 > 
 > allquants <- do.call(rbind, list(readRDS(junctioncovSalmon)$quants,
 +                                  readRDS(junctioncovSalmonBWA)$quants,
-+                                  readRDS(junctioncovSalmonCDS)$quants, 
 +                                  readRDS(junctioncovhera)$quants,
 +                                  readRDS(junctioncovkallisto)$quants,
 +                                  readRDS(junctioncovRSEM)$quants,
@@ -115,17 +121,20 @@ Joining, by = c("seqnames", "start", "end", "gene")
 > if (junctioncovNanopore != "") {
 +   allquants <- rbind(allquants, readRDS(junctioncovNanopore)$quants)
 + }
+> if (junctioncovSalmonCDS != "") {
++   allquants <- rbind(allquants, readRDS(junctioncovSalmonCDS)$quants)
++ }
 > 
 > saveRDS(list(jcov = jcov, jcovscaled = jcovscaled, allquants = allquants), file = outrds)
 > 
 > sessionInfo()
-R version 3.4.0 (2017-04-21)
+R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
-Running under: Ubuntu 14.04.5 LTS
+Running under: Ubuntu 16.04.4 LTS
 
 Matrix products: default
-BLAS: /usr/local/R/R-3.4.0/lib/libRblas.so
-LAPACK: /usr/local/R/R-3.4.0/lib/libRlapack.so
+BLAS: /usr/local/R/R-devel/lib/libRblas.so
+LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
 
 locale:
  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
@@ -137,17 +146,15 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] bindrcpp_0.2  ggplot2_2.2.1 dplyr_0.7.4  
+[1] bindrcpp_0.2.2 dplyr_0.7.4   
 
 loaded via a namespace (and not attached):
- [1] Rcpp_0.12.13     assertthat_0.2.0 plyr_1.8.4       grid_3.4.0      
- [5] R6_2.2.2         gtable_0.2.0     magrittr_1.5     scales_0.5.0    
- [9] rlang_0.1.2      lazyeval_0.2.0   glue_1.1.1       munsell_0.4.3   
-[13] compiler_3.4.0   pkgconfig_2.0.1  colorspace_1.3-2 bindr_0.1       
-[17] tibble_1.3.4    
+ [1] compiler_3.5.0   magrittr_1.5     assertthat_0.2.0 R6_2.2.2        
+ [5] pillar_1.2.1     glue_1.2.0       tibble_1.4.2     Rcpp_0.12.16    
+ [9] pkgconfig_2.0.1  rlang_0.2.0      bindr_0.1.1     
 > date()
-[1] "Fri Feb  2 05:58:42 2018"
+[1] "Mon May  7 21:11:11 2018"
 > 
 > proc.time()
    user  system elapsed 
-255.696   1.591 258.137 
+287.460   2.764 290.554 

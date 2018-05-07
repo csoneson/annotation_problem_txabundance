@@ -16,7 +16,7 @@ $(foreach F,$(fastqfiles),$(eval $(call heraindexrule,$(notdir $(F))_stringtie_t
 define herarule
 hera$(3)/$(2)/abundance.tsv: $(4)/index# $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
-	$(hera) quant -i $(4) -o $$(@D) -w 1 -t 10 $(1)_R1.fastq.gz $(1)_R2.fastq.gz
+	$(hera) quant -i $(4) -o $$(@D) -w 1 -t $(nthreads) $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 endef
 $(foreach F,$(fastqfiles),$(eval $(call herarule,$(F),$(notdir $(F)),,reference/hera/Homo_sapiens.GRCh38)))
 $(foreach F,$(fastqfiles),$(eval $(call herarule,$(F),$(notdir $(F)),_stringtie_tx,reference/hera/$(notdir $(F))_stringtie_tx)))

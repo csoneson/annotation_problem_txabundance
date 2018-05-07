@@ -67,9 +67,30 @@ alpine/$(1)$(2)/scaled_junction_coverage_RSEM.rds alpine/$(1)$(2)/scaled_junctio
 alpine/$(1)$(2)/scaled_junction_coverage_SalmonBWA.rds alpine/$(1)$(2)/scaled_junction_coverage_kallisto.rds \
 Rscripts/alpine_combine_scaled_coverages.R $(3) $(4)
 	mkdir -p $$(@D)
-	$(R) "--args junctioncovSTAR='STAR$(2)/$(1)/$(1)_SJ.out.tab' junctioncovSalmon='$$(word 2,$$^)' junctioncovSalmonBWA='$$(word 6,$$^)' junctioncovSalmonCDS='$(4)' junctioncovNanopore='$(3)' junctioncovhera='$$(word 3,$$^)' junctioncovkallisto='$$(word 7,$$^)' junctioncovRSEM='$$(word 4,$$^)' junctioncovStringTie='$$(word 5,$$^)' outrds='$$@'" Rscripts/alpine_combine_scaled_coverages.R Rout/alpine_combine_scaled_coverages_$(1)$(2).Rout
+	$(R) "--args junctioncovSTAR='STAR$(2)/$(1)/$(1)_SJ.out.tab' junctioncovSalmon='$$(word 2,$$^)' junctioncovSalmonBWA='$$(word 6,$$^)' junctioncovSalmonCDS='$(4)' junctioncovNanopore='$(3)' junctioncovhera='$$(word 3,$$^)' junctioncovkallisto='$$(word 7,$$^)' junctioncovRSEM='$$(word 4,$$^)' junctioncovStringTie='$$(word 5,$$^)' mmfracthreshold=$(mmfracthreshold) outrds='$$@'" Rscripts/alpine_combine_scaled_coverages.R Rout/alpine_combine_scaled_coverages_$(1)$(2).Rout
 endef
 $(eval $(call combcovrule,20151016.A-Cortex_RNA,,,alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_SalmonCDS.rds))
 $(eval $(call combcovrule,20170918.A-WT_4,,alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonMinimap2Nanopore.rds,alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonCDS.rds))
 $(eval $(call combcovrule,20151016.A-Cortex_RNA,_stringtie_tx,,))
 $(eval $(call combcovrule,20170918.A-WT_4,_stringtie_tx,,))
+
+## Summarize gene expression from all methods
+define combgexrule
+alpine/$(1)$(2)/alpine_gene_expression.rds: alpine/$(1)$(2)/alpine_combined_coverages.rds \
+Rscripts/combine_gene_expression_estimates.R
+	$(R) "--args combcovrds='$$(word 1,$$^)' outrds='$$@'" Rscripts/combine_gene_expression_estimates.R Rout/combine_gene_expression_estimates_$(1)$(2).Rout
+endef
+$(foreach F,$(fastqfiles),$(eval $(call combgexrule,$(notdir $(F)),)))
+$(foreach F,$(fastqfiles),$(eval $(call combgexrule,$(notdir $(F)),_stringtie_tx)))
+
+## Calculate gene score
+define scorerule
+alpine/$(1)$(2)/alpine_scores.rds: alpine/$(1)$(2)/alpine_combined_coverages.rds \
+Rscripts/calculate_gene_scores.R
+	$(R) "--args combcovrds='$$(word 1,$$^)' mmfracthreshold=$(mmfracthreshold) outrds='$$@'" Rscripts/calculate_gene_scores.R Rout/calculate_gene_scores_$(1)$(2).Rout
+endef
+$(foreach F,$(fastqfiles),$(eval $(call scorerule,$(notdir $(F)),)))
+$(foreach F,$(fastqfiles),$(eval $(call scorerule,$(notdir $(F)),_stringtie_tx)))
+
+
+

@@ -43,6 +43,7 @@ include makefiles/STAR.mk
 include makefiles/alpine.mk
 include makefiles/plots.mk
 include makefiles/stats.mk
+include makefiles/simulate.mk
 
 ########################################################################################################
 ## Original annotation
@@ -118,6 +119,12 @@ scalecovstringtie: $(foreach F,$(fastqfiles),$(foreach M,$(quantmethodsstringtie
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))_stringtie_tx/alpine_combined_coverages.rds) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))_stringtie_tx/alpine_gene_expression.rds) \
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))_stringtie_tx/alpine_scores.rds)
+
+########################################################################################################
+## Simulated data
+########################################################################################################
+simulation: simulation/misannotated_utr/sim_misannotated_utr_1_R1.fastq.gz \
+simulation/misannotated_utr/sim_misannotated_utr_1_R2.fastq.gz
 
 ########################################################################################################
 ## Plots

@@ -19,7 +19,7 @@ $(hisat2ss): $(gtf)
 ## ==================================================================================== ##
 ## Run HISAT2
 define hisat2rule
-HISAT2/$(2)/$(2).bam: $(hisat2index).1.ht2 $(hisat2ss)# $(1)_R1.fastq.gz $(1)_R2.fastq.gz
+HISAT2/$(2)/$(2).bam: $(hisat2index).1.ht2 $(hisat2ss) $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
 	$(hisat2)/hisat2 -p $(nthreads) -x $(hisat2index) --dta -1 $(1)_R1.fastq.gz -2 $(1)_R2.fastq.gz \
 	--known-splicesite-infile $(hisat2ss) --summary-file $$@_summary.txt | \

@@ -21,7 +21,7 @@ $(foreach F,$(fastqfiles),$(eval $(call rsemindexrule,$(notdir $(F))_stringtie_t
 ## ==================================================================================== ##
 ## Run RSEM
 define rsemrule
-$(4)/$(2)/$(2).isoforms.results: $(3).n2g.idx.fa# $(1)_R1.fastq.gz $(1)_R2.fastq.gz
+$(4)/$(2)/$(2).isoforms.results: $(3).n2g.idx.fa $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
 	bash -c '$(RSEM)/rsem-calculate-expression -p $(nthreads) --bowtie-path /usr/bin --paired-end <(gunzip -c $(1)_R1.fastq.gz) <(gunzip -c $(1)_R2.fastq.gz) $(3) $(4)/$(2)/$(2)'
 	rm -f $(4)/$(2)/$(2).transcript.bam

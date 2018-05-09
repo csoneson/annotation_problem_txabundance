@@ -17,7 +17,7 @@ $(STARindexnogtf)/chrNameLength.txt: $(STARindexnogtf)/SA
 ## ==================================================================================== ##
 ## Align to the genome with STAR
 define starrule
-STAR$(3)/$(2)/$(2)_Aligned.sortedByCoord.out.bam: $(STARindexnogtf)/SA $(4)# $(1)_R1.fastq.gz $(1)_R2.fastq.gz
+STAR$(3)/$(2)/$(2)_Aligned.sortedByCoord.out.bam: $(STARindexnogtf)/SA $(4) $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
 	$(STAR) --genomeDir $(STARindexnogtf) \
 	--readFilesIn $(1)_R1.fastq.gz $(1)_R2.fastq.gz \

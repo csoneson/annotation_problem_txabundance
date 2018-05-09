@@ -14,7 +14,7 @@ $(foreach F,$(fastqfiles),$(eval $(call heraindexrule,$(notdir $(F))_stringtie_t
 ## ==================================================================================== ##
 ## Run hera
 define herarule
-hera$(3)/$(2)/abundance.tsv: $(4)/index# $(1)_R1.fastq.gz $(1)_R2.fastq.gz
+hera$(3)/$(2)/abundance.tsv: $(4)/index $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
 	$(hera) quant -i $(4) -o $$(@D) -w 1 -t $(nthreads) $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 endef

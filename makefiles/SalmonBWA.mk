@@ -15,7 +15,7 @@ $(foreach F,$(fastqfiles),$(eval $(call bwaindexrule,reference/bwa/$(notdir $(F)
 ## ==================================================================================== ##
 ## Run BWA
 define bwarule
-$(4)/$(2)/$(2).bam: $(3).sa# $(1)_R1.fastq.gz $(1)_R2.fastq.gz
+$(4)/$(2)/$(2).bam: $(3).sa $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
 	$(bwa) mem -t $(nthreads) $(3) $(1)_R1.fastq.gz $(1)_R2.fastq.gz | $(samtools) view -b -F 0x0800 -@ $(nthreads) - > $$@
 endef

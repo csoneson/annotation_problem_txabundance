@@ -14,7 +14,7 @@ $(foreach F,$(fastqfiles),$(eval $(call salmonindexrule,reference/salmon/$(notdi
 
 ## Run Salmon
 define salmonrule
-$(4)/$(2)/quant.sf: $(3)/hash.bin# $(1)_R1.fastq.gz $(1)_R2.fastq.gz
+$(4)/$(2)/quant.sf: $(3)/hash.bin $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
 	$(salmon) quant -i $$(word 1,$$(^D)) -l A -p $(nthreads) -1 $(1)_R1.fastq.gz -2 $(1)_R2.fastq.gz -o $$(@D) --seqBias --gcBias --posBias $(5)
 endef

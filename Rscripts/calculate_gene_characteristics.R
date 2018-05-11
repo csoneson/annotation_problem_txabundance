@@ -103,24 +103,6 @@ gene_info <- dplyr::full_join(gene_char, gene_info) %>%
                                                 median_transcript_length_fasta, na.rm = TRUE))
 
 
-pdf(gsub("rds$", "pdf", outrds))
-
-ggplot(gene_info, aes(x = nbr_transcripts)) + geom_histogram(bins = 100) + 
-  theme_bw() + xlab("Number of transcripts per gene") + scale_x_sqrt()
-ggplot(gene_info, aes(x = ave_transcript_length)) + geom_histogram(bins = 100) + 
-  theme_bw() + xlab("Average transcript length per gene") + scale_x_sqrt()
-ggplot(gene_info, aes(x = ave_nbr_exons_per_tx)) + geom_histogram(bins = 100) + 
-  theme_bw() + xlab("Average number of exons in a transcript per gene") + scale_x_sqrt()
-ggplot(gene_info, aes(x = nbr_distinct_3putrs)) + geom_histogram(bins = 100) + 
-  theme_bw() + xlab("Number of distinct 3'UTRs per gene") + scale_x_sqrt()
-ggplot(gene_info, aes(x = ave_3putr_length)) + geom_histogram(bins = 100) + 
-  theme_bw() + xlab("Average 3'UTR length per gene") + scale_x_sqrt()
-ggplot(gene_info, aes(x = length_diff_3putrs_samestart)) + geom_histogram(bins = 100) + 
-  theme_bw() + xlab("Length difference between 3'UTRs with the same start position") + 
-  scale_x_sqrt()
-
-dev.off()
-
 saveRDS(gene_info, file = outrds)
 sessionInfo()
 date()

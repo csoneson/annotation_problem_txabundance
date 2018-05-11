@@ -27,7 +27,7 @@ Type 'q()' to quit R.
 > print(txome)
 [1] "reference/Homo_sapiens.GRCh38.cdna.ncrna.fa"
 > print(outrds)
-[1] "figures/gene_characteristics/gene_characteristics.rds"
+[1] "output/gene_characteristics.rds"
 > 
 > suppressPackageStartupMessages({
 +   library(rtracklayer)
@@ -128,34 +128,6 @@ Joining, by = "gene_id"
 Joining, by = "gene_id"
 > 
 > 
-> pdf(gsub("rds$", "pdf", outrds))
-> 
-> ggplot(gene_info, aes(x = nbr_transcripts)) + geom_histogram(bins = 100) + 
-+   theme_bw() + xlab("Number of transcripts per gene") + scale_x_sqrt()
-> ggplot(gene_info, aes(x = ave_transcript_length)) + geom_histogram(bins = 100) + 
-+   theme_bw() + xlab("Average transcript length per gene") + scale_x_sqrt()
-> ggplot(gene_info, aes(x = ave_nbr_exons_per_tx)) + geom_histogram(bins = 100) + 
-+   theme_bw() + xlab("Average number of exons in a transcript per gene") + scale_x_sqrt()
-Warning message:
-Removed 5638 rows containing non-finite values (stat_bin). 
-> ggplot(gene_info, aes(x = nbr_distinct_3putrs)) + geom_histogram(bins = 100) + 
-+   theme_bw() + xlab("Number of distinct 3'UTRs per gene") + scale_x_sqrt()
-Warning message:
-Removed 44491 rows containing non-finite values (stat_bin). 
-> ggplot(gene_info, aes(x = ave_3putr_length)) + geom_histogram(bins = 100) + 
-+   theme_bw() + xlab("Average 3'UTR length per gene") + scale_x_sqrt()
-Warning message:
-Removed 44491 rows containing non-finite values (stat_bin). 
-> ggplot(gene_info, aes(x = length_diff_3putrs_samestart)) + geom_histogram(bins = 100) + 
-+   theme_bw() + xlab("Length difference between 3'UTRs with the same start position") + 
-+   scale_x_sqrt()
-Warning message:
-Removed 44491 rows containing non-finite values (stat_bin). 
-> 
-> dev.off()
-null device 
-          1 
-> 
 > saveRDS(gene_info, file = outrds)
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
@@ -178,15 +150,15 @@ attached base packages:
 
 other attached packages:
  [1] bindrcpp_0.2.2        ggplot2_2.2.1         dplyr_0.7.4          
- [4] Biostrings_2.47.12    XVector_0.19.9        rtracklayer_1.39.12  
+ [4] Biostrings_2.47.12    XVector_0.20.0        rtracklayer_1.39.12  
  [7] GenomicRanges_1.31.23 GenomeInfoDb_1.15.5   IRanges_2.13.28      
-[10] S4Vectors_0.17.42     BiocGenerics_0.25.3  
+[10] S4Vectors_0.17.42     BiocGenerics_0.26.0  
 
 loaded via a namespace (and not attached):
  [1] Rcpp_0.12.16                plyr_1.8.4                 
  [3] compiler_3.5.0              pillar_1.2.1               
  [5] bindr_0.1.1                 bitops_1.0-6               
- [7] tools_3.5.0                 zlibbioc_1.25.0            
+ [7] tools_3.5.0                 zlibbioc_1.26.0            
  [9] tibble_1.4.2                gtable_0.2.0               
 [11] lattice_0.20-35             pkgconfig_2.0.1            
 [13] rlang_0.2.0                 Matrix_1.2-14              
@@ -198,11 +170,11 @@ loaded via a namespace (and not attached):
 [25] scales_0.5.0                matrixStats_0.53.1         
 [27] GenomicAlignments_1.15.13   assertthat_0.2.0           
 [29] SummarizedExperiment_1.9.16 colorspace_1.3-2           
-[31] labeling_0.3                lazyeval_0.2.1             
-[33] RCurl_1.95-4.10             munsell_0.4.3              
+[31] lazyeval_0.2.1              RCurl_1.95-4.10            
+[33] munsell_0.4.3              
 > date()
-[1] "Mon May  7 12:26:28 2018"
+[1] "Fri May 11 10:26:41 2018"
 > 
 > proc.time()
    user  system elapsed 
-270.836   7.188 284.350 
+282.580   4.824 288.362 

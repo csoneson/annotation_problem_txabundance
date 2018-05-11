@@ -59,33 +59,25 @@ $(eval $(call juncscalerule,20170918.A-WT_4,_stringtie_tx,RSEM,RSEM_stringtie_tx
 $(eval $(call juncscalerule,20170918.A-WT_4,_stringtie_tx,hera,hera_stringtie_tx/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_hera.R,reference/20170918.A-WT_4_stringtie_tx_tx2gene_withsymbol.rds,yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,_stringtie_tx,StringTie,stringtie/20170918.A-WT_4/20170918.A-WT_4_filtered.gtf,Rscripts/read_quant_stringtie.R,reference/20170918.A-WT_4_stringtie_tx_tx2gene_withsymbol.rds,yes))
 
-## Combined coverages for all methods
+## Combine coverages for all methods
 define combcovrule
-alpine/$(1)$(2)/alpine_combined_coverages.rds: STAR$(2)/$(1)/$(1)_Aligned.sortedByCoord.out.bam \
+output/$(1)$(2)_combined_coverages.rds: STAR$(2)/$(1)/$(1)_Aligned.sortedByCoord.out.bam \
 alpine/$(1)$(2)/scaled_junction_coverage_Salmon.rds alpine/$(1)$(2)/scaled_junction_coverage_hera.rds \
 alpine/$(1)$(2)/scaled_junction_coverage_RSEM.rds alpine/$(1)$(2)/scaled_junction_coverage_StringTie.rds \
 alpine/$(1)$(2)/scaled_junction_coverage_SalmonBWA.rds alpine/$(1)$(2)/scaled_junction_coverage_kallisto.rds \
-Rscripts/alpine_combine_scaled_coverages.R $(3) $(4)
+output/gene_characteristics.rds featureCounts/$(1)/$(1)_STAR_exons.txt featureCounts/$(1)/$(1)_STAR_introns.txt \
+Rscripts/combine_scaled_coverages.R $(3) $(4) 
 	mkdir -p $$(@D)
-	$(R) "--args junctioncovSTAR='STAR$(2)/$(1)/$(1)_SJ.out.tab' junctioncovSalmon='$$(word 2,$$^)' junctioncovSalmonBWA='$$(word 6,$$^)' junctioncovSalmonCDS='$(4)' junctioncovNanopore='$(3)' junctioncovhera='$$(word 3,$$^)' junctioncovkallisto='$$(word 7,$$^)' junctioncovRSEM='$$(word 4,$$^)' junctioncovStringTie='$$(word 5,$$^)' mmfracthreshold=$(mmfracthreshold) outrds='$$@'" Rscripts/alpine_combine_scaled_coverages.R Rout/alpine_combine_scaled_coverages_$(1)$(2).Rout
+	$(R) "--args junctioncovSTAR='STAR$(2)/$(1)/$(1)_SJ.out.tab' junctioncovSalmon='$$(word 2,$$^)' junctioncovSalmonBWA='$$(word 6,$$^)' junctioncovSalmonCDS='$(4)' junctioncovNanopore='$(3)' junctioncovhera='$$(word 3,$$^)' junctioncovkallisto='$$(word 7,$$^)' junctioncovRSEM='$$(word 4,$$^)' junctioncovStringTie='$$(word 5,$$^)' genecharacteristics='$$(word 8,$$^)' exoncountstxt='$$(word 9,$$^)' introncountstxt='$$(word 10,$$^)' outrds='$$@'" Rscripts/combine_scaled_coverages.R Rout/combine_scaled_coverages_$(1)$(2).Rout
 endef
 $(eval $(call combcovrule,20151016.A-Cortex_RNA,,,alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_SalmonCDS.rds))
 $(eval $(call combcovrule,20170918.A-WT_4,,alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonMinimap2Nanopore.rds,alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonCDS.rds))
 $(eval $(call combcovrule,20151016.A-Cortex_RNA,_stringtie_tx,,))
 $(eval $(call combcovrule,20170918.A-WT_4,_stringtie_tx,,))
 
-## Summarize gene expression from all methods
-define combgexrule
-alpine/$(1)$(2)/alpine_gene_expression.rds: alpine/$(1)$(2)/alpine_combined_coverages.rds \
-Rscripts/combine_gene_expression_estimates.R
-	$(R) "--args combcovrds='$$(word 1,$$^)' outrds='$$@'" Rscripts/combine_gene_expression_estimates.R Rout/combine_gene_expression_estimates_$(1)$(2).Rout
-endef
-$(foreach F,$(fastqfiles),$(eval $(call combgexrule,$(notdir $(F)),)))
-$(foreach F,$(fastqfiles),$(eval $(call combgexrule,$(notdir $(F)),_stringtie_tx)))
-
-## Calculate gene score
+## Calculate gene scores and add to summary table
 define scorerule
-alpine/$(1)$(2)/alpine_scores.rds: alpine/$(1)$(2)/alpine_combined_coverages.rds \
+output/$(1)$(2)_combined_coverages_with_scores.rds: output/$(1)$(2)_combined_coverages.rds \
 Rscripts/calculate_gene_scores.R
 	$(R) "--args combcovrds='$$(word 1,$$^)' mmfracthreshold=$(mmfracthreshold) outrds='$$@'" Rscripts/calculate_gene_scores.R Rout/calculate_gene_scores_$(1)$(2).Rout
 endef

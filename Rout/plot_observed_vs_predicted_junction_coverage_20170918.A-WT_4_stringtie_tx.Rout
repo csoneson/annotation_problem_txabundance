@@ -25,7 +25,7 @@ Type 'q()' to quit R.
 > quantmethods <- strsplit(quantmethods, ",")[[1]]
 > 
 > print(combcovrds)
-[1] "alpine/20170918.A-WT_4_stringtie_tx/alpine_combined_coverages.rds"
+[1] "output/20170918.A-WT_4_stringtie_tx_combined_coverages_with_scores.rds"
 > print(quantmethods)
 [1] "hera"      "kallisto"  "RSEM"      "Salmon"    "SalmonBWA" "SalmonCDS"
 [7] "StringTie"
@@ -36,22 +36,113 @@ Type 'q()' to quit R.
 +   library(dplyr)
 +   library(tidyr)
 +   library(ggplot2)
++   library(cowplot)
 + })
 > 
 > ## Read combined coverage table
 > x <- readRDS(combcovrds)
-> x <- x$jcovscaled
+> x <- x$junctions
 > 
 > ## Extract required information
 > y <- x %>% dplyr::select(gene, junctionid, method, pred.cov, scaled.cov, 
-+                          uniqreads, mmreads) %>%
++                          uniqreads, mmreads, fracunique) %>%
 +   tidyr::gather(covtype, coverage, pred.cov, scaled.cov) %>%
-+   dplyr::mutate(fracmm = mmreads/(uniqreads+mmreads)) %>%
-+   dplyr::mutate(fracmm = replace(fracmm, is.na(fracmm), 0)) %>%
 +   dplyr::mutate(covtype = replace(covtype, covtype == "pred.cov", "Predicted coverage"),
 +                 covtype = replace(covtype, covtype == "scaled.cov", "Scaled predicted coverage")) %>%
 +   dplyr::filter(method %in% quantmethods)
 > 
+> ## ========================================================================== ##
+> ## Compare predicted coverage to observed coverage in terms of being =0 or >1
+> z <- y %>% dplyr::filter(covtype == "Predicted coverage") %>%
++   dplyr::mutate(coverage = round(coverage)) %>%
++   dplyr::mutate(highfracunique = fracunique > 0.75) %>%
++   dplyr::group_by(gene, method) %>% dplyr::mutate(totaluniqreads = sum(uniqreads)) %>% dplyr::ungroup() %>%
++   dplyr::mutate(hightotaluniqreads = totaluniqreads > 100)
+> 
+> ## Global
+> g1 <- z %>% dplyr::group_by(method) %>% 
++   dplyr::summarize(obs0pred0 = mean(coverage == 0 & uniqreads == 0),
++                    obspospred0 = mean(coverage == 0 & uniqreads > 0),
++                    obs0predlow = mean(coverage > 0 & coverage <= 5 & uniqreads == 0),
++                    obs0predhigh = mean(coverage > 5 & uniqreads == 0),
++                    obspospredpos = mean(coverage > 0 & uniqreads > 0)) %>%
++   tidyr::gather(classif, fraction, -method) %>%
++   dplyr::mutate(classif = replace(classif, classif == "obs0pred0", "Obs = 0, Pred = 0"),
++                 classif = replace(classif, classif == "obspospred0", "Obs > 0, Pred = 0"),
++                 classif = replace(classif, classif == "obs0predlow", "Obs = 0, 0 < Pred <= 5"),
++                 classif = replace(classif, classif == "obs0predhigh", "Obs = 0, Pred > 5"),
++                 classif = replace(classif, classif == "obspospredpos", "Obs > 0, Pred > 0")) %>%
++   dplyr::mutate(classif = factor(classif, levels = c("Obs > 0, Pred = 0", "Obs = 0, Pred > 5",
++                                                      "Obs = 0, 0 < Pred <= 5",
++                                                      "Obs = 0, Pred = 0", "Obs > 0, Pred > 0"))) %>%
++   ggplot(aes(x = method, y = fraction, fill = classif)) + 
++   geom_bar(position = "fill", stat = "identity") + theme_bw() + 
++   scale_fill_manual(values = c("red", "orange", "pink", "green", "forestgreen"), name = "") + 
++   xlab("") + ylab("Fraction of junctions") + 
++   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+> 
+> ## Split by total number of unique reads
+> g2 <- z %>% dplyr::group_by(method, hightotaluniqreads) %>% 
++   dplyr::summarize(obs0pred0 = mean(coverage == 0 & uniqreads == 0),
++                    obspospred0 = mean(coverage == 0 & uniqreads > 0),
++                    obs0predlow = mean(coverage > 0 & coverage <= 5 & uniqreads == 0),
++                    obs0predhigh = mean(coverage > 5 & uniqreads == 0),
++                    obspospredpos = mean(coverage > 0 & uniqreads > 0)) %>%
++   tidyr::gather(classif, fraction, -method, -hightotaluniqreads) %>%
++   dplyr::mutate(classif = replace(classif, classif == "obs0pred0", "Obs = 0, Pred = 0"),
++                 classif = replace(classif, classif == "obspospred0", "Obs > 0, Pred = 0"),
++                 classif = replace(classif, classif == "obs0predlow", "Obs = 0, 0 < Pred <= 5"),
++                 classif = replace(classif, classif == "obs0predhigh", "Obs = 0, Pred > 5"),
++                 classif = replace(classif, classif == "obspospredpos", "Obs > 0, Pred > 0")) %>%
++   dplyr::mutate(classif = factor(classif, levels = c("Obs > 0, Pred = 0", "Obs = 0, Pred > 5",
++                                                      "Obs = 0, 0 < Pred <= 5",
++                                                      "Obs = 0, Pred = 0", "Obs > 0, Pred > 0"))) %>%
++   dplyr::mutate(hightotaluniqreads = replace(hightotaluniqreads, hightotaluniqreads == "TRUE", 
++                                              "Total unique reads > 100"),
++                 hightotaluniqreads = replace(hightotaluniqreads, hightotaluniqreads == "FALSE", 
++                                              "Total unique reads <= 100")) %>%
++   ggplot(aes(x = method, y = fraction, fill = classif)) + 
++   geom_bar(position = "fill", stat = "identity") + theme_bw() + 
++   scale_fill_manual(values = c("red", "orange", "pink", "green", "forestgreen"), name = "") + 
++   xlab("") + ylab("Fraction of junctions") + facet_wrap(~ hightotaluniqreads, nrow = 1) + 
++   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+> 
+> ## Split by fraction unique
+> g3 <- z %>% dplyr::group_by(method, highfracunique) %>% 
++   dplyr::summarize(obs0pred0 = mean(coverage == 0 & uniqreads == 0),
++                    obspospred0 = mean(coverage == 0 & uniqreads > 0),
++                    obs0predlow = mean(coverage > 0 & coverage <= 5 & uniqreads == 0),
++                    obs0predhigh = mean(coverage > 5 & uniqreads == 0),
++                    obspospredpos = mean(coverage > 0 & uniqreads > 0)) %>%
++   tidyr::gather(classif, fraction, -method, -highfracunique) %>%
++   dplyr::mutate(classif = replace(classif, classif == "obs0pred0", "Obs = 0, Pred = 0"),
++                 classif = replace(classif, classif == "obspospred0", "Obs > 0, Pred = 0"),
++                 classif = replace(classif, classif == "obs0predlow", "Obs = 0, 0 < Pred <= 5"),
++                 classif = replace(classif, classif == "obs0predhigh", "Obs = 0, Pred > 5"),
++                 classif = replace(classif, classif == "obspospredpos", "Obs > 0, Pred > 0")) %>%
++   dplyr::mutate(classif = factor(classif, levels = c("Obs > 0, Pred = 0", "Obs = 0, Pred > 5",
++                                                      "Obs = 0, 0 < Pred <= 5",
++                                                      "Obs = 0, Pred = 0", "Obs > 0, Pred > 0"))) %>%
++   dplyr::mutate(highfracunique = replace(highfracunique, highfracunique == "TRUE", 
++                                              "Fraction unique reads > 0.75"),
++                 highfracunique = replace(highfracunique, highfracunique == "FALSE", 
++                                              "Fraction unique reads <= 0.75")) %>%
++   ggplot(aes(x = method, y = fraction, fill = classif)) + 
++   geom_bar(position = "fill", stat = "identity") + theme_bw() + 
++   scale_fill_manual(values = c("red", "orange", "pink", "green", "forestgreen"), name = "") + 
++   xlab("") + ylab("Fraction of junctions") + facet_wrap(~ highfracunique, nrow = 1) + 
++   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+> 
+> png(gsub("\\.rds$", "_detection.png", outrds), width = 7, height = 9, unit = "in", res = 300)
+> cowplot::plot_grid(g1, 
++                    g2 + guides(fill = FALSE),
++                    g3 + guides(fill = FALSE),
++                    ncol = 1, labels = c("A", "B", "C"))
+> dev.off()
+null device 
+          1 
+> 
+> ## ========================================================================== ##
 > ## Calculate correlations
 > corrs <- y %>% dplyr::group_by(method, covtype) %>% 
 +   dplyr::summarize(pearson = signif(cor(uniqreads, coverage, method = "pearson", 
@@ -62,13 +153,13 @@ Type 'q()' to quit R.
 > png(gsub("rds$", "png", outrds), width = 7, height = 15, unit = "in", res = 300)
 > ggplot(y, aes(x = uniqreads, y = coverage)) + 
 +   geom_abline(intercept = 0, slope = 1, color = "black") + 
-+   geom_point(alpha = 0.3, size = 0.3, aes(color = (fracmm > 0.5))) + 
++   geom_point(alpha = 0.3, size = 0.3, aes(color = (fracunique < 0.75))) + 
 +   geom_label(data = corrs, x = -Inf, y = Inf, hjust = -0.05, vjust = 1.1, 
 +              aes(label = paste0("Pearson: ", pearson, "\nSpearman: ", spearman))) + 
 +   facet_grid(method ~ covtype) + 
 +   xlab("Number of uniquely mapping reads spanning junction") + 
 +   ylab("Predicted number of reads spanning junction") + 
-+   scale_color_manual(name = "Fraction\nmultimapping\nreads > 0.5", 
++   scale_color_manual(name = "Fraction\nuniquely mapping\nreads < 0.75", 
 +                      values = c(`TRUE` = "red", `FALSE` = "blue")) + 
 +   guides(color = guide_legend(override.aes = list(size = 3, alpha = 1))) + 
 +   theme_bw()
@@ -79,7 +170,7 @@ null device
 > saveRDS(NULL, outrds)
 > 
 > date()
-[1] "Mon May  7 21:11:52 2018"
+[1] "Fri May 11 20:47:17 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -99,17 +190,17 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] bindrcpp_0.2.2 ggplot2_2.2.1  tidyr_0.8.0    dplyr_0.7.4   
+[1] bindrcpp_0.2.2 cowplot_0.9.2  ggplot2_2.2.1  tidyr_0.8.0    dplyr_0.7.4   
 
 loaded via a namespace (and not attached):
  [1] Rcpp_0.12.16     bindr_0.1.1      magrittr_1.5     tidyselect_0.2.4
  [5] munsell_0.4.3    colorspace_1.3-2 R6_2.2.2         rlang_0.2.0     
  [9] stringr_1.3.0    plyr_1.8.4       tools_3.5.0      grid_3.5.0      
-[13] gtable_0.2.0     digest_0.6.15    lazyeval_0.2.1   assertthat_0.2.0
+[13] gtable_0.2.0     lazyeval_0.2.1   assertthat_0.2.0 digest_0.6.15   
 [17] tibble_1.4.2     purrr_0.2.4      reshape2_1.4.3   glue_1.2.0      
 [21] labeling_0.3     stringi_1.1.7    compiler_3.5.0   pillar_1.2.1    
 [25] scales_0.5.0     pkgconfig_2.0.1 
 > 
 > proc.time()
    user  system elapsed 
-118.944   0.984 120.004 
+116.872   5.044 122.002 

@@ -46,3 +46,10 @@ reference/$(1)$(2)_tx2gene_withsymbol.rds: reference/$(1)$(2)_tx2gene.rds $(tx2g
 	$(R) "--args tx2gene='$$(word 1,$$^)' info='$$(word 2,$$^)' outrds='$$@'" Rscripts/add_symbol_to_tx2gene.R Rout/add_symbol_to_tx2gene_$(1)$(2).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call tx2genesymbolrule,$(notdir $(F)),_stringtie_tx)))
+
+## ==================================================================================== ##
+##                            characterize genes                                        ##
+## ==================================================================================== ##
+output/gene_characteristics.rds: $(gtf) $(txome) Rscripts/calculate_gene_characteristics.R
+	mkdir -p $(@D)
+	$(R) "--args gtf='$(gtf)' txome='$(txome)' outrds='$@'" Rscripts/calculate_gene_characteristics.R Rout/calculate_gene_characteristics.Rout

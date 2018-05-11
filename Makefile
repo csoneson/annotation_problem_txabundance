@@ -82,9 +82,8 @@ $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_predicted_coverage.rds)
 
 ## Scale coverage and calculate scores
 scalecov: $(foreach F,$(fastqfiles),$(foreach M,$(quantmethods$(F)),alpine/$(notdir $(F))/scaled_junction_coverage_$(M).rds)) \
-$(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_combined_coverages.rds) \
-$(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_gene_expression.rds) \
-$(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_scores.rds)
+$(foreach F,$(fastqfiles),output/$(notdir $(F))_combined_coverages.rds) \
+$(foreach F,$(fastqfiles),output/$(notdir $(F))_combined_coverages_with_scores.rds)
 
 ########################################################################################################
 ## Extended annotation (from StringTie)
@@ -116,9 +115,8 @@ $(foreach F,$(fastqfiles),alpine/$(notdir $(F))_stringtie_tx/alpine_predicted_co
 
 ## Scale coverage and calculate scores
 scalecovstringtie: $(foreach F,$(fastqfiles),$(foreach M,$(quantmethodsstringtie),alpine/$(notdir $(F))_stringtie_tx/scaled_junction_coverage_$(M).rds)) \
-$(foreach F,$(fastqfiles),alpine/$(notdir $(F))_stringtie_tx/alpine_combined_coverages.rds) \
-$(foreach F,$(fastqfiles),alpine/$(notdir $(F))_stringtie_tx/alpine_gene_expression.rds) \
-$(foreach F,$(fastqfiles),alpine/$(notdir $(F))_stringtie_tx/alpine_scores.rds)
+$(foreach F,$(fastqfiles),output/$(notdir $(F))_stringtie_tx_combined_coverages.rds) \
+$(foreach F,$(fastqfiles),output/$(notdir $(F))_stringtie_tx_combined_coverages_with_scores.rds)
 
 ########################################################################################################
 ## Simulated data
@@ -129,8 +127,7 @@ simulation/misannotated_utr/sim_misannotated_utr_1_R2.fastq.gz
 ########################################################################################################
 ## Plots
 ########################################################################################################
-plots: figures/gene_characteristics/gene_characteristics.rds \
-$(foreach F,$(fastqfiles),figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F)).rds) \
+plots: $(foreach F,$(fastqfiles),figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F)).rds) \
 $(foreach F,$(fastqfiles),figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F))_stringtie_tx.rds) \
 figures/predicted_coverage_pattern_comparison/predicted_coverage_pattern_comparison_20151016.A-Cortex_RNA_20170918.A-WT_4.rds \
 $(foreach F,$(fastqfiles),figures/gene_scores/gene_scores_$(notdir $(F)).rds) \

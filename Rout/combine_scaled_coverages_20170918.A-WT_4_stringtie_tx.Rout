@@ -23,31 +23,38 @@ Type 'q()' to quit R.
 + }
 > 
 > print(junctioncovSTAR) ## Junction reads from STAR
-[1] "STAR/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_SJ.out.tab"
+[1] "STAR_stringtie_tx/20170918.A-WT_4/20170918.A-WT_4_SJ.out.tab"
 > print(junctioncovSalmon) ## Salmon quantifications
-[1] "alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_Salmon.rds"
+[1] "alpine/20170918.A-WT_4_stringtie_tx/scaled_junction_coverage_Salmon.rds"
 > print(junctioncovSalmonBWA) ## Salmon quantifications in alignment mode (after BWA)
-[1] "alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_SalmonBWA.rds"
+[1] "alpine/20170918.A-WT_4_stringtie_tx/scaled_junction_coverage_SalmonBWA.rds"
 > print(junctioncovSalmonCDS) ## Salmon quantifications based on CDSs only
-[1] "alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_SalmonCDS.rds"
+[1] ""
 > print(junctioncovhera) ## Hera quantifications
-[1] "alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_hera.rds"
+[1] "alpine/20170918.A-WT_4_stringtie_tx/scaled_junction_coverage_hera.rds"
 > print(junctioncovkallisto) ## kallisto quantifications
-[1] "alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_kallisto.rds"
+[1] "alpine/20170918.A-WT_4_stringtie_tx/scaled_junction_coverage_kallisto.rds"
 > print(junctioncovRSEM) ## RSEM quantifications
-[1] "alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_RSEM.rds"
+[1] "alpine/20170918.A-WT_4_stringtie_tx/scaled_junction_coverage_RSEM.rds"
 > print(junctioncovStringTie) ## StringTie quantifications
-[1] "alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_StringTie.rds"
+[1] "alpine/20170918.A-WT_4_stringtie_tx/scaled_junction_coverage_StringTie.rds"
 > print(junctioncovNanopore) ## If present, nanopore results
 [1] ""
-> print(mmfracthreshold) ## Only junctions with mm fraction below this threshold will be used for calculating scaled.cov.MM
-[1] 0.25
+> print(genecharacteristics) ## Gene-level characteristics
+[1] "output/gene_characteristics.rds"
+> print(exoncountstxt)
+[1] "featureCounts/20170918.A-WT_4/20170918.A-WT_4_STAR_exons.txt"
+> print(introncountstxt)
+[1] "featureCounts/20170918.A-WT_4/20170918.A-WT_4_STAR_introns.txt"
 > print(outrds)
-[1] "alpine/20151016.A-Cortex_RNA/alpine_combined_coverages.rds"
+[1] "output/20170918.A-WT_4_stringtie_tx_combined_coverages.rds"
 > 
 > suppressPackageStartupMessages({
 +   library(dplyr)
 + })
+> 
+> ## Combine scaled junction coverages for all methods. Also summarize transcript
+> ## and gene abundances, as well as characteristics of these features.
 > 
 > ## Read junction coverages
 > jcov <- read.delim(junctioncovSTAR, header = FALSE, as.is = TRUE)
@@ -88,15 +95,6 @@ Type 'q()' to quit R.
 +   dplyr::left_join(jcov, by = c("seqnames", "start", "end", "strand")) %>%
 +   dplyr::mutate(uniqreads = replace(uniqreads, is.na(uniqreads), 0),
 +                 mmreads = replace(mmreads, is.na(mmreads), 0)) %>%
-+   dplyr::mutate(include.junction = as.numeric(mmreads/(uniqreads + mmreads) < mmfracthreshold)) %>% 
-+   dplyr::mutate(include.junction = replace(include.junction, is.na(include.junction), 1)) %>%
-+   dplyr::group_by(gene, method) %>% 
-+   dplyr::mutate(scaled.cov = pred.cov/sum(pred.cov, na.rm = TRUE) * 
-+                   sum(uniqreads, na.rm = TRUE)) %>%
-+   dplyr::mutate(scaled.cov = replace(scaled.cov, is.na(scaled.cov), 0)) %>% 
-+   dplyr::mutate(scaled.cov.mm = pred.cov/sum(pred.cov * include.junction, na.rm = TRUE) * 
-+                   sum(uniqreads * include.junction, na.rm = TRUE)) %>%
-+   dplyr::mutate(scaled.cov.mm = replace(scaled.cov.mm, is.na(scaled.cov.mm), 0)) %>% 
 +   dplyr::ungroup()
 Warning messages:
 1: Column `seqnames` joining factor and character vector, coercing into character vector 
@@ -111,6 +109,7 @@ Warning messages:
 +   dplyr::select(junctionid, everything(), transcript)
 Joining, by = c("seqnames", "start", "end", "gene")
 > 
+> ## Read and combine transcript quantifications
 > allquants <- do.call(rbind, list(readRDS(junctioncovSalmon)$quants,
 +                                  readRDS(junctioncovSalmonBWA)$quants,
 +                                  readRDS(junctioncovhera)$quants,
@@ -125,7 +124,47 @@ Joining, by = c("seqnames", "start", "end", "gene")
 +   allquants <- rbind(allquants, readRDS(junctioncovSalmonCDS)$quants)
 + }
 > 
-> saveRDS(list(jcov = jcov, jcovscaled = jcovscaled, allquants = allquants), file = outrds)
+> ## Summarize abundances on gene level
+> allquants_gene <- allquants %>% dplyr::group_by(gene, method) %>%
++   dplyr::mutate(TPMrel = TPM/sum(TPM)) %>%
++   dplyr::mutate(TPMrel = replace(TPMrel, is.na(TPMrel), 0)) %>%
++   dplyr::summarize(count = sum(count),
++                    TPM = sum(TPM),
++                    nbr_expressed_transcripts = sum(TPM > 0),
++                    nbr_expressed_transcripts_5p = sum(TPMrel > 0.05)) %>%
++   dplyr::ungroup()
+> 
+> ## Add gene characteristics
+> genechars <- readRDS(genecharacteristics)
+> allquants_gene <- dplyr::left_join(allquants_gene, genechars, 
++                                    by = c("gene" = "gene_id"))
+> 
+> ## Add exon and intron counts
+> exoncounts <- read.delim(exoncountstxt, skip = 1, header = TRUE, as.is = TRUE) %>%
++   dplyr::select(-Chr, -Start, -End, -Strand, -Length) %>%
++   setNames(c("gene", "exoncount"))
+> introncounts <- read.delim(introncountstxt, skip = 1, header = TRUE, as.is = TRUE) %>%
++   dplyr::select(-Chr, -Start, -End, -Strand, -Length) %>%
++   setNames(c("gene", "introncount"))
+> intron_exon_ratio <- dplyr::full_join(exoncounts, introncounts) %>% 
++   dplyr::mutate(introncount = replace(introncount, is.na(introncount), 0)) %>%
++   dplyr::mutate(intron_exon_ratio = introncount/exoncount) %>%
++   dplyr::mutate(intron_exon_ratio = replace(intron_exon_ratio, exoncount==0 & introncount==0, 0))
+Joining, by = "gene"
+> allquants_gene <- dplyr::left_join(allquants_gene, intron_exon_ratio)
+Joining, by = "gene"
+> 
+> ## Add total unique and multimapping junction reads per gene
+> totjunctionreads <- jcovscaled %>% dplyr::filter(method == "Salmon") %>%
++   dplyr::select(gene, uniqreads, mmreads) %>%
++   dplyr::group_by(gene) %>% dplyr::summarize(uniqjuncreads = sum(uniqreads),
++                                              mmjuncreads = sum(mmreads)) %>%
++   dplyr::mutate(uniqjuncfraction = uniqjuncreads/(uniqjuncreads + mmjuncreads)) %>%
++   dplyr::mutate(uniqjuncfraction = replace(uniqjuncfraction, is.na(uniqjuncfraction), 1))
+> allquants_gene <- dplyr::left_join(allquants_gene, totjunctionreads, by = "gene")
+> 
+> saveRDS(list(junctions = jcovscaled, transcripts = allquants, 
++              genes = allquants_gene), file = outrds)
 > 
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
@@ -153,8 +192,8 @@ loaded via a namespace (and not attached):
  [5] pillar_1.2.1     glue_1.2.0       tibble_1.4.2     Rcpp_0.12.16    
  [9] pkgconfig_2.0.1  rlang_0.2.0      bindr_0.1.1     
 > date()
-[1] "Mon May  7 21:11:11 2018"
+[1] "Fri May 11 20:43:34 2018"
 > 
 > proc.time()
    user  system elapsed 
-287.460   2.764 290.554 
+218.836   9.952 229.003 

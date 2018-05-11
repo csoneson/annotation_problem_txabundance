@@ -1,15 +1,8 @@
 ## ==================================================================================== ##
-##                            characterize genes                                        ##
-## ==================================================================================== ##
-figures/gene_characteristics/gene_characteristics.rds: $(gtf) $(txome) Rscripts/plot_gene_characteristics.R
-	mkdir -p $(@D)
-	$(R) "--args gtf='$(gtf)' txome='$(txome)' outrds='$@'" Rscripts/plot_gene_characteristics.R Rout/plot_gene_characteristics.Rout
-
-## ==================================================================================== ##
 ##              compare observed and predicted junction coverages                       ##
 ## ==================================================================================== ##
 define obsvspredrule
-figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(1)$(2).rds: alpine/$(1)$(2)/alpine_combined_coverages.rds \
+figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(1)$(2).rds: output/$(1)$(2)_combined_coverages_with_scores.rds \
 Rscripts/plot_observed_vs_predicted_junction_coverage.R
 	mkdir -p $$(@D)
 	$(R) "--args combcovrds='$$<' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,StringTie' outrds='$$@'" Rscripts/plot_observed_vs_predicted_junction_coverage.R Rout/plot_observed_vs_predicted_junction_coverage_$(1)$(2).Rout
@@ -22,20 +15,18 @@ $(foreach F,$(fastqfiles),$(eval $(call obsvspredrule,$(notdir $(F)),_stringtie_
 ## ==================================================================================== ##
 figures/predicted_coverage_pattern_comparison/predicted_coverage_pattern_comparison_20151016.A-Cortex_RNA_20170918.A-WT_4.rds: \
 alpine/20151016.A-Cortex_RNA/alpine_predicted_coverage.rds \
-alpine/20170918.A-WT_4/alpine_predicted_coverage.rds Rscripts/compare_predicted_coverage_patterns.R
+alpine/20170918.A-WT_4/alpine_predicted_coverage.rds Rscripts/plot_compare_predicted_coverage_patterns.R
 	mkdir -p $(@D)
-	$(R) "--args predcov1='$(word 1,$^)' predcov2='$(word 2,$^)' outrds='$@'" Rscripts/compare_predicted_coverage_patterns.R Rout/compare_predicted_coverage_patterns_20151016.A-Cortex_RNA_20170918.A-WT_4.Rout
+	$(R) "--args predcov1='$(word 1,$^)' predcov2='$(word 2,$^)' outrds='$@'" Rscripts/plot_compare_predicted_coverage_patterns.R Rout/plot_compare_predicted_coverage_patterns_20151016.A-Cortex_RNA_20170918.A-WT_4.Rout
 
 ## ==================================================================================== ##
 ##                            plot gene scores                                          ##
 ## ==================================================================================== ##
 define plotscorerule
-figures/gene_scores/gene_scores_$(1)$(2).rds: alpine/$(1)$(2)/alpine_gene_expression.rds \
-figures/gene_characteristics/gene_characteristics.rds alpine/$(1)$(2)/alpine_scores.rds \
-featureCounts/$(1)/$(1)_STAR_exons.txt featureCounts/$(1)/$(1)_STAR_introns.txt \
+figures/gene_scores/gene_scores_$(1)$(2).rds: output/$(1)$(2)_combined_coverages_with_scores.rds \
 Rscripts/plot_score_distribution.R
 	mkdir -p $$(@D)
-	$(R) "--args scorerds='$$(word 3,$$^)' gexrds='$$(word 1,$$^)' geneinfords='$$(word 2,$$^)' exoncountstxt='$$(word 4,$$^)' introncountstxt='$$(word 5,$$^)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,StringTie' outrds='$$@'" Rscripts/plot_score_distribution.R Rout/plot_score_distribution_$(1)$(2).Rout
+	$(R) "--args scorerds='$$(word 1,$$^)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,StringTie' outrds='$$@'" Rscripts/plot_score_distribution.R Rout/plot_score_distribution_$(1)$(2).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call plotscorerule,$(notdir $(F)),)))
 $(foreach F,$(fastqfiles),$(eval $(call plotscorerule,$(notdir $(F)),_stringtie_tx)))

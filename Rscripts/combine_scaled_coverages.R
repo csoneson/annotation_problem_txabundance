@@ -12,12 +12,17 @@ print(junctioncovkallisto) ## kallisto quantifications
 print(junctioncovRSEM) ## RSEM quantifications
 print(junctioncovStringTie) ## StringTie quantifications
 print(junctioncovNanopore) ## If present, nanopore results
-print(mmfracthreshold) ## Only junctions with mm fraction below this threshold will be used for calculating scaled.cov.MM
+print(genecharacteristics) ## Gene-level characteristics
+print(exoncountstxt)
+print(introncountstxt)
 print(outrds)
 
 suppressPackageStartupMessages({
   library(dplyr)
 })
+
+## Combine scaled junction coverages for all methods. Also summarize transcript
+## and gene abundances, as well as characteristics of these features.
 
 ## Read junction coverages
 jcov <- read.delim(junctioncovSTAR, header = FALSE, as.is = TRUE)
@@ -58,15 +63,6 @@ jcovscaled <- jcovscaled %>%
   dplyr::left_join(jcov, by = c("seqnames", "start", "end", "strand")) %>%
   dplyr::mutate(uniqreads = replace(uniqreads, is.na(uniqreads), 0),
                 mmreads = replace(mmreads, is.na(mmreads), 0)) %>%
-  dplyr::mutate(include.junction = as.numeric(mmreads/(uniqreads + mmreads) < mmfracthreshold)) %>% 
-  dplyr::mutate(include.junction = replace(include.junction, is.na(include.junction), 1)) %>%
-  dplyr::group_by(gene, method) %>% 
-  dplyr::mutate(scaled.cov = pred.cov/sum(pred.cov, na.rm = TRUE) * 
-                  sum(uniqreads, na.rm = TRUE)) %>%
-  dplyr::mutate(scaled.cov = replace(scaled.cov, is.na(scaled.cov), 0)) %>% 
-  dplyr::mutate(scaled.cov.mm = pred.cov/sum(pred.cov * include.junction, na.rm = TRUE) * 
-                  sum(uniqreads * include.junction, na.rm = TRUE)) %>%
-  dplyr::mutate(scaled.cov.mm = replace(scaled.cov.mm, is.na(scaled.cov.mm), 0)) %>% 
   dplyr::ungroup()
 
 j0 <- jcovscaled %>% dplyr::select(seqnames, start, end, gene) %>%
@@ -77,6 +73,7 @@ j0 <- jcovscaled %>% dplyr::select(seqnames, start, end, gene) %>%
 jcovscaled <- jcovscaled %>% dplyr::left_join(j0) %>%
   dplyr::select(junctionid, everything(), transcript)
 
+## Read and combine transcript quantifications
 allquants <- do.call(rbind, list(readRDS(junctioncovSalmon)$quants,
                                  readRDS(junctioncovSalmonBWA)$quants,
                                  readRDS(junctioncovhera)$quants,
@@ -91,7 +88,45 @@ if (junctioncovSalmonCDS != "") {
   allquants <- rbind(allquants, readRDS(junctioncovSalmonCDS)$quants)
 }
 
-saveRDS(list(jcov = jcov, jcovscaled = jcovscaled, allquants = allquants), file = outrds)
+## Summarize abundances on gene level
+allquants_gene <- allquants %>% dplyr::group_by(gene, method) %>%
+  dplyr::mutate(TPMrel = TPM/sum(TPM)) %>%
+  dplyr::mutate(TPMrel = replace(TPMrel, is.na(TPMrel), 0)) %>%
+  dplyr::summarize(count = sum(count),
+                   TPM = sum(TPM),
+                   nbr_expressed_transcripts = sum(TPM > 0),
+                   nbr_expressed_transcripts_5p = sum(TPMrel > 0.05)) %>%
+  dplyr::ungroup()
+
+## Add gene characteristics
+genechars <- readRDS(genecharacteristics)
+allquants_gene <- dplyr::left_join(allquants_gene, genechars, 
+                                   by = c("gene" = "gene_id"))
+
+## Add exon and intron counts
+exoncounts <- read.delim(exoncountstxt, skip = 1, header = TRUE, as.is = TRUE) %>%
+  dplyr::select(-Chr, -Start, -End, -Strand, -Length) %>%
+  setNames(c("gene", "exoncount"))
+introncounts <- read.delim(introncountstxt, skip = 1, header = TRUE, as.is = TRUE) %>%
+  dplyr::select(-Chr, -Start, -End, -Strand, -Length) %>%
+  setNames(c("gene", "introncount"))
+intron_exon_ratio <- dplyr::full_join(exoncounts, introncounts) %>% 
+  dplyr::mutate(introncount = replace(introncount, is.na(introncount), 0)) %>%
+  dplyr::mutate(intron_exon_ratio = introncount/exoncount) %>%
+  dplyr::mutate(intron_exon_ratio = replace(intron_exon_ratio, exoncount==0 & introncount==0, 0))
+allquants_gene <- dplyr::left_join(allquants_gene, intron_exon_ratio)
+
+## Add total unique and multimapping junction reads per gene
+totjunctionreads <- jcovscaled %>% dplyr::filter(method == "Salmon") %>%
+  dplyr::select(gene, uniqreads, mmreads) %>%
+  dplyr::group_by(gene) %>% dplyr::summarize(uniqjuncreads = sum(uniqreads),
+                                             mmjuncreads = sum(mmreads)) %>%
+  dplyr::mutate(uniqjuncfraction = uniqjuncreads/(uniqjuncreads + mmjuncreads)) %>%
+  dplyr::mutate(uniqjuncfraction = replace(uniqjuncfraction, is.na(uniqjuncfraction), 1))
+allquants_gene <- dplyr::left_join(allquants_gene, totjunctionreads, by = "gene")
+
+saveRDS(list(junctions = jcovscaled, transcripts = allquants, 
+             genes = allquants_gene), file = outrds)
 
 sessionInfo()
 date()

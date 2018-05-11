@@ -13,22 +13,111 @@ suppressPackageStartupMessages({
   library(dplyr)
   library(tidyr)
   library(ggplot2)
+  library(cowplot)
 })
 
 ## Read combined coverage table
 x <- readRDS(combcovrds)
-x <- x$jcovscaled
+x <- x$junctions
 
 ## Extract required information
 y <- x %>% dplyr::select(gene, junctionid, method, pred.cov, scaled.cov, 
-                         uniqreads, mmreads) %>%
+                         uniqreads, mmreads, fracunique) %>%
   tidyr::gather(covtype, coverage, pred.cov, scaled.cov) %>%
-  dplyr::mutate(fracmm = mmreads/(uniqreads+mmreads)) %>%
-  dplyr::mutate(fracmm = replace(fracmm, is.na(fracmm), 0)) %>%
   dplyr::mutate(covtype = replace(covtype, covtype == "pred.cov", "Predicted coverage"),
                 covtype = replace(covtype, covtype == "scaled.cov", "Scaled predicted coverage")) %>%
   dplyr::filter(method %in% quantmethods)
 
+## ========================================================================== ##
+## Compare predicted coverage to observed coverage in terms of being =0 or >1
+z <- y %>% dplyr::filter(covtype == "Predicted coverage") %>%
+  dplyr::mutate(coverage = round(coverage)) %>%
+  dplyr::mutate(highfracunique = fracunique > 0.75) %>%
+  dplyr::group_by(gene, method) %>% dplyr::mutate(totaluniqreads = sum(uniqreads)) %>% dplyr::ungroup() %>%
+  dplyr::mutate(hightotaluniqreads = totaluniqreads > 100)
+
+## Global
+g1 <- z %>% dplyr::group_by(method) %>% 
+  dplyr::summarize(obs0pred0 = mean(coverage == 0 & uniqreads == 0),
+                   obspospred0 = mean(coverage == 0 & uniqreads > 0),
+                   obs0predlow = mean(coverage > 0 & coverage <= 5 & uniqreads == 0),
+                   obs0predhigh = mean(coverage > 5 & uniqreads == 0),
+                   obspospredpos = mean(coverage > 0 & uniqreads > 0)) %>%
+  tidyr::gather(classif, fraction, -method) %>%
+  dplyr::mutate(classif = replace(classif, classif == "obs0pred0", "Obs = 0, Pred = 0"),
+                classif = replace(classif, classif == "obspospred0", "Obs > 0, Pred = 0"),
+                classif = replace(classif, classif == "obs0predlow", "Obs = 0, 0 < Pred <= 5"),
+                classif = replace(classif, classif == "obs0predhigh", "Obs = 0, Pred > 5"),
+                classif = replace(classif, classif == "obspospredpos", "Obs > 0, Pred > 0")) %>%
+  dplyr::mutate(classif = factor(classif, levels = c("Obs > 0, Pred = 0", "Obs = 0, Pred > 5",
+                                                     "Obs = 0, 0 < Pred <= 5",
+                                                     "Obs = 0, Pred = 0", "Obs > 0, Pred > 0"))) %>%
+  ggplot(aes(x = method, y = fraction, fill = classif)) + 
+  geom_bar(position = "fill", stat = "identity") + theme_bw() + 
+  scale_fill_manual(values = c("red", "orange", "pink", "green", "forestgreen"), name = "") + 
+  xlab("") + ylab("Fraction of junctions") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+
+## Split by total number of unique reads
+g2 <- z %>% dplyr::group_by(method, hightotaluniqreads) %>% 
+  dplyr::summarize(obs0pred0 = mean(coverage == 0 & uniqreads == 0),
+                   obspospred0 = mean(coverage == 0 & uniqreads > 0),
+                   obs0predlow = mean(coverage > 0 & coverage <= 5 & uniqreads == 0),
+                   obs0predhigh = mean(coverage > 5 & uniqreads == 0),
+                   obspospredpos = mean(coverage > 0 & uniqreads > 0)) %>%
+  tidyr::gather(classif, fraction, -method, -hightotaluniqreads) %>%
+  dplyr::mutate(classif = replace(classif, classif == "obs0pred0", "Obs = 0, Pred = 0"),
+                classif = replace(classif, classif == "obspospred0", "Obs > 0, Pred = 0"),
+                classif = replace(classif, classif == "obs0predlow", "Obs = 0, 0 < Pred <= 5"),
+                classif = replace(classif, classif == "obs0predhigh", "Obs = 0, Pred > 5"),
+                classif = replace(classif, classif == "obspospredpos", "Obs > 0, Pred > 0")) %>%
+  dplyr::mutate(classif = factor(classif, levels = c("Obs > 0, Pred = 0", "Obs = 0, Pred > 5",
+                                                     "Obs = 0, 0 < Pred <= 5",
+                                                     "Obs = 0, Pred = 0", "Obs > 0, Pred > 0"))) %>%
+  dplyr::mutate(hightotaluniqreads = replace(hightotaluniqreads, hightotaluniqreads == "TRUE", 
+                                             "Total unique reads > 100"),
+                hightotaluniqreads = replace(hightotaluniqreads, hightotaluniqreads == "FALSE", 
+                                             "Total unique reads <= 100")) %>%
+  ggplot(aes(x = method, y = fraction, fill = classif)) + 
+  geom_bar(position = "fill", stat = "identity") + theme_bw() + 
+  scale_fill_manual(values = c("red", "orange", "pink", "green", "forestgreen"), name = "") + 
+  xlab("") + ylab("Fraction of junctions") + facet_wrap(~ hightotaluniqreads, nrow = 1) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+
+## Split by fraction unique
+g3 <- z %>% dplyr::group_by(method, highfracunique) %>% 
+  dplyr::summarize(obs0pred0 = mean(coverage == 0 & uniqreads == 0),
+                   obspospred0 = mean(coverage == 0 & uniqreads > 0),
+                   obs0predlow = mean(coverage > 0 & coverage <= 5 & uniqreads == 0),
+                   obs0predhigh = mean(coverage > 5 & uniqreads == 0),
+                   obspospredpos = mean(coverage > 0 & uniqreads > 0)) %>%
+  tidyr::gather(classif, fraction, -method, -highfracunique) %>%
+  dplyr::mutate(classif = replace(classif, classif == "obs0pred0", "Obs = 0, Pred = 0"),
+                classif = replace(classif, classif == "obspospred0", "Obs > 0, Pred = 0"),
+                classif = replace(classif, classif == "obs0predlow", "Obs = 0, 0 < Pred <= 5"),
+                classif = replace(classif, classif == "obs0predhigh", "Obs = 0, Pred > 5"),
+                classif = replace(classif, classif == "obspospredpos", "Obs > 0, Pred > 0")) %>%
+  dplyr::mutate(classif = factor(classif, levels = c("Obs > 0, Pred = 0", "Obs = 0, Pred > 5",
+                                                     "Obs = 0, 0 < Pred <= 5",
+                                                     "Obs = 0, Pred = 0", "Obs > 0, Pred > 0"))) %>%
+  dplyr::mutate(highfracunique = replace(highfracunique, highfracunique == "TRUE", 
+                                             "Fraction unique reads > 0.75"),
+                highfracunique = replace(highfracunique, highfracunique == "FALSE", 
+                                             "Fraction unique reads <= 0.75")) %>%
+  ggplot(aes(x = method, y = fraction, fill = classif)) + 
+  geom_bar(position = "fill", stat = "identity") + theme_bw() + 
+  scale_fill_manual(values = c("red", "orange", "pink", "green", "forestgreen"), name = "") + 
+  xlab("") + ylab("Fraction of junctions") + facet_wrap(~ highfracunique, nrow = 1) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+
+png(gsub("\\.rds$", "_detection.png", outrds), width = 7, height = 9, unit = "in", res = 300)
+cowplot::plot_grid(g1, 
+                   g2 + guides(fill = FALSE),
+                   g3 + guides(fill = FALSE),
+                   ncol = 1, labels = c("A", "B", "C"))
+dev.off()
+
+## ========================================================================== ##
 ## Calculate correlations
 corrs <- y %>% dplyr::group_by(method, covtype) %>% 
   dplyr::summarize(pearson = signif(cor(uniqreads, coverage, method = "pearson", 
@@ -39,13 +128,13 @@ corrs <- y %>% dplyr::group_by(method, covtype) %>%
 png(gsub("rds$", "png", outrds), width = 7, height = 15, unit = "in", res = 300)
 ggplot(y, aes(x = uniqreads, y = coverage)) + 
   geom_abline(intercept = 0, slope = 1, color = "black") + 
-  geom_point(alpha = 0.3, size = 0.3, aes(color = (fracmm > 0.5))) + 
+  geom_point(alpha = 0.3, size = 0.3, aes(color = (fracunique < 0.75))) + 
   geom_label(data = corrs, x = -Inf, y = Inf, hjust = -0.05, vjust = 1.1, 
              aes(label = paste0("Pearson: ", pearson, "\nSpearman: ", spearman))) + 
   facet_grid(method ~ covtype) + 
   xlab("Number of uniquely mapping reads spanning junction") + 
   ylab("Predicted number of reads spanning junction") + 
-  scale_color_manual(name = "Fraction\nmultimapping\nreads > 0.5", 
+  scale_color_manual(name = "Fraction\nuniquely mapping\nreads < 0.75", 
                      values = c(`TRUE` = "red", `FALSE` = "blue")) + 
   guides(color = guide_legend(override.aes = list(size = 3, alpha = 1))) + 
   theme_bw()

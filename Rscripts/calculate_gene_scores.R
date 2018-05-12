@@ -53,10 +53,8 @@ scaled_coverage <- function(uniqreads, mmreads, predcovs, g, beta = 1) {
 combcov <- readRDS(combcovrds)
 junccov <- combcov$junctions
 
-## Calculate score. Consider only junctions with not too many multimapping reads
+## Calculate score. 
 junccov <- junccov %>%
-  dplyr::mutate(fracunique = uniqreads/(uniqreads + mmreads)) %>% 
-  dplyr::mutate(fracunique = replace(fracunique, is.na(fracunique), 1)) %>%
   dplyr::group_by(gene, method) %>% 
   dplyr::mutate(score = junction_score(uniqreads, mmreads, pred.cov, g = gthr, beta = 1)) %>%
   dplyr::mutate(scaled.cov = scaled_coverage(uniqreads, mmreads, pred.cov, g = gthr, beta = 1)) %>%

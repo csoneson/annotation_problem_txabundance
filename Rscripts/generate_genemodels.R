@@ -6,7 +6,7 @@ for (i in 1:length(args)) {
 print(gtf)
 print(outrds)
 
-source("Rscripts/plot_tracks.R")
+source("Rscripts/helper_plot_tracks.R")
 
 ## Create gene models for Gviz visualization
 options(ucscChromosomeNames = FALSE)

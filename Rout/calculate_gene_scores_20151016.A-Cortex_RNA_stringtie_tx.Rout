@@ -75,10 +75,8 @@ Type 'q()' to quit R.
 > combcov <- readRDS(combcovrds)
 > junccov <- combcov$junctions
 > 
-> ## Calculate score. Consider only junctions with not too many multimapping reads
+> ## Calculate score. 
 > junccov <- junccov %>%
-+   dplyr::mutate(fracunique = uniqreads/(uniqreads + mmreads)) %>% 
-+   dplyr::mutate(fracunique = replace(fracunique, is.na(fracunique), 1)) %>%
 +   dplyr::group_by(gene, method) %>% 
 +   dplyr::mutate(score = junction_score(uniqreads, mmreads, pred.cov, g = gthr, beta = 1)) %>%
 +   dplyr::mutate(scaled.cov = scaled_coverage(uniqreads, mmreads, pred.cov, g = gthr, beta = 1)) %>%
@@ -96,7 +94,7 @@ Type 'q()' to quit R.
 +              genes = genecov), file = outrds)
 > 
 > date()
-[1] "Sat May 12 10:56:06 2018"
+[1] "Sat May 12 15:36:06 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -125,4 +123,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-117.940   0.784 119.393 
+146.676   0.756 147.642 

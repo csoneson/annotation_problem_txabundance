@@ -12,12 +12,14 @@ print(outdir)  ## output directory
 print(libid)  ## string that will be added to the beginning of all output files (library ID)
 print(checkdir)  ## directory to write (empty) rds files (time stamps)
 
-suppressPackageStartupMessages(library(dplyr))
-suppressPackageStartupMessages(library(ggplot2))
-suppressPackageStartupMessages(library(cowplot))
-suppressPackageStartupMessages(library(ggrepel))
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(ggplot2)
+  library(cowplot)
+  library(ggrepel)
+})
 
-source("Rscripts/plot_tracks.R")
+source("Rscripts/helper_plot_tracks.R")
 
 ## Read gene models for Gviz plot (pregenerated from gtf to save time) and
 ## quantifications
@@ -33,10 +35,10 @@ if (file.exists(gene)) {
 
 ## Investigate each gene
 mclapply(genes, function(currgene) {
-  jl <- combcov$jcovscaled %>% dplyr::filter(gene == currgene) %>%
+  jl <- combcov$junctions %>% dplyr::filter(gene == currgene) %>%
     dplyr::mutate(junctionid2 = junctionid) %>%
     dplyr::mutate(junctionid2 = replace(junctionid2, 
-                                        abs(scaledcoverage - uniqreads) < mean(uniqreads), 
+                                        abs(scaled.cov - uniqreads) < mean(uniqreads), 
                                         ""))
 
   pdf(paste0(outdir, "/plots/", libid, currgene, ".pdf"), width = 12, height = 10)
@@ -49,7 +51,7 @@ mclapply(genes, function(currgene) {
                 pdf_filename = NULL, pdf_width = 7, pdf_height = 7)
   }, error = function(e) message(e))
   
-  print(ggplot(jl, aes(x = scaledcoverage, y = uniqreads, label = junctionid)) + 
+  print(ggplot(jl, aes(x = scaled.cov, y = uniqreads, label = junctionid)) + 
           geom_point(size = 4) + geom_label_repel() +
           facet_wrap(~ methodscore) + 
           geom_abline(intercept = 0, slope = 1) + 
@@ -57,7 +59,16 @@ mclapply(genes, function(currgene) {
           ylab("Number of uniquely mapped reads") + 
           theme_bw())
   
-  print(ggplot(jl, aes(x = scaledcoverage, y = uniqreads, label = junctionid2)) + 
+  print(ggplot(jl, aes(x = scaled.cov, y = uniqreads, label = junctionid,
+                       color = fracunique > 0.75)) + 
+          geom_point(size = 4) + geom_label_repel() +
+          facet_wrap(~ methodscore) + 
+          geom_abline(intercept = 0, slope = 1) + 
+          xlab("Scaled predicted coverage") + 
+          ylab("Number of uniquely mapped reads") + 
+          theme_bw())
+  
+  print(ggplot(jl, aes(x = scaled.cov, y = uniqreads, label = junctionid2)) + 
           geom_point(size = 4) + geom_label_repel() +
           facet_wrap(~ methodscore) + 
           geom_abline(intercept = 0, slope = 1) + 
@@ -67,20 +78,20 @@ mclapply(genes, function(currgene) {
   dev.off()
   
   write.table(jl %>% dplyr::select(-score, -pred.cov, -method, -junctionid2) %>%
-                dplyr::mutate(scaledcoverage = round(scaledcoverage, 2)) %>% 
-                tidyr::spread(methodscore, scaledcoverage) %>%
+                dplyr::mutate(scaled.cov = round(scaled.cov, 2)) %>% 
+                tidyr::spread(methodscore, scaled.cov) %>%
                 dplyr::arrange(start),
               file = paste0(outdir, "/jcov/", libid, currgene, "_jscaledcov.txt"),
               quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
   
-  write.table(combcov$allquants %>% dplyr::filter(gene == currgene) %>% 
+  write.table(combcov$transcripts %>% dplyr::filter(gene == currgene) %>% 
                 dplyr::select(transcript, method, TPM) %>%
                 dplyr::mutate(TPM = round(TPM, 2)) %>% 
                 tidyr::spread(method, TPM),
               file = paste0(outdir, "/tpm/", libid, currgene, "_tpm.txt"),
               quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
   
-  write.table(combcov$allquants %>% dplyr::filter(gene == currgene) %>% 
+  write.table(combcov$transcripts %>% dplyr::filter(gene == currgene) %>% 
                 dplyr::select(transcript, method, count) %>%
                 dplyr::mutate(count = round(count, 2)) %>% 
                 tidyr::spread(method, count),

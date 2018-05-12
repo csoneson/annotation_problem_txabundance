@@ -3,8 +3,6 @@ R := R_LIBS=/home/Shared/Rlib/devel-lib/ /usr/local/R/R-devel/bin/R CMD BATCH --
 samtools := /usr/local/bin/samtools
 bedtools := /usr/local/bin/bedtools
 
-gvizgenemodels := reference/Homo_sapiens.GRCh38.90_gviz_genemodels.rds
-
 ## List FASTQ files (without the _{R1,R2}.fastq.gz part)
 fastqfiles := \
 /home/Shared/data/seq/roche_pacbio_targeted_cdna/Illumina_RNA_seq/20151016.A-Cortex_RNA \
@@ -33,6 +31,7 @@ plots stats
 ## Include makefiles. These need to be included after the definition of the "all" rule, 
 ## otherwise the default rule will be the first one from these makefiles
 include makefiles/reference.mk
+include makefiles/genes_to_plot.mk
 include makefiles/Salmon.mk
 include makefiles/hera.mk
 include makefiles/SalmonBWA.mk
@@ -61,7 +60,8 @@ reference/RSEM/Homo_sapiens.GRCh38.rsem.cdna.ncrna/Homo_sapiens.GRCh38.rsem.cdna
 $(STARindexnogtf)/chrNameLength.txt \
 reference/hera/Homo_sapiens.GRCh38/index \
 $(hisat2index).1.ht2 \
-$(hisat2ss)
+$(hisat2ss) \
+$(gvizgenemodels)
 
 ## Align and quantify each sample
 quant: $(foreach F,$(fastqfiles),salmon/cDNAncRNA/$(notdir $(F))/quant.sf) \
@@ -131,13 +131,16 @@ plots: $(foreach F,$(fastqfiles),figures/observed_vs_predicted_junction_coverage
 $(foreach F,$(fastqfiles),figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F))_stringtie_tx.rds) \
 figures/predicted_coverage_pattern_comparison/predicted_coverage_pattern_comparison_20151016.A-Cortex_RNA_20170918.A-WT_4.rds \
 $(foreach F,$(fastqfiles),figures/gene_scores/gene_scores_$(notdir $(F)).rds) \
-$(foreach F,$(fastqfiles),figures/gene_scores/gene_scores_$(notdir $(F))_stringtie_tx.rds)
+$(foreach F,$(fastqfiles),figures/gene_scores/gene_scores_$(notdir $(F))_stringtie_tx.rds) \
+$(foreach G,$(genes_to_plot),$(foreach F,$(fastqfiles),output_genewise/$(notdir $(F))/check/$(G).rds))
 
 ########################################################################################################
 ## Stats
 ########################################################################################################
 stats: $(foreach F,$(fastqfiles),stats/alpine_coverage_prediction_summary_$(notdir $(F)).txt) \
-$(foreach F,$(fastqfiles),stats/alpine_coverage_prediction_summary_$(notdir $(F))_stringtie_tx.txt)
+$(foreach F,$(fastqfiles),stats/alpine_coverage_prediction_summary_$(notdir $(F))_stringtie_tx.txt) \
+$(foreach F,$(fastqfiles),stats/genes_with_high_score_$(notdir $(F)).txt) \
+$(foreach F,$(fastqfiles),stats/genes_with_high_score_$(notdir $(F))_stringtie_tx.txt)
 
 ########################################################################################################
 ## Other
@@ -146,18 +149,5 @@ $(foreach F,$(fastqfiles),stats/alpine_coverage_prediction_summary_$(notdir $(F)
 listpackages:
 	$(R) Rscripts/list_packages.R Rout/list_packages.Rout
 
-## Gene models for Gviz
-$(gvizgenemodels): $(gtf) Rscripts/generate_genemodels.R Rscripts/plot_tracks.R
-	$(R) "--args gtf='$(gtf)' outrds='$@'" Rscripts/generate_genemodels.R Rout/generate_genemodels.Rout
-
-## Gene models for Gviz
-## TODO: Fix generate_genemodels.R (exon_id column doesn't exist in the StringTie gtf, but it has exon_number
-define gvizgmrule
-reference/Gviz/$(notdir $(1))_stringtie_tx_gviz_genemodels.rds: stringtie/$(notdir $(1))/$(notdir $(1)).gtf \
-Rscripts/generate_genemodels.R Rscripts/plot_tracks.R
-	mkdir -p $$(@D)
-	$$(R) "--args gtf='stringtie/$$(notdir $(1))/$$(notdir $(1)).gtf' outrds='$$@'" Rscripts/generate_genemodels.R Rout/generate_genemodels_$$(notdir $(1)).Rout
-endef
-$(foreach F,$(fastqfiles),$(eval $(call gvizgmrule,$(F))))
 
 

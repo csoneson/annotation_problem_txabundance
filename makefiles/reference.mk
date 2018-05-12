@@ -7,6 +7,8 @@ genome := $(refdir)/genome/Homo_sapiens.GRCh38.dna.primary_assembly.fa
 gtf := $(refdir)/gtf/Homo_sapiens.GRCh38.90.gtf
 txome := reference/Homo_sapiens.GRCh38.cdna.ncrna.fa
 
+gvizgenemodels := reference/Gviz/Homo_sapiens.GRCh38.90_gviz_genemodels.rds
+
 tx2gene := reference/Homo_sapiens.GRCh38.90_tx2gene.rds
 tx2geneext := reference/Homo_sapiens.GRCh38.90_tx2gene_ext.rds
 flatgtfexons := reference/Homo_sapiens.GRCh38.90.reduced.exons.gtf
@@ -53,3 +55,12 @@ $(foreach F,$(fastqfiles),$(eval $(call tx2genesymbolrule,$(notdir $(F)),_string
 output/gene_characteristics.rds: $(gtf) $(txome) Rscripts/calculate_gene_characteristics.R
 	mkdir -p $(@D)
 	$(R) "--args gtf='$(gtf)' txome='$(txome)' outrds='$@'" Rscripts/calculate_gene_characteristics.R Rout/calculate_gene_characteristics.Rout
+
+## ==================================================================================== ##
+##                              Gviz gene models                                        ##
+## ==================================================================================== ##
+## Gene models for Gviz
+$(gvizgenemodels): $(gtf) Rscripts/generate_genemodels.R Rscripts/helper_plot_tracks.R
+	mkdir -p $(@D)
+	$(R) "--args gtf='$(gtf)' outrds='$@'" Rscripts/generate_genemodels.R Rout/generate_genemodels.Rout
+

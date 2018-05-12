@@ -4,7 +4,11 @@ suppressPackageStartupMessages(library(GenomicRanges))
 
 create_genemodels <- function(gtf_file, seltype = "exon") {
   genemodels <- import(gtf_file)
-  idx <- match(c("transcript_id", "gene_id", "exon_id"), colnames(mcols(genemodels)))
+  if (all(c("transcript_id", "gene_id", "exon_id") %in% colnames(mcols(genemodels)))) {
+    idx <- match(c("transcript_id", "gene_id", "exon_id"), colnames(mcols(genemodels)))
+  } else {
+    idx <- match(c("transcript_id", "gene_id", "exon_number"), colnames(mcols(genemodels)))
+  }
   colnames(mcols(genemodels))[idx] <- c("transcript", "gene", "exon")
   mcols(genemodels)$symbol <- mcols(genemodels)$transcript
   genemodels <- subset(genemodels, type == seltype)

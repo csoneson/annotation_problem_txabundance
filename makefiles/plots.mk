@@ -31,15 +31,21 @@ endef
 $(foreach F,$(fastqfiles),$(eval $(call plotscorerule,$(notdir $(F)),)))
 $(foreach F,$(fastqfiles),$(eval $(call plotscorerule,$(notdir $(F)),_stringtie_tx)))
 
-# ## ==================================================================================== ##
-# ##                            select genes and plot                                     ##
-# ## ==================================================================================== ##
-# ## Generate text file with genes to investigate further
-# define genelistrule
-# gene_selection/$(1)/genes_to_run.txt: alpine/$(1)/alpine_predicted_coverage.rds $(tx2geneext) Rscripts/list_genes_to_run.R
-# 	$(R) "--args inrds='$$<' tx2gene='$$(word 2,$$^)' outtxt='$$@'" Rscripts/list_genes_to_run.R Rout/list_genes_to_run_$(1).Rout
-# endef
-# $(foreach F,$(fastqfiles),$(eval $(call genelistrule,$(notdir $(F)))))
+## ==================================================================================== ##
+##                            genewise results/plots                                    ##
+## ==================================================================================== ##
+define geneplotrule
+output_genewise/$(1)$(2)/check/$(3).rds: STARbigwig/$(1)$(2)_Aligned.sortedByCoord.out.bw output/$(1)$(2)_combined_coverages_with_scores.rds \
+$(gvizgenemodels) Rscripts/plot_genewise_results.R
+	mkdir -p output_genewise/$(1)$(2)/plots
+	mkdir -p output_genewise/$(1)$(2)/jcov
+	mkdir -p output_genewise/$(1)$(2)/tpm
+	mkdir -p output_genewise/$(1)$(2)/count
+	mkdir -p output_genewise/$(1)$(2)/check
+	$(R) "--args gene='$(3)' bigwig='$$(word 1,$$^)' genemodels='$(gvizgenemodels)' combcovrds='$$(word 2,$$^)' ncores=$(4) outdir='output_genewise/$(1)$(2)' libid='$(1)_' checkdir='output_genewise/$(1)$(2)/check'" Rscripts/plot_genewise_results.R Rout/plot_genewise_results_$(1)$(2)_$(3).Rout
+endef
+$(foreach G,$(genes_to_plot),$(foreach F,$(fastqfiles),$(eval $(call geneplotrule,$(notdir $(F)),,$(G),1))))
+
 
 # ## TODO: FIX FOR STRINGTIE_TX
 # ## Predict coverage and compare to observed junction coverage

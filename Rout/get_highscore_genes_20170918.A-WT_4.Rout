@@ -1,0 +1,81 @@
+
+R Under development (unstable) (2017-12-14 r73916) -- "Unsuffered Consequences"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> args <- (commandArgs(trailingOnly = TRUE))
+> for (i in 1:length(args)) {
++   eval(parse(text = args[[i]]))
++ }
+> 
+> print(scorerds)
+[1] "output/20170918.A-WT_4_combined_coverages_with_scores.rds"
+> print(outtxt)
+[1] "stats/genes_with_high_score_20170918.A-WT_4.txt"
+> 
+> suppressPackageStartupMessages({
++   library(dplyr)
++ })
+> 
+> scores <- readRDS(scorerds)$genes
+> 
+> scores_sub <- 
++   scores %>% dplyr::filter(count > 1000 & intron_exon_ratio < 0.1 & 
++                              uniqjuncfraction > 0.9 & uniqjuncreads > 25) %>%
++   dplyr::group_by(method) %>% dplyr::arrange(desc(score)) %>% dplyr::top_n(50) %>%
++   dplyr::ungroup() %>% dplyr::group_by(gene) %>% dplyr::mutate(meanscore = mean(score)) %>% 
++   dplyr::arrange(desc(meanscore), method) %>%
++   dplyr::select(gene, method, count, nbr_transcripts, 
++                 length_diff_3putrs_samestart, intron_exon_ratio,
++                 uniqjuncreads, mmjuncreads, 
++                 uniqjuncfraction, nbr_junctions_in_gene, score)
+Selecting by score
+> 
+> write.table(scores_sub, file = outtxt, row.names = FALSE, col.names = TRUE,
++             sep = "\t", quote = FALSE)
+> 
+> date()
+[1] "Sat May 12 17:49:10 2018"
+> sessionInfo()
+R Under development (unstable) (2017-12-14 r73916)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 16.04.4 LTS
+
+Matrix products: default
+BLAS: /usr/local/R/R-devel/lib/libRblas.so
+LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
+ [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
+ [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
+[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] bindrcpp_0.2.2 dplyr_0.7.4   
+
+loaded via a namespace (and not attached):
+ [1] compiler_3.5.0   magrittr_1.5     assertthat_0.2.0 R6_2.2.2        
+ [5] pillar_1.2.1     glue_1.2.0       tibble_1.4.2     Rcpp_0.12.16    
+ [9] pkgconfig_2.0.1  rlang_0.2.0      bindr_0.1.1     
+> 
+> proc.time()
+   user  system elapsed 
+ 18.376   0.408  18.784 

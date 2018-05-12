@@ -13,8 +13,8 @@ print(junctioncovRSEM) ## RSEM quantifications
 print(junctioncovStringTie) ## StringTie quantifications
 print(junctioncovNanopore) ## If present, nanopore results
 print(genecharacteristics) ## Gene-level characteristics
-print(exoncountstxt)
-print(introncountstxt)
+print(exoncountstxt) ## Exon counts for each gene
+print(introncountstxt) ## Intron counts for each gene
 print(outrds)
 
 suppressPackageStartupMessages({
@@ -24,7 +24,7 @@ suppressPackageStartupMessages({
 ## Combine scaled junction coverages for all methods. Also summarize transcript
 ## and gene abundances, as well as characteristics of these features.
 
-## Read junction coverages
+## Read junction coverages from STAR. Both in a stranded and unstranded mode.
 jcov <- read.delim(junctioncovSTAR, header = FALSE, as.is = TRUE)
 colnames(jcov) <- c("seqnames", "start", "end", "strand", "motif", "annot", 
                     "uniqreads", "mmreads", "maxoverhang")
@@ -54,10 +54,15 @@ if (junctioncovSalmonCDS != "") {
   jcovscaled <- rbind(jcovscaled, readRDS(junctioncovSalmonCDS)$allcovs)
 }
 
+## Count the number of junctions per gene
+jcovscaled <- jcovscaled %>% 
+  dplyr::group_by(gene) %>% 
+  dplyr::mutate(nbr_junctions_in_gene = length(start))
+
 jcovscaled <- jcovscaled %>%
   dplyr::group_by(seqnames, start, end, gene) %>%
   dplyr::mutate(transcript = paste(unique(strsplit(paste(unique(transcript), collapse = ","), 
-                                                   ",")[[1]]), collapse = ",")) %>% 
+                                                   ",")[[1]]), collapse = ",")) %>% ## to make sure we have the same transcript combination for a given junction across all methods
   dplyr::ungroup() %>% 
   dplyr::mutate(pred.cov = replace(pred.cov, is.na(pred.cov), 0)) %>%
   dplyr::left_join(jcov, by = c("seqnames", "start", "end", "strand")) %>%
@@ -67,6 +72,7 @@ jcovscaled <- jcovscaled %>%
   dplyr::mutate(fracunique = replace(fracunique, is.na(fracunique), 1)) %>%
   dplyr::ungroup()
 
+## Define a junction ID for each junction
 j0 <- jcovscaled %>% dplyr::select(seqnames, start, end, gene) %>%
   dplyr::distinct() %>% dplyr::group_by(gene) %>% dplyr::arrange(start) %>%
   dplyr::mutate(junctionid = paste0("J", seq_len(length(start)))) %>%
@@ -112,20 +118,32 @@ exoncounts <- read.delim(exoncountstxt, skip = 1, header = TRUE, as.is = TRUE) %
 introncounts <- read.delim(introncountstxt, skip = 1, header = TRUE, as.is = TRUE) %>%
   dplyr::select(-Chr, -Start, -End, -Strand, -Length) %>%
   setNames(c("gene", "introncount"))
-intron_exon_ratio <- dplyr::full_join(exoncounts, introncounts) %>% 
+allquants_gene <- dplyr::left_join(allquants_gene, 
+                                   dplyr::full_join(exoncounts, introncounts)) %>% 
+  dplyr::mutate(exoncount = replace(exoncount, is.na(exoncount), 0)) %>% 
   dplyr::mutate(introncount = replace(introncount, is.na(introncount), 0)) %>%
   dplyr::mutate(intron_exon_ratio = introncount/exoncount) %>%
   dplyr::mutate(intron_exon_ratio = replace(intron_exon_ratio, exoncount==0 & introncount==0, 0))
-allquants_gene <- dplyr::left_join(allquants_gene, intron_exon_ratio)
 
 ## Add total unique and multimapping junction reads per gene
 totjunctionreads <- jcovscaled %>% dplyr::filter(method == "Salmon") %>%
   dplyr::select(gene, uniqreads, mmreads) %>%
   dplyr::group_by(gene) %>% dplyr::summarize(uniqjuncreads = sum(uniqreads),
-                                             mmjuncreads = sum(mmreads)) %>%
+                                             mmjuncreads = sum(mmreads))
+allquants_gene <- dplyr::left_join(allquants_gene, totjunctionreads, by = "gene") %>%
+  dplyr::mutate(uniqjuncreads = replace(uniqjuncreads, is.na(uniqjuncreads), 0)) %>%
+  dplyr::mutate(mmjuncreads = replace(mmjuncreads, is.na(mmjuncreads), 0)) %>%
   dplyr::mutate(uniqjuncfraction = uniqjuncreads/(uniqjuncreads + mmjuncreads)) %>%
   dplyr::mutate(uniqjuncfraction = replace(uniqjuncfraction, is.na(uniqjuncfraction), 1))
-allquants_gene <- dplyr::left_join(allquants_gene, totjunctionreads, by = "gene")
+
+## Add number of junctions per gene (from the junction summary). If a gene is
+## not in the junction summary, it means that it doesn't have any annotated
+## junctions.
+allquants_gene <- allquants_gene %>% 
+  dplyr::left_join(jcovscaled %>% dplyr::select(gene, method, nbr_junctions_in_gene) %>%
+                     dplyr::distinct(),
+                   by = c("gene", "method")) %>%
+  dplyr::mutate(nbr_junctions_in_gene = replace(nbr_junctions_in_gene, is.na(nbr_junctions_in_gene), 0))
 
 saveRDS(list(junctions = jcovscaled, transcripts = allquants, 
              genes = allquants_gene), file = outrds)

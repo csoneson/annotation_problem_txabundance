@@ -42,9 +42,9 @@ Type 'q()' to quit R.
 [1] ""
 > print(genecharacteristics) ## Gene-level characteristics
 [1] "output/gene_characteristics.rds"
-> print(exoncountstxt)
+> print(exoncountstxt) ## Exon counts for each gene
 [1] "featureCounts/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_STAR_exons.txt"
-> print(introncountstxt)
+> print(introncountstxt) ## Intron counts for each gene
 [1] "featureCounts/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_STAR_introns.txt"
 > print(outrds)
 [1] "output/20151016.A-Cortex_RNA_combined_coverages.rds"
@@ -56,7 +56,7 @@ Type 'q()' to quit R.
 > ## Combine scaled junction coverages for all methods. Also summarize transcript
 > ## and gene abundances, as well as characteristics of these features.
 > 
-> ## Read junction coverages
+> ## Read junction coverages from STAR. Both in a stranded and unstranded mode.
 > jcov <- read.delim(junctioncovSTAR, header = FALSE, as.is = TRUE)
 > colnames(jcov) <- c("seqnames", "start", "end", "strand", "motif", "annot", 
 +                     "uniqreads", "mmreads", "maxoverhang")
@@ -86,10 +86,15 @@ Type 'q()' to quit R.
 +   jcovscaled <- rbind(jcovscaled, readRDS(junctioncovSalmonCDS)$allcovs)
 + }
 > 
+> ## Count the number of junctions per gene
+> jcovscaled <- jcovscaled %>% 
++   dplyr::group_by(gene) %>% 
++   dplyr::mutate(nbr_junctions_in_gene = length(start))
+> 
 > jcovscaled <- jcovscaled %>%
 +   dplyr::group_by(seqnames, start, end, gene) %>%
 +   dplyr::mutate(transcript = paste(unique(strsplit(paste(unique(transcript), collapse = ","), 
-+                                                    ",")[[1]]), collapse = ",")) %>% 
++                                                    ",")[[1]]), collapse = ",")) %>% ## to make sure we have the same transcript combination for a given junction across all methods
 +   dplyr::ungroup() %>% 
 +   dplyr::mutate(pred.cov = replace(pred.cov, is.na(pred.cov), 0)) %>%
 +   dplyr::left_join(jcov, by = c("seqnames", "start", "end", "strand")) %>%
@@ -102,6 +107,7 @@ Warning messages:
 1: Column `seqnames` joining factor and character vector, coercing into character vector 
 2: Column `strand` joining factor and character vector, coercing into character vector 
 > 
+> ## Define a junction ID for each junction
 > j0 <- jcovscaled %>% dplyr::select(seqnames, start, end, gene) %>%
 +   dplyr::distinct() %>% dplyr::group_by(gene) %>% dplyr::arrange(start) %>%
 +   dplyr::mutate(junctionid = paste0("J", seq_len(length(start)))) %>%
@@ -148,22 +154,34 @@ Joining, by = c("seqnames", "start", "end", "gene")
 > introncounts <- read.delim(introncountstxt, skip = 1, header = TRUE, as.is = TRUE) %>%
 +   dplyr::select(-Chr, -Start, -End, -Strand, -Length) %>%
 +   setNames(c("gene", "introncount"))
-> intron_exon_ratio <- dplyr::full_join(exoncounts, introncounts) %>% 
+> allquants_gene <- dplyr::left_join(allquants_gene, 
++                                    dplyr::full_join(exoncounts, introncounts)) %>% 
++   dplyr::mutate(exoncount = replace(exoncount, is.na(exoncount), 0)) %>% 
 +   dplyr::mutate(introncount = replace(introncount, is.na(introncount), 0)) %>%
 +   dplyr::mutate(intron_exon_ratio = introncount/exoncount) %>%
 +   dplyr::mutate(intron_exon_ratio = replace(intron_exon_ratio, exoncount==0 & introncount==0, 0))
 Joining, by = "gene"
-> allquants_gene <- dplyr::left_join(allquants_gene, intron_exon_ratio)
 Joining, by = "gene"
 > 
 > ## Add total unique and multimapping junction reads per gene
 > totjunctionreads <- jcovscaled %>% dplyr::filter(method == "Salmon") %>%
 +   dplyr::select(gene, uniqreads, mmreads) %>%
 +   dplyr::group_by(gene) %>% dplyr::summarize(uniqjuncreads = sum(uniqreads),
-+                                              mmjuncreads = sum(mmreads)) %>%
++                                              mmjuncreads = sum(mmreads))
+> allquants_gene <- dplyr::left_join(allquants_gene, totjunctionreads, by = "gene") %>%
++   dplyr::mutate(uniqjuncreads = replace(uniqjuncreads, is.na(uniqjuncreads), 0)) %>%
++   dplyr::mutate(mmjuncreads = replace(mmjuncreads, is.na(mmjuncreads), 0)) %>%
 +   dplyr::mutate(uniqjuncfraction = uniqjuncreads/(uniqjuncreads + mmjuncreads)) %>%
 +   dplyr::mutate(uniqjuncfraction = replace(uniqjuncfraction, is.na(uniqjuncfraction), 1))
-> allquants_gene <- dplyr::left_join(allquants_gene, totjunctionreads, by = "gene")
+> 
+> ## Add number of junctions per gene (from the junction summary). If a gene is
+> ## not in the junction summary, it means that it doesn't have any annotated
+> ## junctions.
+> allquants_gene <- allquants_gene %>% 
++   dplyr::left_join(jcovscaled %>% dplyr::select(gene, method, nbr_junctions_in_gene) %>%
++                      dplyr::distinct(),
++                    by = c("gene", "method")) %>%
++   dplyr::mutate(nbr_junctions_in_gene = replace(nbr_junctions_in_gene, is.na(nbr_junctions_in_gene), 0))
 > 
 > saveRDS(list(junctions = jcovscaled, transcripts = allquants, 
 +              genes = allquants_gene), file = outrds)
@@ -194,8 +212,8 @@ loaded via a namespace (and not attached):
  [5] pillar_1.2.1     glue_1.2.0       tibble_1.4.2     Rcpp_0.12.16    
  [9] pkgconfig_2.0.1  rlang_0.2.0      bindr_0.1.1     
 > date()
-[1] "Sat May 12 10:54:33 2018"
+[1] "Sat May 12 15:10:55 2018"
 > 
 > proc.time()
    user  system elapsed 
-266.444   2.484 269.211 
+278.908   2.716 281.853 

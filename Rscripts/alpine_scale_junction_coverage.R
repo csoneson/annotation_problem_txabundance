@@ -11,9 +11,11 @@ print(tx2gene)  ## link transcripts to genes
 print(method)  ## method ID to add to the quantification table
 print(outrds)  ## output file
 
-suppressPackageStartupMessages(library(alpine))
-suppressPackageStartupMessages(library(parallel))
-suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages({
+  library(alpine)
+  library(parallel)
+  library(dplyr)
+})
 
 source(quantreadscript)
 
@@ -35,7 +37,7 @@ names(transcripts) <- transcripts
 scaledcovs <- lapply(transcripts, function(tx) {
   tryCatch({
     ab <- quants$count[quants$transcript == tx]
-    if (is.na(ab)) ab <- 0
+    if (length(ab) == 0 || is.na(ab)) ab <- 0  ## if the transcript is not present in the quantification file
     m <- predcovs[[tx]]$junctions
     m$pred.cov <- m$pred.cov / max(1e-10, sum(predcovs[[tx]]$pred.cov)) * 
       ab * predcovs[[tx]]$avefraglength
@@ -49,7 +51,7 @@ if (strandspec == "no") {
   allcovs$strand <- "*"
 }
 
-## Add coverages of the same junction from different transcripts. Each junction
+## Sum coverages of the same junction from different transcripts. Each junction
 ## is present once per gene it is included in.
 allcovs <- allcovs %>%
   dplyr::group_by(seqnames, start, end, strand) %>%

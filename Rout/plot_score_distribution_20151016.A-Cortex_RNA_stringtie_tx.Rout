@@ -129,8 +129,8 @@ loaded via a namespace (and not attached):
 [13] glue_1.2.0       munsell_0.4.3    compiler_3.5.0   colorspace_1.3-2
 [17] pkgconfig_2.0.1  bindr_0.1.1      tibble_1.4.2    
 > date()
-[1] "Fri May 11 20:56:09 2018"
+[1] "Sat May 12 11:01:14 2018"
 > 
 > proc.time()
    user  system elapsed 
-218.612  88.356 308.121 
+197.668 109.956 307.807 

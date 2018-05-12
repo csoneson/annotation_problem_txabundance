@@ -95,6 +95,8 @@ Type 'q()' to quit R.
 +   dplyr::left_join(jcov, by = c("seqnames", "start", "end", "strand")) %>%
 +   dplyr::mutate(uniqreads = replace(uniqreads, is.na(uniqreads), 0),
 +                 mmreads = replace(mmreads, is.na(mmreads), 0)) %>%
++   dplyr::mutate(fracunique = uniqreads/(uniqreads + mmreads)) %>% 
++   dplyr::mutate(fracunique = replace(fracunique, is.na(fracunique), 1)) %>%
 +   dplyr::ungroup()
 Warning messages:
 1: Column `seqnames` joining factor and character vector, coercing into character vector 
@@ -192,8 +194,8 @@ loaded via a namespace (and not attached):
  [5] pillar_1.2.1     glue_1.2.0       tibble_1.4.2     Rcpp_0.12.16    
  [9] pkgconfig_2.0.1  rlang_0.2.0      bindr_0.1.1     
 > date()
-[1] "Fri May 11 20:43:34 2018"
+[1] "Sat May 12 10:53:29 2018"
 > 
 > proc.time()
    user  system elapsed 
-218.836   9.952 229.003 
+202.676   1.792 204.651 

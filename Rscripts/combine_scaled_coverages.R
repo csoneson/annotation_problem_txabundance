@@ -63,6 +63,8 @@ jcovscaled <- jcovscaled %>%
   dplyr::left_join(jcov, by = c("seqnames", "start", "end", "strand")) %>%
   dplyr::mutate(uniqreads = replace(uniqreads, is.na(uniqreads), 0),
                 mmreads = replace(mmreads, is.na(mmreads), 0)) %>%
+  dplyr::mutate(fracunique = uniqreads/(uniqreads + mmreads)) %>% 
+  dplyr::mutate(fracunique = replace(fracunique, is.na(fracunique), 1)) %>%
   dplyr::ungroup()
 
 j0 <- jcovscaled %>% dplyr::select(seqnames, start, end, gene) %>%

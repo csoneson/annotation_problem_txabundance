@@ -1,0 +1,208 @@
+
+R Under development (unstable) (2017-12-14 r73916) -- "Unsuffered Consequences"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> args <- (commandArgs(trailingOnly = TRUE))
+> for (i in 1:length(args)) {
++   eval(parse(text = args[[i]]))
++ }
+> 
+> print(gene)  ## gene of interest, or file listing collection of genes (one per row)
+[1] "ENSG00000178163"
+> print(bigwig)  ## bigwig file for visualization
+[1] "STARbigwig/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bw"
+> print(genemodels)  ## gene models 
+[1] "reference/Gviz/Homo_sapiens.GRCh38.90_gviz_genemodels.rds"
+> print(combcovrds)  ## combined junction coverages
+[1] "output/20151016.A-Cortex_RNA_combined_coverages_with_scores.rds"
+> print(ncores)  ## number of cores for parallel computations
+[1] 1
+> print(outdir)  ## output directory
+[1] "output_genewise/20151016.A-Cortex_RNA"
+> print(libid)  ## string that will be added to the beginning of all output files (library ID)
+[1] "20151016.A-Cortex_RNA_"
+> print(checkdir)  ## directory to write (empty) rds files (time stamps)
+[1] "output_genewise/20151016.A-Cortex_RNA/check"
+> 
+> suppressPackageStartupMessages({
++   library(dplyr)
++   library(ggplot2)
++   library(cowplot)
++   library(ggrepel)
++ })
+> 
+> source("Rscripts/helper_plot_tracks.R")
+> 
+> ## Read gene models for Gviz plot (pregenerated from gtf to save time) and
+> ## quantifications
+> genemodels <- readRDS(genemodels)
+> combcov <- readRDS(combcovrds)
+> 
+> ## Determine which gene(s) to investigate
+> if (file.exists(gene)) {
++   genes <- unlist(read.delim(gene, as.is = TRUE, header = FALSE))
++ } else {
++   genes <- gene
++ }
+> 
+> ## Investigate each gene
+> mclapply(genes, function(currgene) {
++   jl <- combcov$junctions %>% dplyr::filter(gene == currgene) %>%
++     dplyr::mutate(junctionid2 = junctionid) %>%
++     dplyr::mutate(junctionid2 = replace(junctionid2, 
++                                         abs(scaled.cov - uniqreads) < mean(uniqreads), 
++                                         ""))
++ 
++   pdf(paste0(outdir, "/plots/", libid, currgene, ".pdf"), width = 12, height = 10)
++   tryCatch({
++     plot_tracks(mygene = currgene, genemodels = genemodels$genemodels_exon, 
++                 genemodels2 = genemodels$genemodels_cds, 
++                 gtf_file = NULL, rnaseq_datafiles = structure(bigwig, names = "s1"), 
++                 rnaseq_condition = structure("g1", names = "s1"), show_chr = NULL, 
++                 min_coord = NULL, max_coord = NULL, 
++                 pdf_filename = NULL, pdf_width = 7, pdf_height = 7)
++   }, error = function(e) message(e))
++   
++   print(ggplot(jl, aes(x = scaled.cov, y = uniqreads, label = junctionid)) + 
++           geom_point(size = 4) + geom_label_repel() +
++           facet_wrap(~ methodscore) + 
++           geom_abline(intercept = 0, slope = 1) + 
++           xlab("Scaled predicted coverage") + 
++           ylab("Number of uniquely mapped reads") + 
++           theme_bw())
++   
++   print(ggplot(jl, aes(x = scaled.cov, y = uniqreads, label = junctionid,
++                        color = fracunique > 0.75)) + 
++           geom_point(size = 4) + geom_label_repel() +
++           facet_wrap(~ methodscore) + 
++           geom_abline(intercept = 0, slope = 1) + 
++           xlab("Scaled predicted coverage") + 
++           ylab("Number of uniquely mapped reads") + 
++           theme_bw())
++   
++   print(ggplot(jl, aes(x = scaled.cov, y = uniqreads, label = junctionid2)) + 
++           geom_point(size = 4) + geom_label_repel() +
++           facet_wrap(~ methodscore) + 
++           geom_abline(intercept = 0, slope = 1) + 
++           xlab("Scaled predicted coverage") + 
++           ylab("Number of uniquely mapped reads") + 
++           theme_bw())
++   dev.off()
++   
++   write.table(jl %>% dplyr::select(-score, -pred.cov, -method, -junctionid2) %>%
++                 dplyr::mutate(scaled.cov = round(scaled.cov, 2)) %>% 
++                 tidyr::spread(methodscore, scaled.cov) %>%
++                 dplyr::arrange(start),
++               file = paste0(outdir, "/jcov/", libid, currgene, "_jscaledcov.txt"),
++               quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
++   
++   write.table(combcov$transcripts %>% dplyr::filter(gene == currgene) %>% 
++                 dplyr::select(transcript, method, TPM) %>%
++                 dplyr::mutate(TPM = round(TPM, 2)) %>% 
++                 tidyr::spread(method, TPM),
++               file = paste0(outdir, "/tpm/", libid, currgene, "_tpm.txt"),
++               quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
++   
++   write.table(combcov$transcripts %>% dplyr::filter(gene == currgene) %>% 
++                 dplyr::select(transcript, method, count) %>%
++                 dplyr::mutate(count = round(count, 2)) %>% 
++                 tidyr::spread(method, count),
++               file = paste0(outdir, "/count/", libid, currgene, "_count.txt"),
++               quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
++   
++   saveRDS(jl, paste0(checkdir, "/", currgene, ".rds"))
++ }, mc.preschedule = FALSE, mc.cores = ncores)
+[[1]]
+NULL
+
+> 
+> saveRDS(NULL, paste0(checkdir, "/", basename(gene), ".rds"))
+> sessionInfo()
+R Under development (unstable) (2017-12-14 r73916)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 16.04.4 LTS
+
+Matrix products: default
+BLAS: /usr/local/R/R-devel/lib/libRblas.so
+LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
+ [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
+ [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
+[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+
+attached base packages:
+ [1] grid      parallel  stats4    stats     graphics  grDevices utils    
+ [8] datasets  methods   base     
+
+other attached packages:
+ [1] bindrcpp_0.2.2        Gviz_1.24.0           rtracklayer_1.39.12  
+ [4] GenomicRanges_1.31.23 GenomeInfoDb_1.15.5   IRanges_2.13.28      
+ [7] S4Vectors_0.17.42     BiocGenerics_0.26.0   ggrepel_0.7.0        
+[10] cowplot_0.9.2         ggplot2_2.2.1         dplyr_0.7.4          
+
+loaded via a namespace (and not attached):
+ [1] Biobase_2.39.2              httr_1.3.1                 
+ [3] tidyr_0.8.0                 bit64_0.9-7                
+ [5] splines_3.5.0               Formula_1.2-2              
+ [7] assertthat_0.2.0            latticeExtra_0.6-28        
+ [9] blob_1.1.1                  BSgenome_1.47.5            
+[11] GenomeInfoDbData_1.1.0      Rsamtools_1.31.3           
+[13] progress_1.1.2              pillar_1.2.1               
+[15] RSQLite_2.1.0               backports_1.1.2            
+[17] lattice_0.20-35             biovizBase_1.28.0          
+[19] glue_1.2.0                  digest_0.6.15              
+[21] RColorBrewer_1.1-2          XVector_0.20.0             
+[23] checkmate_1.8.5             colorspace_1.3-2           
+[25] htmltools_0.3.6             Matrix_1.2-14              
+[27] plyr_1.8.4                  XML_3.98-1.11              
+[29] pkgconfig_2.0.1             biomaRt_2.35.13            
+[31] zlibbioc_1.26.0             purrr_0.2.4                
+[33] scales_0.5.0                BiocParallel_1.13.3        
+[35] tibble_1.4.2                htmlTable_1.11.2           
+[37] AnnotationFilter_1.3.2      GenomicFeatures_1.31.10    
+[39] SummarizedExperiment_1.9.16 nnet_7.3-12                
+[41] lazyeval_0.2.1              survival_2.42-3            
+[43] magrittr_1.5                memoise_1.1.0              
+[45] foreign_0.8-70              data.table_1.10.4-3        
+[47] tools_3.5.0                 prettyunits_1.0.2          
+[49] matrixStats_0.53.1          stringr_1.3.0              
+[51] munsell_0.4.3               cluster_2.0.7-1            
+[53] DelayedArray_0.5.30         ensembldb_2.3.15           
+[55] AnnotationDbi_1.41.5        Biostrings_2.47.12         
+[57] compiler_3.5.0              rlang_0.2.0                
+[59] RCurl_1.95-4.10             dichromat_2.0-0            
+[61] rstudioapi_0.7              VariantAnnotation_1.25.13  
+[63] htmlwidgets_1.0             labeling_0.3               
+[65] bitops_1.0-6                base64enc_0.1-3            
+[67] gtable_0.2.0                curl_3.2                   
+[69] DBI_0.8                     R6_2.2.2                   
+[71] GenomicAlignments_1.15.13   gridExtra_2.3              
+[73] knitr_1.20                  bit_1.1-12                 
+[75] bindr_0.1.1                 Hmisc_4.1-1                
+[77] ProtGenerics_1.11.0         stringi_1.1.7              
+[79] Rcpp_0.12.16                rpart_4.1-13               
+[81] acepack_1.4.1               tidyselect_0.2.4           
+> date()
+[1] "Sun May 13 11:22:27 2018"
+> 
+> 
+> proc.time()
+   user  system elapsed 
+ 74.908   1.728  76.718 

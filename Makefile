@@ -43,6 +43,7 @@ include makefiles/alpine.mk
 include makefiles/plots.mk
 include makefiles/stats.mk
 include makefiles/simulate.mk
+include makefiles/nanopore.mk
 
 ########################################################################################################
 ## Original annotation
@@ -125,6 +126,14 @@ simulation: simulation/misannotated_utr/sim_misannotated_utr_1_R1.fastq.gz \
 simulation/misannotated_utr/sim_misannotated_utr_1_R2.fastq.gz
 
 ########################################################################################################
+## nanopore
+########################################################################################################
+nanopore: minimap2wub/$(nanopore_sample)/bam_count_reads.tsv \
+minimap2genome/$(nanopore_sample)/$(nanopore_sample)_minimap2_genome_s.bam.bai \
+minimap2genomebigwig/$(nanopore_sample)_minimap2_genome_s.bw \
+minimap2salmon/$(nanopore_sample)/quant.sf
+
+########################################################################################################
 ## Plots
 ########################################################################################################
 plots: $(foreach F,$(fastqfiles),figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F)).rds) \
@@ -132,7 +141,9 @@ $(foreach F,$(fastqfiles),figures/observed_vs_predicted_junction_coverage/observ
 figures/predicted_coverage_pattern_comparison/predicted_coverage_pattern_comparison_20151016.A-Cortex_RNA_20170918.A-WT_4.rds \
 $(foreach F,$(fastqfiles),figures/gene_scores/gene_scores_$(notdir $(F)).rds) \
 $(foreach F,$(fastqfiles),figures/gene_scores/gene_scores_$(notdir $(F))_stringtie_tx.rds) \
-$(foreach G,$(genes_to_plot),$(foreach F,$(fastqfiles),output_genewise/$(notdir $(F))/check/$(G).rds))
+$(foreach G,$(genes_to_plot),$(foreach F,$(fastqfiles),output_genewise/$(notdir $(F))/check/$(G).rds)) \
+$(foreach F,$(fastqfiles),figures/correlation_with_inferential_variance/correlation_with_inferential_variance_$(notdir $(F)).rds) \
+$(foreach F,$(fastqfiles),figures/correlation_between_methods/correlation_between_methods_$(notdir $(F)).rds)
 
 ########################################################################################################
 ## Stats

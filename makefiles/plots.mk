@@ -46,38 +46,24 @@ $(gvizgenemodels) Rscripts/plot_genewise_results.R
 endef
 $(foreach G,$(genes_to_plot),$(foreach F,$(fastqfiles),$(eval $(call geneplotrule,$(notdir $(F)),,$(G),1))))
 
+## ==================================================================================== ##
+##                    correlation with inferential variance                             ##
+## ==================================================================================== ##
+define infvarrule
+figures/correlation_with_inferential_variance/correlation_with_inferential_variance_$(1)$(2).rds: \
+output/$(1)$(2)_combined_coverages_with_scores.rds $(3)/$(1)/quant.sf $(4) Rscripts/plot_correlation_with_inferential_variance.R
+	mkdir -p $$(@D)
+	$(R) "--args scorerds='$$(word 1,$$^)' salmondir='$(3)/$(1)' tx2gene='$(4)' outrds='$$@'" Rscripts/plot_correlation_with_inferential_variance.R Rout/plot_correlation_with_inferential_variance_$(1)$(2).Rout
+endef
+$(foreach F,$(fastqfiles),$(eval $(call infvarrule,$(notdir $(F)),,salmon/cDNAncRNA,$(tx2gene))))
 
-# ## TODO: FIX FOR STRINGTIE_TX
-# ## Predict coverage and compare to observed junction coverage
-# ## "gene" can be either a gene ID or a text file with a list of genes to investigate
-# define alpinepredrule
-# alpine_check/$(1)/$(notdir $(2)).rds: $(gvizgenemodels) \
-# STARbigwig/$(1)_Aligned.sortedByCoord.out.bw alpine/$(1)/alpine_combined_coverages.rds \
-# $(2) Rscripts/alpine_compare_coverage.R Rscripts/plot_tracks.R
-# 	mkdir -p $$(@D)
-# 	mkdir -p alpine_out/$(1)/plots
-# 	mkdir -p alpine_out/$(1)/jcov
-# 	mkdir -p alpine_out/$(1)/tpm
-# 	mkdir -p alpine_out/$(1)/count	
-# 	$(R) "--args gene='$(2)' bigwig='$$(word 2,$$^)' ncores=$(3) genemodels='$$(word 1,$$^)' combcovrds='$$(word 3,$$^)' outdir='alpine_out/$(1)' libid='$(1)_' checkdir='$$(@D)'" Rscripts/alpine_compare_coverage.R Rout/alpine_compare_coverage_$(1)_$(notdir $(2)).Rout
-# endef
-# $(foreach F,$(fastqfiles),$(eval $(call alpinepredrule,$(notdir $(F)),gene_selection/$(notdir $(F))/genes_to_run.txt,25)))
-# $(foreach F,$(fastqfiles),$(eval $(call alpinepredrule,$(notdir $(F)),gene_selection/$(notdir $(F))/subset_genes_to_run.txt,25)))
-
-# ## ==================================================================================== ##
-# ##                            general summary plots                                     ##
-# ## ==================================================================================== ##
-
-# ## Deviation between predicted and observed coverages across data sets
-# figures/deviation_predicted_observed_coverage_across_datasets.rds: alpine/20151016.A-Cortex_RNA/alpine_combined_coverages.rds \
-# alpine/20170918.A-WT_4/alpine_combined_coverages.rds Rscripts/deviation_predicted_observed_coverage_across_datasets.R
-# 	mkdir -p $(@D)
-# 	$(R) "--args combcovrds1='$(word 1,$^)' combcovrds2='$(word 2,$^)' outrds='$@'" Rscripts/deviation_predicted_observed_coverage_across_datasets.R Rout/deviation_predicted_observed_coverage_across_datasets.Rout
-
-# ## Correlation between scores from different methods
-# define corrmethodrule
-# figures/score_correlation_between_methods_$(1).rds: alpine/$(1)/alpine_combined_coverages.rds Rscripts/score_correlation_between_methods.R
-# 	mkdir -p $$(@D)
-# 	$(R) "--args combcovrds='$$(word 1,$$^)' outrds='$$@'" Rscripts/score_correlation_between_methods.R Rout/score_correlation_between_methods_$(1).Rout
-# endef
-# $(foreach F,$(fastqfiles),$(eval $(call corrmethodrule,$(notdir $(F)))))
+## ==================================================================================== ##
+##                            general summary plots                                     ##
+## ==================================================================================== ##
+## Correlation between scores from different methods
+define corrmethodrule
+figures/correlation_between_methods/correlation_between_methods_$(1)$(2).rds: output/$(1)$(2)_combined_coverages_with_scores.rds Rscripts/plot_correlation_between_methods.R
+	mkdir -p $$(@D)
+	$(R) "--args scorerds='$$(word 1,$$^)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,StringTie' outrds='$$@'" Rscripts/plot_correlation_between_methods.R Rout/plot_correlation_between_methods_$(1)$(2).Rout
+endef
+$(foreach F,$(fastqfiles),$(eval $(call corrmethodrule,$(notdir $(F)),)))

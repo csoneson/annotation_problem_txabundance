@@ -43,7 +43,8 @@ $(eval $(call juncscalerule,20170918.A-WT_4,,kallisto,kallisto/cDNAncRNA/2017091
 $(eval $(call juncscalerule,20170918.A-WT_4,,RSEM,RSEM/cDNAncRNA/20170918.A-WT_4/20170918.A-WT_4.isoforms.results,Rscripts/read_quant_rsem.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,,hera,hera/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_hera.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,,StringTie,stringtie_onlyref/20170918.A-WT_4/20170918.A-WT_4.gtf,Rscripts/read_quant_stringtie.R,$(tx2geneext),yes))
-$(eval $(call juncscalerule,20170918.A-WT_4,,SalmonMinimap2Nanopore,/home/Shared/data/seq/hussain_bath_nanopore_rnaseq/FGCZ/salmonminimap2/20171207_1645_p2557_4017_2_ALLREADS.pass/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),no))
+$(eval $(call juncscalerule,20170918.A-WT_4,,SalmonMinimap2Nanopore,minimap2salmon/20171207_1645_p2557_4017_2_ALLREADS.pass/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),no))
+$(eval $(call juncscalerule,20170918.A-WT_4,,WubMinimap2Nanopore,minimap2wub/20171207_1645_p2557_4017_2_ALLREADS.pass/bam_count_reads.tsv,Rscripts/read_quant_wub.R,$(tx2geneext),no))
 
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_stringtie_tx,Salmon,salmon_stringtie_tx/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,reference/20151016.A-Cortex_RNA_stringtie_tx_tx2gene_withsymbol.rds,yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_stringtie_tx,SalmonBWA,salmonbwa_stringtie_tx/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,reference/20151016.A-Cortex_RNA_stringtie_tx_tx2gene_withsymbol.rds,yes))
@@ -71,7 +72,7 @@ Rscripts/combine_scaled_coverages.R $(3) $(4)
 	$(R) "--args junctioncovSTAR='STAR$(2)/$(1)/$(1)_SJ.out.tab' junctioncovSalmon='$$(word 2,$$^)' junctioncovSalmonBWA='$$(word 6,$$^)' junctioncovSalmonCDS='$(4)' junctioncovNanopore='$(3)' junctioncovhera='$$(word 3,$$^)' junctioncovkallisto='$$(word 7,$$^)' junctioncovRSEM='$$(word 4,$$^)' junctioncovStringTie='$$(word 5,$$^)' genecharacteristics='$$(word 8,$$^)' exoncountstxt='$$(word 9,$$^)' introncountstxt='$$(word 10,$$^)' outrds='$$@'" Rscripts/combine_scaled_coverages.R Rout/combine_scaled_coverages_$(1)$(2).Rout
 endef
 $(eval $(call combcovrule,20151016.A-Cortex_RNA,,,alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_SalmonCDS.rds))
-$(eval $(call combcovrule,20170918.A-WT_4,,alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonMinimap2Nanopore.rds,alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonCDS.rds))
+$(eval $(call combcovrule,20170918.A-WT_4,,alpine/20170918.A-WT_4/scaled_junction_coverage_WubMinimap2Nanopore.rds,alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonCDS.rds))
 $(eval $(call combcovrule,20151016.A-Cortex_RNA,_stringtie_tx,,))
 $(eval $(call combcovrule,20170918.A-WT_4,_stringtie_tx,,))
 

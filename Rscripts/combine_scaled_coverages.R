@@ -56,7 +56,7 @@ if (junctioncovSalmonCDS != "") {
 
 ## Count the number of junctions per gene
 jcovscaled <- jcovscaled %>% 
-  dplyr::group_by(gene) %>% 
+  dplyr::group_by(gene, method) %>% 
   dplyr::mutate(nbr_junctions_in_gene = length(start))
 
 jcovscaled <- jcovscaled %>%

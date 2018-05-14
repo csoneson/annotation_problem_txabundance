@@ -88,7 +88,7 @@ Type 'q()' to quit R.
 > 
 > ## Count the number of junctions per gene
 > jcovscaled <- jcovscaled %>% 
-+   dplyr::group_by(gene) %>% 
++   dplyr::group_by(gene, method) %>% 
 +   dplyr::mutate(nbr_junctions_in_gene = length(start))
 > 
 > jcovscaled <- jcovscaled %>%
@@ -212,8 +212,8 @@ loaded via a namespace (and not attached):
  [5] pillar_1.2.1     glue_1.2.0       tibble_1.4.2     Rcpp_0.12.16    
  [9] pkgconfig_2.0.1  rlang_0.2.0      bindr_0.1.1     
 > date()
-[1] "Sat May 12 15:10:58 2018"
+[1] "Mon May 14 12:13:24 2018"
 > 
 > proc.time()
    user  system elapsed 
-281.460   3.008 284.670 
+359.764   9.532 369.972 

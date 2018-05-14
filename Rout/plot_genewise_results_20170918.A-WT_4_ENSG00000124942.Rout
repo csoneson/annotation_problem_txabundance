@@ -209,9 +209,9 @@ loaded via a namespace (and not attached):
 [79] Rcpp_0.12.16                rpart_4.1-13               
 [81] acepack_1.4.1               tidyselect_0.2.4           
 > date()
-[1] "Sun May 13 11:19:58 2018"
+[1] "Mon May 14 12:29:31 2018"
 > 
 > 
 > proc.time()
    user  system elapsed 
- 85.644   2.140  87.926 
+ 91.628   2.008  94.875 

@@ -10,7 +10,7 @@ fastqfiles := \
 
 ## Abundance quantification methods
 quantmethods20151016.A-Cortex_RNA := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS
-quantmethods20170918.A-WT_4 := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS SalmonMinimap2Nanopore
+quantmethods20170918.A-WT_4 := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS SalmonMinimap2Nanopore WubMinimap2Nanopore
 quantmethodsstringtie := Salmon SalmonBWA kallisto RSEM StringTie hera
 
 nthreads := 24
@@ -143,7 +143,8 @@ $(foreach F,$(fastqfiles),figures/gene_scores/gene_scores_$(notdir $(F)).rds) \
 $(foreach F,$(fastqfiles),figures/gene_scores/gene_scores_$(notdir $(F))_stringtie_tx.rds) \
 $(foreach G,$(genes_to_plot),$(foreach F,$(fastqfiles),output_genewise/$(notdir $(F))/check/$(G).rds)) \
 $(foreach F,$(fastqfiles),figures/correlation_with_inferential_variance/correlation_with_inferential_variance_$(notdir $(F)).rds) \
-$(foreach F,$(fastqfiles),figures/correlation_between_methods/correlation_between_methods_$(notdir $(F)).rds)
+$(foreach F,$(fastqfiles),figures/correlation_between_methods/correlation_between_methods_$(notdir $(F)).rds) \
+figures/correlation_between_nanopore_and_illumina_scores/correlation_between_nanopore_and_illumina_scores_20170918.A-WT_4.rds
 
 ########################################################################################################
 ## Stats

@@ -58,7 +58,7 @@ endef
 $(foreach F,$(fastqfiles),$(eval $(call infvarrule,$(notdir $(F)),,salmon/cDNAncRNA,$(tx2gene))))
 
 ## ==================================================================================== ##
-##                            general summary plots                                     ##
+##                              correlation plots                                       ##
 ## ==================================================================================== ##
 ## Correlation between scores from different methods
 define corrmethodrule
@@ -67,3 +67,11 @@ figures/correlation_between_methods/correlation_between_methods_$(1)$(2).rds: ou
 	$(R) "--args scorerds='$$(word 1,$$^)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,StringTie' outrds='$$@'" Rscripts/plot_correlation_between_methods.R Rout/plot_correlation_between_methods_$(1)$(2).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call corrmethodrule,$(notdir $(F)),)))
+
+## Correlation between scores from nanopore and illumina
+define corrnanomethodrule
+figures/correlation_between_nanopore_and_illumina_scores/correlation_between_nanopore_and_illumina_scores_$(1)$(2).rds: output/$(1)$(2)_combined_coverages_with_scores.rds Rscripts/plot_nanopore_vs_illumina_scores.R
+	mkdir -p $$(@D)
+	$(R) "--args scorerds='$$(word 1,$$^)' targetmethod='WubMinimap2Nanopore' outrds='$$@'" Rscripts/plot_nanopore_vs_illumina_scores.R Rout/plot_nanopore_vs_illumina_scores_$(1)$(2).Rout
+endef
+$(eval $(call corrnanomethodrule,20170918.A-WT_4,))

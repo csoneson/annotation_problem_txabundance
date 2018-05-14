@@ -82,6 +82,13 @@ for (mincount in c(0, 1000)) {
         theme(legend.position = "none") + 
         scale_color_manual(values = method_colors),
       
+      ggplot(scores %>% dplyr::filter(!is.na(score) & count >= mincount),
+             aes(x = uniqjuncreads, y = score, color = method)) +
+        geom_point(alpha = 0.5, size = 0.5) + theme_bw() + facet_wrap(~ method, nrow = 1) +
+        geom_smooth(color = "black", method = "loess") + xlab("Number of uniquely mapping junction reads") +
+        theme(legend.position = "none") + 
+        scale_color_manual(values = method_colors),
+      
       ggplot(scores %>% dplyr::filter(!is.na(score) & count >= mincount) %>% 
                dplyr::mutate(intron_exon_ratio = replace(intron_exon_ratio, 
                                                          intron_exon_ratio > 10, 10)), 

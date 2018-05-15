@@ -26,6 +26,8 @@ Type 'q()' to quit R.
 [1] "ENSG00000225465"
 > print(bigwig)  ## bigwig file for visualization
 [1] "STARbigwig/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bw"
+> print(bigwignanopore)  ## second bigwig file (nanopore)
+[1] ""
 > print(genemodels)  ## gene models 
 [1] "reference/Gviz/Homo_sapiens.GRCh38.90_gviz_genemodels.rds"
 > print(combcovrds)  ## combined junction coverages
@@ -69,11 +71,17 @@ Type 'q()' to quit R.
 +                                         ""))
 + 
 +   pdf(paste0(outdir, "/plots/", libid, currgene, ".pdf"), width = 12, height = 10)
++   bwfiles <- structure(bigwig, names = "Illumina")
++   bwcond <- structure("g1", names = "Illumina")
++   if (bigwignanopore != "") {
++     bwfiles <- c(bwfiles, structure(bigwignanopore, names = "Nanopore"))
++     bwcond <- c(bwcond, structure("g2", names = "Nanopore"))
++   }
 +   tryCatch({
 +     plot_tracks(mygene = currgene, genemodels = genemodels$genemodels_exon, 
 +                 genemodels2 = genemodels$genemodels_cds, 
-+                 gtf_file = NULL, rnaseq_datafiles = structure(bigwig, names = "s1"), 
-+                 rnaseq_condition = structure("g1", names = "s1"), show_chr = NULL, 
++                 gtf_file = NULL, rnaseq_datafiles = bwfiles, 
++                 rnaseq_condition = bwcond, show_chr = NULL, 
 +                 min_coord = NULL, max_coord = NULL, 
 +                 pdf_filename = NULL, pdf_width = 7, pdf_height = 7)
 +   }, error = function(e) message(e))
@@ -207,9 +215,9 @@ loaded via a namespace (and not attached):
 [79] Rcpp_0.12.16                rpart_4.1-13               
 [81] acepack_1.4.1               tidyselect_0.2.4           
 > date()
-[1] "Mon May 14 12:41:22 2018"
+[1] "Mon May 14 15:24:46 2018"
 > 
 > 
 > proc.time()
    user  system elapsed 
- 98.264   5.036 104.312 
+106.068   4.904 111.655 

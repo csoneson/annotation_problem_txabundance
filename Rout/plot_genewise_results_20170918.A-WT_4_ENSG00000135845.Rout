@@ -26,6 +26,8 @@ Type 'q()' to quit R.
 [1] "ENSG00000135845"
 > print(bigwig)  ## bigwig file for visualization
 [1] "STARbigwig/20170918.A-WT_4_Aligned.sortedByCoord.out.bw"
+> print(bigwignanopore)  ## second bigwig file (nanopore)
+[1] "minimap2genomebigwig/20171207_1645_p2557_4017_2_ALLREADS.pass_minimap2_genome_s.bw"
 > print(genemodels)  ## gene models 
 [1] "reference/Gviz/Homo_sapiens.GRCh38.90_gviz_genemodels.rds"
 > print(combcovrds)  ## combined junction coverages
@@ -69,11 +71,17 @@ Type 'q()' to quit R.
 +                                         ""))
 + 
 +   pdf(paste0(outdir, "/plots/", libid, currgene, ".pdf"), width = 12, height = 10)
++   bwfiles <- structure(bigwig, names = "Illumina")
++   bwcond <- structure("g1", names = "Illumina")
++   if (bigwignanopore != "") {
++     bwfiles <- c(bwfiles, structure(bigwignanopore, names = "Nanopore"))
++     bwcond <- c(bwcond, structure("g2", names = "Nanopore"))
++   }
 +   tryCatch({
 +     plot_tracks(mygene = currgene, genemodels = genemodels$genemodels_exon, 
 +                 genemodels2 = genemodels$genemodels_cds, 
-+                 gtf_file = NULL, rnaseq_datafiles = structure(bigwig, names = "s1"), 
-+                 rnaseq_condition = structure("g1", names = "s1"), show_chr = NULL, 
++                 gtf_file = NULL, rnaseq_datafiles = bwfiles, 
++                 rnaseq_condition = bwcond, show_chr = NULL, 
 +                 min_coord = NULL, max_coord = NULL, 
 +                 pdf_filename = NULL, pdf_width = 7, pdf_height = 7)
 +   }, error = function(e) message(e))
@@ -133,10 +141,18 @@ NULL
 Warning messages:
 1: In .local(con, format, text, ...) :
   'which' contains seqlevels not known to BigWig file: GL000216.2, KI270726.1
-2: In .Seqinfo.mergexy(x, y) :
+2: In .local(con, format, text, ...) :
+  'which' contains seqlevels not known to BigWig file: GL000213.1, GL000216.2, GL000225.1, KI270726.1, KI270750.1
+3: In .Seqinfo.mergexy(x, y) :
   Each of the 2 combined objects has sequence levels not in the other:
   - in 'x': GL000008.2, GL000208.1, GL000214.1, GL000221.1, GL000224.1, KI270435.1, KI270512.1, KI270589.1, KI270706.1, KI270707.1, KI270708.1, KI270709.1, KI270712.1, KI270714.1, KI270717.1, KI270718.1, KI270719.1, KI270720.1, KI270722.1, KI270723.1, KI270724.1, KI270725.1, KI270729.1, KI270738.1, KI270739.1, KI270741.1, KI270742.1, KI270743.1, KI270745.1, KI270746.1, KI270748.1, KI270749.1, KI270751.1, KI270754.1, KI270755.1
   - in 'y': GL000216.2, KI270726.1
+  Make sure to always combine/compare objects based on the same reference
+  genome (use suppressWarnings() to suppress this warning).
+4: In .Seqinfo.mergexy(x, y) :
+  Each of the 2 combined objects has sequence levels not in the other:
+  - in 'x': GL000008.2, GL000214.1, GL000221.1, GL000224.1, KI270438.1, KI270706.1, KI270712.1, KI270714.1, KI270718.1, KI270719.1, KI270720.1, KI270729.1, KI270730.1, KI270742.1, KI270743.1, KI270745.1, KI270748.1, KI270751.1, KI270757.1
+  - in 'y': GL000213.1, GL000216.2, GL000225.1, KI270726.1, KI270750.1
   Make sure to always combine/compare objects based on the same reference
   genome (use suppressWarnings() to suppress this warning).
 > 
@@ -209,9 +225,9 @@ loaded via a namespace (and not attached):
 [79] Rcpp_0.12.16                rpart_4.1-13               
 [81] acepack_1.4.1               tidyselect_0.2.4           
 > date()
-[1] "Mon May 14 12:54:06 2018"
+[1] "Mon May 14 15:31:47 2018"
 > 
 > 
 > proc.time()
    user  system elapsed 
-105.260   6.576 112.705 
+111.356   4.392 116.833 

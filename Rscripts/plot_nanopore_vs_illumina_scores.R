@@ -60,7 +60,11 @@ png(gsub("\\.rds$", "_summary.png", outrds), width = 8, height = 8,
     unit = "in", res = 300)
 ggplot(scorecomp, aes(x = method, y = nbr_genes, fill = category)) + 
   geom_bar(stat = "identity") + 
-  scale_fill_manual(values = c("blue", "green", "red", "cyan", "pink"), name = "") + 
+  scale_fill_manual(values = c(`Nanopore score - score >= 0.5` = "#000099", 
+                               `0 < Nanopore score - score < 0.5` = "#8080ff",
+                               `score = Nanopore score` = "#ffc6b3",
+                               `0 < score - Nanopore score < 0.5` = "#ff6633",
+                               `score - Nanopore score >= 0.5` = "#992600"), name = "") + 
   theme_bw() + xlab("") + ylab("Number or genes") + 
   guides(fill = guide_legend(nrow = 3)) + theme(legend.position = "bottom")
 dev.off()

@@ -51,6 +51,11 @@ Type 'q()' to quit R.
 +                 covtype = replace(covtype, covtype == "scaled.cov", "Scaled predicted coverage")) %>%
 +   dplyr::filter(method %in% quantmethods)
 > 
+> ## Remove a few extreme outliers
+> print(sum(y$coverage >= (2 * max(y$uniqreads))))
+[1] 9
+> y <- y %>% dplyr::filter(coverage < (2 * max(uniqreads)))
+> 
 > ## ========================================================================== ##
 > ## Compare predicted coverage to observed coverage in terms of being =0 or >1
 > z <- y %>% dplyr::filter(covtype == "Predicted coverage") %>%
@@ -77,7 +82,11 @@ Type 'q()' to quit R.
 +                                                      "Obs = 0, Pred = 0", "Obs > 0, Pred > 0"))) %>%
 +   ggplot(aes(x = method, y = fraction, fill = classif)) + 
 +   geom_bar(position = "fill", stat = "identity") + theme_bw() + 
-+   scale_fill_manual(values = c("red", "orange", "pink", "green", "forestgreen"), name = "") + 
++   scale_fill_manual(values = c(`Obs > 0, Pred > 0` = "#000099", 
++                                `Obs = 0, Pred = 0` = "#8080ff",
++                                `Obs = 0, 0 < Pred <= 5` = "#ffc6b3",
++                                `Obs = 0, Pred > 5` = "#ff6633",
++                                `Obs > 0, Pred = 0` = "#992600"), name = "") + 
 +   xlab("") + ylab("Fraction of junctions") + 
 +   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
 > 
@@ -103,7 +112,11 @@ Type 'q()' to quit R.
 +                                              "Total unique reads <= 100")) %>%
 +   ggplot(aes(x = method, y = fraction, fill = classif)) + 
 +   geom_bar(position = "fill", stat = "identity") + theme_bw() + 
-+   scale_fill_manual(values = c("red", "orange", "pink", "green", "forestgreen"), name = "") + 
++   scale_fill_manual(values = c(`Obs > 0, Pred > 0` = "#000099", 
++                                `Obs = 0, Pred = 0` = "#8080ff",
++                                `Obs = 0, 0 < Pred <= 5` = "#ffc6b3",
++                                `Obs = 0, Pred > 5` = "#ff6633",
++                                `Obs > 0, Pred = 0` = "#992600"), name = "") + 
 +   xlab("") + ylab("Fraction of junctions") + facet_wrap(~ hightotaluniqreads, nrow = 1) + 
 +   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
 > 
@@ -129,7 +142,11 @@ Type 'q()' to quit R.
 +                                              "Fraction unique reads <= 0.75")) %>%
 +   ggplot(aes(x = method, y = fraction, fill = classif)) + 
 +   geom_bar(position = "fill", stat = "identity") + theme_bw() + 
-+   scale_fill_manual(values = c("red", "orange", "pink", "green", "forestgreen"), name = "") + 
++   scale_fill_manual(values = c(`Obs > 0, Pred > 0` = "#000099", 
++                                `Obs = 0, Pred = 0` = "#8080ff",
++                                `Obs = 0, 0 < Pred <= 5` = "#ffc6b3",
++                                `Obs = 0, Pred > 5` = "#ff6633",
++                                `Obs > 0, Pred = 0` = "#992600"), name = "") + 
 +   xlab("") + ylab("Fraction of junctions") + facet_wrap(~ highfracunique, nrow = 1) + 
 +   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
 > 
@@ -170,7 +187,7 @@ null device
 > saveRDS(NULL, outrds)
 > 
 > date()
-[1] "Mon May 14 12:20:19 2018"
+[1] "Mon May 14 20:30:58 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -203,4 +220,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-221.012   8.036 230.123 
+203.908   9.440 213.561 

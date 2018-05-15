@@ -5,6 +5,7 @@ for (i in 1:length(args)) {
 
 print(gene)  ## gene of interest, or file listing collection of genes (one per row)
 print(bigwig)  ## bigwig file for visualization
+print(bigwignanopore)  ## second bigwig file (nanopore)
 print(genemodels)  ## gene models 
 print(combcovrds)  ## combined junction coverages
 print(ncores)  ## number of cores for parallel computations
@@ -42,11 +43,17 @@ mclapply(genes, function(currgene) {
                                         ""))
 
   pdf(paste0(outdir, "/plots/", libid, currgene, ".pdf"), width = 12, height = 10)
+  bwfiles <- structure(bigwig, names = "Illumina")
+  bwcond <- structure("g1", names = "Illumina")
+  if (bigwignanopore != "") {
+    bwfiles <- c(bwfiles, structure(bigwignanopore, names = "Nanopore"))
+    bwcond <- c(bwcond, structure("g2", names = "Nanopore"))
+  }
   tryCatch({
     plot_tracks(mygene = currgene, genemodels = genemodels$genemodels_exon, 
                 genemodels2 = genemodels$genemodels_cds, 
-                gtf_file = NULL, rnaseq_datafiles = structure(bigwig, names = "s1"), 
-                rnaseq_condition = structure("g1", names = "s1"), show_chr = NULL, 
+                gtf_file = NULL, rnaseq_datafiles = bwfiles, 
+                rnaseq_condition = bwcond, show_chr = NULL, 
                 min_coord = NULL, max_coord = NULL, 
                 pdf_filename = NULL, pdf_width = 7, pdf_height = 7)
   }, error = function(e) message(e))

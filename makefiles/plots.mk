@@ -36,15 +36,16 @@ $(foreach F,$(fastqfiles),$(eval $(call plotscorerule,$(notdir $(F)),_stringtie_
 ## ==================================================================================== ##
 define geneplotrule
 output_genewise/$(1)$(2)/check/$(3).rds: STARbigwig/$(1)$(2)_Aligned.sortedByCoord.out.bw output/$(1)$(2)_combined_coverages_with_scores.rds \
-$(gvizgenemodels) Rscripts/plot_genewise_results.R
+$(gvizgenemodels) $(5) Rscripts/plot_genewise_results.R
 	mkdir -p output_genewise/$(1)$(2)/plots
 	mkdir -p output_genewise/$(1)$(2)/jcov
 	mkdir -p output_genewise/$(1)$(2)/tpm
 	mkdir -p output_genewise/$(1)$(2)/count
 	mkdir -p output_genewise/$(1)$(2)/check
-	$(R) "--args gene='$(3)' bigwig='$$(word 1,$$^)' genemodels='$(gvizgenemodels)' combcovrds='$$(word 2,$$^)' ncores=$(4) outdir='output_genewise/$(1)$(2)' libid='$(1)_' checkdir='output_genewise/$(1)$(2)/check'" Rscripts/plot_genewise_results.R Rout/plot_genewise_results_$(1)$(2)_$(3).Rout
+	$(R) "--args gene='$(3)' bigwig='$$(word 1,$$^)' bigwignanopore='$(5)' genemodels='$(gvizgenemodels)' combcovrds='$$(word 2,$$^)' ncores=$(4) outdir='output_genewise/$(1)$(2)' libid='$(1)_' checkdir='output_genewise/$(1)$(2)/check'" Rscripts/plot_genewise_results.R Rout/plot_genewise_results_$(1)$(2)_$(3).Rout
 endef
-$(foreach G,$(genes_to_plot),$(foreach F,$(fastqfiles),$(eval $(call geneplotrule,$(notdir $(F)),,$(G),1))))
+$(foreach G,$(genes_to_plot),$(foreach F,20151016.A-Cortex_RNA,$(eval $(call geneplotrule,$(F),,$(G),1,))))
+$(foreach G,$(genes_to_plot),$(foreach F,20170918.A-WT_4,$(eval $(call geneplotrule,$(F),,$(G),1,minimap2genomebigwig/20171207_1645_p2557_4017_2_ALLREADS.pass_minimap2_genome_s.bw))))
 
 ## ==================================================================================== ##
 ##                    correlation with inferential variance                             ##

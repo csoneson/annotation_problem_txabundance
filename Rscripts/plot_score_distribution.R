@@ -58,7 +58,12 @@ print(ggplot(scoresNA, aes(x = method, y = number, fill = reason)) +
         geom_bar(stat = "identity") + theme_bw() + 
         theme(legend.position = "bottom") + 
         guides(fill = guide_legend(nrow = 2, title = "")) + 
-        scale_fill_manual(values = c("blue", "orange", "green", "cyan", "black", "grey")) + 
+        scale_fill_manual(values = c(`Valid score` = "#000099",
+                                     `Estimated abundance = 0` = "#9999ff",
+                                     `Other` = "#b30059",
+                                     `No junctions` = "#99e600",
+                                     `Has junctions, but no uniquely mapping junction reads` = "#cc3300",
+                                     `Has junctions, but too large fraction multimapping junction reads` = "#ffb399")) + 
         xlab("") + ylab("Number of genes"))
 dev.off()
 

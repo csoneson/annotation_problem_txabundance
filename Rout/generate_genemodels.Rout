@@ -101,8 +101,8 @@ loaded via a namespace (and not attached):
 [73] stringi_1.1.7               Rcpp_0.12.16               
 [75] rpart_4.1-13                acepack_1.4.1              
 > date()
-[1] "Sat May 12 21:23:33 2018"
+[1] "Mon May 14 15:12:13 2018"
 > 
 > proc.time()
    user  system elapsed 
-134.836   3.780 138.712 
+164.036   9.460 174.857 

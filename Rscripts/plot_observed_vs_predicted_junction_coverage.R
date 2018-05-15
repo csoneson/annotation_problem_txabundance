@@ -28,6 +28,10 @@ y <- x %>% dplyr::select(gene, junctionid, method, pred.cov, scaled.cov,
                 covtype = replace(covtype, covtype == "scaled.cov", "Scaled predicted coverage")) %>%
   dplyr::filter(method %in% quantmethods)
 
+## Remove a few extreme outliers
+print(sum(y$coverage >= (2 * max(y$uniqreads))))
+y <- y %>% dplyr::filter(coverage < (2 * max(uniqreads)))
+
 ## ========================================================================== ##
 ## Compare predicted coverage to observed coverage in terms of being =0 or >1
 z <- y %>% dplyr::filter(covtype == "Predicted coverage") %>%
@@ -54,7 +58,11 @@ g1 <- z %>% dplyr::group_by(method) %>%
                                                      "Obs = 0, Pred = 0", "Obs > 0, Pred > 0"))) %>%
   ggplot(aes(x = method, y = fraction, fill = classif)) + 
   geom_bar(position = "fill", stat = "identity") + theme_bw() + 
-  scale_fill_manual(values = c("red", "orange", "pink", "green", "forestgreen"), name = "") + 
+  scale_fill_manual(values = c(`Obs > 0, Pred > 0` = "#000099", 
+                               `Obs = 0, Pred = 0` = "#8080ff",
+                               `Obs = 0, 0 < Pred <= 5` = "#ffc6b3",
+                               `Obs = 0, Pred > 5` = "#ff6633",
+                               `Obs > 0, Pred = 0` = "#992600"), name = "") + 
   xlab("") + ylab("Fraction of junctions") + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
 
@@ -80,7 +88,11 @@ g2 <- z %>% dplyr::group_by(method, hightotaluniqreads) %>%
                                              "Total unique reads <= 100")) %>%
   ggplot(aes(x = method, y = fraction, fill = classif)) + 
   geom_bar(position = "fill", stat = "identity") + theme_bw() + 
-  scale_fill_manual(values = c("red", "orange", "pink", "green", "forestgreen"), name = "") + 
+  scale_fill_manual(values = c(`Obs > 0, Pred > 0` = "#000099", 
+                               `Obs = 0, Pred = 0` = "#8080ff",
+                               `Obs = 0, 0 < Pred <= 5` = "#ffc6b3",
+                               `Obs = 0, Pred > 5` = "#ff6633",
+                               `Obs > 0, Pred = 0` = "#992600"), name = "") + 
   xlab("") + ylab("Fraction of junctions") + facet_wrap(~ hightotaluniqreads, nrow = 1) + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
 
@@ -106,7 +118,11 @@ g3 <- z %>% dplyr::group_by(method, highfracunique) %>%
                                              "Fraction unique reads <= 0.75")) %>%
   ggplot(aes(x = method, y = fraction, fill = classif)) + 
   geom_bar(position = "fill", stat = "identity") + theme_bw() + 
-  scale_fill_manual(values = c("red", "orange", "pink", "green", "forestgreen"), name = "") + 
+  scale_fill_manual(values = c(`Obs > 0, Pred > 0` = "#000099", 
+                               `Obs = 0, Pred = 0` = "#8080ff",
+                               `Obs = 0, 0 < Pred <= 5` = "#ffc6b3",
+                               `Obs = 0, Pred > 5` = "#ff6633",
+                               `Obs > 0, Pred = 0` = "#992600"), name = "") + 
   xlab("") + ylab("Fraction of junctions") + facet_wrap(~ highfracunique, nrow = 1) + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
 

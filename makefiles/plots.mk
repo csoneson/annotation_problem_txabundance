@@ -46,6 +46,7 @@ $(gvizgenemodels) $(5) Rscripts/plot_genewise_results.R
 endef
 $(foreach G,$(genes_to_plot),$(foreach F,20151016.A-Cortex_RNA,$(eval $(call geneplotrule,$(F),,$(G),1,))))
 $(foreach G,$(genes_to_plot),$(foreach F,20170918.A-WT_4,$(eval $(call geneplotrule,$(F),,$(G),1,minimap2genomebigwig/20171207_1645_p2557_4017_2_ALLREADS.pass_minimap2_genome_s.bw))))
+$(foreach G,$(genes_to_plot),$(foreach F,sim_misannotated_utr_1,$(eval $(call geneplotrule,$(F),,$(G),1,))))
 
 ## ==================================================================================== ##
 ##                    correlation with inferential variance                             ##

@@ -44,8 +44,10 @@ STAR$(3)/$(2)/$(2)_Aligned.sortedByCoord.out.bam $(flatgtf$(4))
 	mkdir -p $$(@D)
 	$(featurecounts) -F GTF -t exon -g gene_id -O -s $(5) -p -T $(nthreads) -a $$(word 2,$$^) -o $$@ $$(word 1,$$^)
 endef
-$(foreach F,$(fastqfiles),$(eval $(call featurecountsrule,$(F),$(notdir $(F)),,exons,2)))
-$(foreach F,$(fastqfiles),$(eval $(call featurecountsrule,$(F),$(notdir $(F)),,introns,2)))
+$(foreach F,$(fastqfilesreal),$(eval $(call featurecountsrule,$(F),$(notdir $(F)),,exons,2)))
+$(foreach F,$(fastqfilessim),$(eval $(call featurecountsrule,$(F),$(notdir $(F)),,exons,1)))
+$(foreach F,$(fastqfilesreal),$(eval $(call featurecountsrule,$(F),$(notdir $(F)),,introns,2)))
+$(foreach F,$(fastqfilessim),$(eval $(call featurecountsrule,$(F),$(notdir $(F)),,introns,1)))
 
 ## Convert BAM files to bigWig
 define bwrule

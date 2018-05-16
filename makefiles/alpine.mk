@@ -7,8 +7,10 @@ Rscripts/alpine_fitbiasmodel.R
 endef
 $(eval $(call fitbiasrule,20151016.A-Cortex_RNA,,$(gtf),126,100,300,Homo_sapiens,GRCh38,90))
 $(eval $(call fitbiasrule,20170918.A-WT_4,,$(gtf),151,140,450,Homo_sapiens,GRCh38,90))
+$(eval $(call fitbiasrule,sim_misannotated_utr_1,,$(gtf),100,180,320,Homo_sapiens,GRCh38,90))
 $(eval $(call fitbiasrule,20151016.A-Cortex_RNA,_stringtie_tx,stringtie/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_filtered.gtf,126,100,300,Homo_sapiens,GRCh38,90))
 $(eval $(call fitbiasrule,20170918.A-WT_4,_stringtie_tx,stringtie/20170918.A-WT_4/20170918.A-WT_4_filtered.gtf,151,140,450,Homo_sapiens,GRCh38,90))
+$(eval $(call fitbiasrule,sim_misannotated_utr_1,_stringtie_tx,stringtie/sim_misannotated_utr_1/sim_misannotated_utr_1_filtered.gtf,100,180,320,Homo_sapiens,GRCh38,90))
 
 ## Predict transcript and junction coverage profiles for all transcripts that have at least one 
 ## junction and are longer than the fragment length
@@ -46,6 +48,14 @@ $(eval $(call juncscalerule,20170918.A-WT_4,,StringTie,stringtie_onlyref/2017091
 $(eval $(call juncscalerule,20170918.A-WT_4,,SalmonMinimap2Nanopore,minimap2salmon/20171207_1645_p2557_4017_2_ALLREADS.pass/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),no))
 $(eval $(call juncscalerule,20170918.A-WT_4,,WubMinimap2Nanopore,minimap2wub/20171207_1645_p2557_4017_2_ALLREADS.pass/bam_count_reads.tsv,Rscripts/read_quant_wub.R,$(tx2geneext),no))
 
+$(eval $(call juncscalerule,sim_misannotated_utr_1,,Salmon,salmon/cDNAncRNA/sim_misannotated_utr_1/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
+$(eval $(call juncscalerule,sim_misannotated_utr_1,,SalmonBWA,salmonbwa/cDNAncRNA/sim_misannotated_utr_1/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
+$(eval $(call juncscalerule,sim_misannotated_utr_1,,SalmonCDS,salmon/cds/sim_misannotated_utr_1/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
+$(eval $(call juncscalerule,sim_misannotated_utr_1,,kallisto,kallisto/cDNAncRNA/sim_misannotated_utr_1/abundance.tsv,Rscripts/read_quant_kallisto.R,$(tx2geneext),yes))
+$(eval $(call juncscalerule,sim_misannotated_utr_1,,RSEM,RSEM/cDNAncRNA/sim_misannotated_utr_1/sim_misannotated_utr_1.isoforms.results,Rscripts/read_quant_rsem.R,$(tx2geneext),yes))
+$(eval $(call juncscalerule,sim_misannotated_utr_1,,hera,hera/sim_misannotated_utr_1/abundance.tsv,Rscripts/read_quant_hera.R,$(tx2geneext),yes))
+$(eval $(call juncscalerule,sim_misannotated_utr_1,,StringTie,stringtie_onlyref/sim_misannotated_utr_1/sim_misannotated_utr_1.gtf,Rscripts/read_quant_stringtie.R,$(tx2geneext),yes))
+
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_stringtie_tx,Salmon,salmon_stringtie_tx/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,reference/20151016.A-Cortex_RNA_stringtie_tx_tx2gene_withsymbol.rds,yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_stringtie_tx,SalmonBWA,salmonbwa_stringtie_tx/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,reference/20151016.A-Cortex_RNA_stringtie_tx_tx2gene_withsymbol.rds,yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_stringtie_tx,kallisto,kallisto_stringtie_tx/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_kallisto.R,reference/20151016.A-Cortex_RNA_stringtie_tx_tx2gene_withsymbol.rds,yes))
@@ -60,6 +70,13 @@ $(eval $(call juncscalerule,20170918.A-WT_4,_stringtie_tx,RSEM,RSEM_stringtie_tx
 $(eval $(call juncscalerule,20170918.A-WT_4,_stringtie_tx,hera,hera_stringtie_tx/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_hera.R,reference/20170918.A-WT_4_stringtie_tx_tx2gene_withsymbol.rds,yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,_stringtie_tx,StringTie,stringtie/20170918.A-WT_4/20170918.A-WT_4_filtered.gtf,Rscripts/read_quant_stringtie.R,reference/20170918.A-WT_4_stringtie_tx_tx2gene_withsymbol.rds,yes))
 
+$(eval $(call juncscalerule,sim_misannotated_utr_1,_stringtie_tx,Salmon,salmon_stringtie_tx/sim_misannotated_utr_1/quant.sf,Rscripts/read_quant_salmon.R,reference/sim_misannotated_utr_1_stringtie_tx_tx2gene_withsymbol.rds,yes))
+$(eval $(call juncscalerule,sim_misannotated_utr_1,_stringtie_tx,SalmonBWA,salmonbwa_stringtie_tx/sim_misannotated_utr_1/quant.sf,Rscripts/read_quant_salmon.R,reference/sim_misannotated_utr_1_stringtie_tx_tx2gene_withsymbol.rds,yes))
+$(eval $(call juncscalerule,sim_misannotated_utr_1,_stringtie_tx,kallisto,kallisto_stringtie_tx/sim_misannotated_utr_1/abundance.tsv,Rscripts/read_quant_kallisto.R,reference/sim_misannotated_utr_1_stringtie_tx_tx2gene_withsymbol.rds,yes))
+$(eval $(call juncscalerule,sim_misannotated_utr_1,_stringtie_tx,RSEM,RSEM_stringtie_tx/sim_misannotated_utr_1/sim_misannotated_utr_1.isoforms.results,Rscripts/read_quant_rsem.R,reference/sim_misannotated_utr_1_stringtie_tx_tx2gene_withsymbol.rds,yes))
+$(eval $(call juncscalerule,sim_misannotated_utr_1,_stringtie_tx,hera,hera_stringtie_tx/sim_misannotated_utr_1/abundance.tsv,Rscripts/read_quant_hera.R,reference/sim_misannotated_utr_1_stringtie_tx_tx2gene_withsymbol.rds,yes))
+$(eval $(call juncscalerule,sim_misannotated_utr_1,_stringtie_tx,StringTie,stringtie/sim_misannotated_utr_1/sim_misannotated_utr_1_filtered.gtf,Rscripts/read_quant_stringtie.R,reference/sim_misannotated_utr_1_stringtie_tx_tx2gene_withsymbol.rds,yes))
+
 ## Combine coverages for all methods
 define combcovrule
 output/$(1)$(2)_combined_coverages.rds: STAR$(2)/$(1)/$(1)_Aligned.sortedByCoord.out.bam \
@@ -73,8 +90,10 @@ Rscripts/combine_scaled_coverages.R $(3) $(4)
 endef
 $(eval $(call combcovrule,20151016.A-Cortex_RNA,,,alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_SalmonCDS.rds))
 $(eval $(call combcovrule,20170918.A-WT_4,,alpine/20170918.A-WT_4/scaled_junction_coverage_WubMinimap2Nanopore.rds,alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonCDS.rds))
+$(eval $(call combcovrule,sim_misannotated_utr_1,,,alpine/sim_misannotated_utr_1/scaled_junction_coverage_SalmonCDS.rds))
 $(eval $(call combcovrule,20151016.A-Cortex_RNA,_stringtie_tx,,))
 $(eval $(call combcovrule,20170918.A-WT_4,_stringtie_tx,,))
+$(eval $(call combcovrule,sim_misannotated_utr_1,_stringtie_tx,,))
 
 ## Calculate gene scores and add to summary table
 define scorerule

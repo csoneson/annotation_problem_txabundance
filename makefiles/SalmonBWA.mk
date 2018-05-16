@@ -1,14 +1,19 @@
 bwa := /home/charlotte/software/bwa/bwa
 salmon := /home/charlotte/software/Salmon-0.9.1_linux_x86_64/bin/salmon
 
-define bwaindexrule
-$(1).sa: $(2)
+define bwacopyrule
+$(1): $(2)
 	mkdir -p $$(@D)
 	scp $(2) $(1)
+endef
+$(foreach F,$(fastqfiles),$(eval $(call bwacopyrule,reference/bwa/$(notdir $(F))_stringtie_tx/$(notdir $(F))_stringtie_tx.fa,stringtie/$(notdir $(F))/$(notdir $(F))_stringtie_tx.fa)))
+
+define bwaindexrule
+$(1).sa: $(1)
 	$(bwa) index $(1)
 endef
-$(eval $(call bwaindexrule,reference/bwa/Homo_sapiens.GRCh38.cdna.ncrna/Homo_sapiens.GRCh38.cdna.ncrna.fa,$(txome)))
-$(foreach F,$(fastqfiles),$(eval $(call bwaindexrule,reference/bwa/$(notdir $(F))_stringtie_tx/$(notdir $(F))_stringtie_tx.fa,stringtie/$(notdir $(F))/$(notdir $(F))_stringtie_tx.fa)))
+$(eval $(call bwaindexrule,reference/bwa/Homo_sapiens.GRCh38.cdna.ncrna/Homo_sapiens.GRCh38.cdna.ncrna.fa))
+$(foreach F,$(fastqfiles),$(eval $(call bwaindexrule,reference/bwa/$(notdir $(F))_stringtie_tx/$(notdir $(F))_stringtie_tx.fa)))
 
 ## ==================================================================================== ##
 ##                                  BWA + Salmon                                        ##

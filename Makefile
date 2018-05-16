@@ -4,13 +4,16 @@ samtools := /usr/local/bin/samtools
 bedtools := /usr/local/bin/bedtools
 
 ## List FASTQ files (without the _{R1,R2}.fastq.gz part)
-fastqfiles := \
+fastqfilesreal := \
 /home/Shared/data/seq/roche_pacbio_targeted_cdna/Illumina_RNA_seq/20151016.A-Cortex_RNA \
 /home/Shared/data/seq/hussain_bath_nanopore_rnaseq/Illumina/FASTQ/20170918.A-WT_4
+fastqfilessim := simulation/misannotated_utr/sim_misannotated_utr_1
+fastqfiles := $(fastqfilesreal) $(fastqfilessim)
 
 ## Abundance quantification methods
 quantmethods20151016.A-Cortex_RNA := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS
 quantmethods20170918.A-WT_4 := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS SalmonMinimap2Nanopore WubMinimap2Nanopore
+quantmethodssim_misannotated_utr_1 := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS
 quantmethodsstringtie := Salmon SalmonBWA kallisto RSEM StringTie hera
 
 nthreads := 24

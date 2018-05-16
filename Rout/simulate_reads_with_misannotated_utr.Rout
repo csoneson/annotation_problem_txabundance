@@ -139,7 +139,7 @@ Type 'q()' to quit R.
 +                                reads_per_transcript = 1000,
 +                                size = 500,
 +                                paired = TRUE,
-+                                reportCoverage = TRUE,
++                                reportCoverage = FALSE,
 +                                readlen = 100,
 +                                distr = "normal",
 +                                fraglen = 250,
@@ -147,3 +147,85 @@ Type 'q()' to quit R.
 +                                strand_specific = TRUE,
 +                                seed = 42,
 +                                gzip = TRUE)
+> 
+> ## Load generated reads (forward and reverse) and generate ShortRead objects.
+> ## Assign (arbitrarily) a quality of "H" to all bases.
+> fa1 <- Biostrings::readDNAStringSet(paste0(readdir, "/sample_01_1.fasta.gz"))
+> q1 <- ShortRead::FastqQuality(
++   Biostrings::BStringSet(x = sapply(seq_len(length(fa1)), 
++                                     function(w) paste(rep("H", 100), collapse = "")))
++ )
+> fq1 <- ShortRead::ShortReadQ(sread = fa1, 
++                              quality = q1, 
++                              id = BStringSet(x = names(fa1)))
+> 
+> fa2 <- Biostrings::readDNAStringSet(paste0(readdir, "/sample_01_2.fasta.gz"))
+> q2 <- ShortRead::FastqQuality(
++   Biostrings::BStringSet(x = sapply(seq_len(length(fa2)), 
++                                     function(w) paste(rep("H", 100), collapse = "")))
++ )
+> fq2 <- ShortRead::ShortReadQ(sread = fa2, 
++                              quality = q2, 
++                              id = BStringSet(x = names(fa2)))
+> 
+> ## Shuffle reads
+> set.seed(42)
+> ordr <- sample(x = seq_len(length(fq1)), size = length(fq1), replace = FALSE)
+> fq1 <- fq1[ordr]
+> fq2 <- fq2[ordr]
+> 
+> ## Write to fastq files
+> unlink(paste0(readdir, "/", readbasename, "_R1.fastq.gz"))
+> writeFastq(fq1, file = paste0(readdir, "/", readbasename, "_R1.fastq.gz"), mode = "w", 
++            full = FALSE, compress = TRUE)
+> unlink(paste0(readdir, "/", readbasename, "_R2.fastq.gz"))
+> writeFastq(fq2, file = paste0(readdir, "/", readbasename, "_R2.fastq.gz"), mode = "w",
++            full = FALSE, compress = TRUE)
+> 
+> date()
+[1] "Wed May 16 08:56:36 2018"
+> sessionInfo()
+R Under development (unstable) (2017-12-14 r73916)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 16.04.4 LTS
+
+Matrix products: default
+BLAS: /usr/local/R/R-devel/lib/libRblas.so
+LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
+ [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
+ [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
+[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+
+attached base packages:
+[1] stats4    parallel  stats     graphics  grDevices utils     datasets 
+[8] methods   base     
+
+other attached packages:
+ [1] bindrcpp_0.2.2              ShortRead_1.38.0           
+ [3] GenomicAlignments_1.15.13   SummarizedExperiment_1.9.16
+ [5] DelayedArray_0.5.30         matrixStats_0.53.1         
+ [7] Biobase_2.39.2              Rsamtools_1.31.3           
+ [9] BiocParallel_1.13.3         polyester_1.16.0           
+[11] dplyr_0.7.4                 rtracklayer_1.39.12        
+[13] GenomicRanges_1.31.23       GenomeInfoDb_1.15.5        
+[15] Biostrings_2.47.12          XVector_0.20.0             
+[17] IRanges_2.13.28             S4Vectors_0.17.42          
+[19] BiocGenerics_0.26.0        
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_0.12.16           RColorBrewer_1.1-2     compiler_3.5.0        
+ [4] pillar_1.2.1           bindr_0.1.1            bitops_1.0-6          
+ [7] tools_3.5.0            zlibbioc_1.26.0        tibble_1.4.2          
+[10] lattice_0.20-35        pkgconfig_2.0.1        rlang_0.2.0           
+[13] Matrix_1.2-14          GenomeInfoDbData_1.1.0 hwriter_1.3.2         
+[16] grid_3.5.0             glue_1.2.0             R6_2.2.2              
+[19] XML_3.98-1.11          latticeExtra_0.6-28    limma_3.35.14         
+[22] magrittr_1.5           assertthat_0.2.0       logspline_2.1.9       
+[25] RCurl_1.95-4.10       
+> 
+> proc.time()
+    user   system  elapsed 
+3649.208  103.144 3768.439 

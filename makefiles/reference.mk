@@ -34,7 +34,6 @@ $(flatgtfexons): $(flatgtfintrons)
 ## ==================================================================================== ##
 ##                     Reference files for extended annotation                          ##
 ## ==================================================================================== ##
-
 ## Generate tx2gene
 define tx2generule
 reference/$(1)$(2)_tx2gene.rds: $(3) Rscripts/generate_tx2gene_from_gtf.R

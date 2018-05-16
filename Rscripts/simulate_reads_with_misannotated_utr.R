@@ -103,21 +103,36 @@ for (g in genes_of_interest) {
                                                        names = paste0(base_tx, "_utrfrom_", utr_tx))))
 }
 
-## Write modified transcripts to fasta file
-writeXStringSet(modified_transcripts, filepath = outfasta)
+## Select additional transcripts randomly (excluding genes considered above) and
+## assign them counts
+available_transcripts <- setdiff(names(txfasta), 
+                                 gtf$transcript_id[gtf$gene_id %in% genes_of_interest])
+set.seed(42)
+additional_transcripts <- sample(available_transcripts, size = 10000, replace = FALSE)
+additional_counts <- c(rmultinom(n = 1, size = 10e6, prob = runif(10000)))
+## Check the number of isoforms of the genes of the selected transcripts
+table(as.data.frame(gtf) %>% dplyr::filter(type == "transcript") %>%
+        dplyr::group_by(gene_id) %>% dplyr::mutate(nbr_tx = length(transcript_id)) %>%
+        dplyr::filter(transcript_id %in% additional_transcripts) %>%
+        dplyr::select(gene_id, nbr_tx) %>% dplyr::distinct() %>% dplyr::pull(nbr_tx))
+
+## Write modified and additional transcripts to fasta file
+writeXStringSet(c(modified_transcripts, txfasta[additional_transcripts]), 
+                filepath = outfasta)
 
 ## Simulate reads with polyester
 polyester::simulate_experiment(fasta = outfasta, 
                                outdir = readdir, 
                                fold_changes = 1,
                                num_reps = c(1, 1),
-                               reads_per_transcript = 1000,
+                               reads_per_transcript = c(rep(1000, length(modified_transcripts)),
+                                                        additional_counts),
                                size = 500,
                                paired = TRUE,
                                reportCoverage = FALSE,
-                               readlen = 100,
+                               readlen = 125,
                                distr = "normal",
-                               fraglen = 250,
+                               fraglen = 300,
                                fragsd = 25,
                                strand_specific = TRUE,
                                seed = 42,
@@ -149,7 +164,9 @@ ordr <- sample(x = seq_len(length(fq1)), size = length(fq1), replace = FALSE)
 fq1 <- fq1[ordr]
 fq2 <- fq2[ordr]
 
-## Write to fastq files
+## Write reads to fastq files and save list of modified genes
+saveRDS(genes_of_interest, file = paste0(readdir, "/", readbasename,
+                                         "_modified_genes.rds"))
 unlink(paste0(readdir, "/", readbasename, "_R1.fastq.gz"))
 writeFastq(fq1, file = paste0(readdir, "/", readbasename, "_R1.fastq.gz"), mode = "w", 
            full = FALSE, compress = TRUE)

@@ -31,6 +31,8 @@ all: prepref quant alpineprep scalecov \
 preprefstringtie quantstringtie alpineprepstringtie scalecovstringtie \
 plots stats
 
+tmp: alpineprep quant
+
 ## Include makefiles. These need to be included after the definition of the "all" rule, 
 ## otherwise the default rule will be the first one from these makefiles
 include makefiles/reference.mk

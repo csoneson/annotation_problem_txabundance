@@ -8,6 +8,7 @@ print(txfasta)
 print(outfasta)
 print(readdir)
 print(readbasename)
+print(readlen)
 
 suppressPackageStartupMessages({
   library(Biostrings)
@@ -116,21 +117,31 @@ table(as.data.frame(gtf) %>% dplyr::filter(type == "transcript") %>%
         dplyr::filter(transcript_id %in% additional_transcripts) %>%
         dplyr::select(gene_id, nbr_tx) %>% dplyr::distinct() %>% dplyr::pull(nbr_tx))
 
+## Generate final set of transcripts to simulate from and number of reads to generate
+transcripts_to_simulate_from <- c(modified_transcripts, txfasta[additional_transcripts])
+reads_per_transcript <- c(rep(1000, length(modified_transcripts)),
+                          additional_counts)
+
+## Subset to transcripts that are at least as long as the fragment length
+idx <- which(width(transcripts_to_simulate_from) >= readlen)
+transcripts_to_simulate_from <- transcripts_to_simulate_from[idx]
+reads_per_transcript <- reads_per_transcript[idx]
+
 ## Write modified and additional transcripts to fasta file
-writeXStringSet(c(modified_transcripts, txfasta[additional_transcripts]), 
+writeXStringSet(transcripts_to_simulate_from, 
                 filepath = outfasta)
 
-## Simulate reads with polyester
+## Simulate reads with polyester. Generates files sample_01_1.fasta.gz and
+## sample_01_2.fasta.gz in the readdir
 polyester::simulate_experiment(fasta = outfasta, 
                                outdir = readdir, 
                                fold_changes = 1,
                                num_reps = c(1, 1),
-                               reads_per_transcript = c(rep(1000, length(modified_transcripts)),
-                                                        additional_counts),
+                               reads_per_transcript = reads_per_transcript,
                                size = 500,
                                paired = TRUE,
                                reportCoverage = FALSE,
-                               readlen = 125,
+                               readlen = readlen,
                                distr = "normal",
                                fraglen = 300,
                                fragsd = 25,
@@ -138,41 +149,9 @@ polyester::simulate_experiment(fasta = outfasta,
                                seed = 42,
                                gzip = TRUE)
 
-## Load generated reads (forward and reverse) and generate ShortRead objects.
-## Assign (arbitrarily) a quality of "H" to all bases.
-fa1 <- Biostrings::readDNAStringSet(paste0(readdir, "/sample_01_1.fasta.gz"))
-q1 <- ShortRead::FastqQuality(
-  Biostrings::BStringSet(x = sapply(seq_len(length(fa1)), 
-                                    function(w) paste(rep("H", 100), collapse = "")))
-)
-fq1 <- ShortRead::ShortReadQ(sread = fa1, 
-                             quality = q1, 
-                             id = BStringSet(x = names(fa1)))
-
-fa2 <- Biostrings::readDNAStringSet(paste0(readdir, "/sample_01_2.fasta.gz"))
-q2 <- ShortRead::FastqQuality(
-  Biostrings::BStringSet(x = sapply(seq_len(length(fa2)), 
-                                    function(w) paste(rep("H", 100), collapse = "")))
-)
-fq2 <- ShortRead::ShortReadQ(sread = fa2, 
-                             quality = q2, 
-                             id = BStringSet(x = names(fa2)))
-
-## Shuffle reads
-set.seed(42)
-ordr <- sample(x = seq_len(length(fq1)), size = length(fq1), replace = FALSE)
-fq1 <- fq1[ordr]
-fq2 <- fq2[ordr]
-
 ## Write reads to fastq files and save list of modified genes
 saveRDS(genes_of_interest, file = paste0(readdir, "/", readbasename,
                                          "_modified_genes.rds"))
-unlink(paste0(readdir, "/", readbasename, "_R1.fastq.gz"))
-writeFastq(fq1, file = paste0(readdir, "/", readbasename, "_R1.fastq.gz"), mode = "w", 
-           full = FALSE, compress = TRUE)
-unlink(paste0(readdir, "/", readbasename, "_R2.fastq.gz"))
-writeFastq(fq2, file = paste0(readdir, "/", readbasename, "_R2.fastq.gz"), mode = "w",
-           full = FALSE, compress = TRUE)
 
 date()
 sessionInfo()

@@ -20,7 +20,5 @@ $(4)/$(2)/abundance.tsv: $(3) $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
 	$(kallisto) quant -i $(3) -o $$(@D) --bias -t $(nthreads) $(5) $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 endef
-$(foreach F,$(fastqfilesreal),$(eval $(call kallistorule,$(F),$(notdir $(F)),$(kallistocdnancrnaindex),kallisto/cDNAncRNA,--rf-stranded)))
-$(foreach F,$(fastqfilessim),$(eval $(call kallistorule,$(F),$(notdir $(F)),$(kallistocdnancrnaindex),kallisto/cDNAncRNA,--fr-stranded)))
-$(foreach F,$(fastqfilesreal),$(eval $(call kallistorule,$(F),$(notdir $(F)),reference/kallisto/$(notdir $(F))_stringtie_tx_kidx_v0.44.0,kallisto_stringtie_tx,--rf-stranded)))
-$(foreach F,$(fastqfilessim),$(eval $(call kallistorule,$(F),$(notdir $(F)),reference/kallisto/$(notdir $(F))_stringtie_tx_kidx_v0.44.0,kallisto_stringtie_tx,--fr-stranded)))
+$(foreach F,$(fastqfiles),$(eval $(call kallistorule,$(F),$(notdir $(F)),$(kallistocdnancrnaindex),kallisto/cDNAncRNA,--rf-stranded)))
+$(foreach F,$(fastqfiles),$(eval $(call kallistorule,$(F),$(notdir $(F)),reference/kallisto/$(notdir $(F))_stringtie_tx_kidx_v0.44.0,kallisto_stringtie_tx,--rf-stranded)))

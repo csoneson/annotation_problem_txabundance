@@ -27,11 +27,11 @@ Type 'q()' to quit R.
 > print(bam)  ## used to extract "medium to highly expressed genes" to fit the bias model
 [1] "STAR/sim_misannotated_utr_1/sim_misannotated_utr_1_Aligned.sortedByCoord.out.bam"
 > print(readlength)
-[1] 100
+[1] 125
 > print(minsize)
-[1] 180
+[1] 220
 > print(maxsize)
-[1] 320
+[1] 380
 > print(organism)
 [1] "Homo_sapiens"
 > print(genomeVersion)
@@ -40,6 +40,8 @@ Type 'q()' to quit R.
 [1] 90
 > print(outdir)
 [1] "alpine/sim_misannotated_utr_1"
+> print(subsample)
+[1] FALSE
 > 
 > suppressPackageStartupMessages({
 +   library(ensembldb)
@@ -85,7 +87,7 @@ Checking exons ... OK
 Warning messages:
 1: In ensDbFromGRanges(GTF, outfile = outfile, path = path, organism = organism,  :
    I'm missing column(s): 'entrezid'. The corresponding database column(s) will be empty!
-2: In c2 :
+2: In .identC(class1, class2) :
   closing unused connection 3 (ftp://ftp.ensembl.org/pub/release-90/mysql/)
 > txdb
 EnsDb for Ensembl:
@@ -95,7 +97,7 @@ EnsDb for Ensembl:
 |Supporting package: ensembldb
 |Db created by: ensembldb package from Bioconductor
 |script_version: 0.0.1
-|Creation time: Wed May 16 15:03:45 2018
+|Creation time: Thu May 17 16:36:36 2018
 |ensembl_version: 90
 |ensembl_host: unknown
 |Organism: Homo_sapiens
@@ -261,8 +263,10 @@ seqinfo: 47 sequences from GRCh38 genome
 [1] 14180
 > 
 > ## Sample 1000 genes to use for the fitting of the bias model
-> set.seed(1)
-> ebt.fit <- ebt.fit[sample(length(ebt.fit), 1000)]
+> if (subsample) {
++   set.seed(1)
++   ebt.fit <- ebt.fit[sample(length(ebt.fit), 1000)]
++ }
 > 
 > ## Read bam file
 > bam.files <- bam
@@ -274,14 +278,19 @@ seqinfo: 47 sequences from GRCh38 genome
 > mcols(txps.fit)$cts <- cts$records
 > txps.fit <- txps.fit[names(ebt.fit)]
 > sum(txps.fit$cts > 500 & txps.fit$cts < 10000)
-[1] 11
+[1] 0
 > ebt.fit <- ebt.fit[txps.fit$cts > 500 & txps.fit$cts < 10000]
 > length(ebt.fit)
-[1] 11
+[1] 0
 > 
 > ## Get fragment width and read length
 > w <- getFragmentWidths(bam.files, ebt.fit[[min(which(sapply(ebt.fit, length) > 1))]])
-Error in getFragmentWidths(bam.files, ebt.fit[[min(which(sapply(ebt.fit,  : 
-  length(fo) > 0 is not TRUE
-Calls: getFragmentWidths -> stopifnot
+Error in if (i < 1L) stop("[[ subscript must be >= 1") : 
+  missing value where TRUE/FALSE needed
+Calls: getFragmentWidths ... getListElement -> getListElement -> normalizeDoubleBracketSubscript
+In addition: Warning messages:
+1: In min(which(sapply(ebt.fit, length) > 1)) :
+  no non-missing arguments to min; returning Inf
+2: In normalizeDoubleBracketSubscript(i, x, exact = exact, allow.NA = TRUE,  :
+  NAs introduced by coercion to integer range
 Execution halted

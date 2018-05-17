@@ -12,6 +12,7 @@ print(organism)
 print(genomeVersion)
 print(version)
 print(outdir)
+print(subsample)
 
 suppressPackageStartupMessages({
   library(ensembldb)
@@ -78,8 +79,10 @@ ebt.fit <- ebt.fit[gene.lengths > min.bp & gene.lengths < max.bp]
 length(ebt.fit)
 
 ## Sample 1000 genes to use for the fitting of the bias model
-set.seed(1)
-ebt.fit <- ebt.fit[sample(length(ebt.fit), 1000)]
+if (subsample) {
+  set.seed(1)
+  ebt.fit <- ebt.fit[sample(length(ebt.fit), 1000)]
+}
 
 ## Read bam file
 bam.files <- bam

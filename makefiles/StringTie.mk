@@ -33,8 +33,7 @@ stringtie_onlyref/$(1)/$(1).gtf: HISAT2/$(1)/$(1).bam $(gtf)
 	mkdir -p $$(@D)
 	$(stringtie) $$< -o $$@ -p $(nthreads) -G $(gtf) -e -A $$@.tab $(2)
 endef
-$(foreach F,$(fastqfilesreal),$(eval $(call stringtierefrule,$(notdir $(F)),--rf)))
-$(foreach F,$(fastqfilessim),$(eval $(call stringtierefrule,$(notdir $(F)),--fr)))
+$(foreach F,$(fastqfiles),$(eval $(call stringtierefrule,$(notdir $(F)),--rf)))
 
 ## Run StringTie with assembly of new transcripts
 define stringtierule
@@ -42,8 +41,7 @@ stringtie/$(1)/$(1).gtf: HISAT2/$(1)/$(1).bam $(gtf)
 	mkdir -p $$(@D)
 	$(stringtie) $$< -o $$@ -p $(nthreads) -G $(gtf) -A $$@.tab $(2)
 endef
-$(foreach F,$(fastqfilesreal),$(eval $(call stringtierule,$(notdir $(F)),--rf)))
-$(foreach F,$(fastqfilessim),$(eval $(call stringtierule,$(notdir $(F)),--fr)))
+$(foreach F,$(fastqfiles),$(eval $(call stringtierule,$(notdir $(F)),--rf)))
 
 ## Filter StringTie output gtf. For assembled single-exon transcripts, StringTie can not 
 ## derive the strand (since there are no reads spanning junctions). This will prevent the 

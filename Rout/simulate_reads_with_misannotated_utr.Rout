@@ -32,6 +32,8 @@ Type 'q()' to quit R.
 [1] "simulation/misannotated_utr"
 > print(readbasename)
 [1] "sim_misannotated_utr_1"
+> print(readlen)
+[1] 125
 > 
 > suppressPackageStartupMessages({
 +   library(Biostrings)
@@ -42,3 +44,27 @@ Type 'q()' to quit R.
 + })
 > 
 > gtf <- rtracklayer::import(gtf, format = "gtf")
+> txfasta <- Biostrings::readDNAStringSet(txfasta)
+> names(txfasta) <- gsub("\\.[0-9]+$", "", sapply(strsplit(names(txfasta), " "), .subset, 1))
+> 
+> ## Get the coordinates of the 3'UTR for each transcript
+> utrs <- as.data.frame(gtf) %>% dplyr::filter(type == "three_prime_utr") %>%
++   dplyr::group_by(transcript_id) %>%
++   dplyr::summarize(start = min(start), end = max(end), width = sum(width), 
++                    seqnames = seqnames[1], gene_id = gene_id[1], strand = strand[1])
+> 
+> ## If a gene has multiple 3'UTRs starting in the same place but with different
+> ## length, get the length difference
+> tmp <- utrs %>% dplyr::select(-transcript_id)
+> tmp <- split(tmp, tmp$gene_id)
+> utr_length_diff <- sapply(tmp, function(w) {
++   if (all(w$strand == "-")) {
++     w %>% group_by(end) %>% summarize(widthdiff = max(width) - min(width)) %>% 
++       select(widthdiff) %>% max
++   } else if (all(w$strand == "+")) {
++     w %>% group_by(start) %>% summarize(widthdiff = max(width) - min(width)) %>% 
++       select(widthdiff) %>% max
++   } else {
++     0
++   }
++ })

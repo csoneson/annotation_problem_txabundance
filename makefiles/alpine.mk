@@ -3,14 +3,14 @@ define fitbiasrule
 alpine/$(1)$(2)/alpine_fitbiasmodel.rds: $(3) STAR$(2)/$(1)/$(1)_Aligned.sortedByCoord.out.bam \
 Rscripts/alpine_fitbiasmodel.R
 	mkdir -p $$(@D)
-	$(R) "--args gtf='$(3)' bam='$$(word 2,$$^)' readlength=$(4) minsize=$(5) maxsize=$(6) organism='$(7)' genomeVersion='$(8)' version=$(9) outdir='$$(@D)'" Rscripts/alpine_fitbiasmodel.R Rout/alpine_fitbiasmodel_$(1)$(2).Rout
+	$(R) "--args gtf='$(3)' bam='$$(word 2,$$^)' readlength=$(4) minsize=$(5) maxsize=$(6) organism='$(7)' genomeVersion='$(8)' version=$(9) outdir='$$(@D)' subsample=$(10)" Rscripts/alpine_fitbiasmodel.R Rout/alpine_fitbiasmodel_$(1)$(2).Rout
 endef
-$(eval $(call fitbiasrule,20151016.A-Cortex_RNA,,$(gtf),126,100,300,Homo_sapiens,GRCh38,90))
-$(eval $(call fitbiasrule,20170918.A-WT_4,,$(gtf),151,140,450,Homo_sapiens,GRCh38,90))
-$(eval $(call fitbiasrule,sim_misannotated_utr_1,,$(gtf),125,220,380,Homo_sapiens,GRCh38,90))
-$(eval $(call fitbiasrule,20151016.A-Cortex_RNA,_stringtie_tx,stringtie/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_filtered.gtf,126,100,300,Homo_sapiens,GRCh38,90))
-$(eval $(call fitbiasrule,20170918.A-WT_4,_stringtie_tx,stringtie/20170918.A-WT_4/20170918.A-WT_4_filtered.gtf,151,140,450,Homo_sapiens,GRCh38,90))
-$(eval $(call fitbiasrule,sim_misannotated_utr_1,_stringtie_tx,stringtie/sim_misannotated_utr_1/sim_misannotated_utr_1_filtered.gtf,125,220,380,Homo_sapiens,GRCh38,90))
+$(eval $(call fitbiasrule,20151016.A-Cortex_RNA,,$(gtf),126,100,300,Homo_sapiens,GRCh38,90,TRUE))
+$(eval $(call fitbiasrule,20170918.A-WT_4,,$(gtf),151,140,450,Homo_sapiens,GRCh38,90,TRUE))
+$(eval $(call fitbiasrule,sim_misannotated_utr_1,,$(gtf),125,220,380,Homo_sapiens,GRCh38,90,FALSE))
+$(eval $(call fitbiasrule,20151016.A-Cortex_RNA,_stringtie_tx,stringtie/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_filtered.gtf,126,100,300,Homo_sapiens,GRCh38,90,TRUE))
+$(eval $(call fitbiasrule,20170918.A-WT_4,_stringtie_tx,stringtie/20170918.A-WT_4/20170918.A-WT_4_filtered.gtf,151,140,450,Homo_sapiens,GRCh38,90,TRUE))
+$(eval $(call fitbiasrule,sim_misannotated_utr_1,_stringtie_tx,stringtie/sim_misannotated_utr_1/sim_misannotated_utr_1_filtered.gtf,125,220,380,Homo_sapiens,GRCh38,90,FALSE))
 
 ## Predict transcript and junction coverage profiles for all transcripts that have at least one 
 ## junction and are longer than the fragment length
@@ -18,10 +18,10 @@ define predcovrule
 alpine/$(1)$(2)/alpine_predicted_coverage.rds: alpine/$(1)$(2)/alpine_fitbiasmodel.rds \
 STAR$(2)/$(1)/$(1)_Aligned.sortedByCoord.out.bam Rscripts/alpine_get_predicted_coverage.R
 	mkdir -p $$(@D)
-	$(R) "--args bam='$$(word 2,$$^)' biasmodels='$$(word 1,$$^)' ncores=$(3) outrds='$$@'" Rscripts/alpine_get_predicted_coverage.R Rout/alpine_get_predicted_coverage_$(1)$(2).Rout
+	$(R) "--args bam='$$(word 2,$$^)' biasmodels='$$(word 1,$$^)' ncores=$(nthreads) outrds='$$@'" Rscripts/alpine_get_predicted_coverage.R Rout/alpine_get_predicted_coverage_$(1)$(2).Rout
 endef
-$(foreach F,$(fastqfiles),$(eval $(call predcovrule,$(notdir $(F)),,25)))
-$(foreach F,$(fastqfiles),$(eval $(call predcovrule,$(notdir $(F)),_stringtie_tx,25)))
+$(foreach F,$(fastqfiles),$(eval $(call predcovrule,$(notdir $(F)),)))
+$(foreach F,$(fastqfiles),$(eval $(call predcovrule,$(notdir $(F)),_stringtie_tx)))
 
 ## Scale junction coverage by transcript abundance estimates for each method
 define juncscalerule

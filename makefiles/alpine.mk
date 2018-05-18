@@ -1,9 +1,9 @@
 ## Fit bias model
 define fitbiasrule
-alpine/$(1)$(2)/alpine_fitbiasmodel.rds: $(3) STAR$(2)/$(1)/$(1)_Aligned.sortedByCoord.out.bam \
+alpine/$(1)$(2)/alpine_fitbiasmodel.rds: $(3) STAR$(2)/$(1)/$(1)_Aligned.sortedByCoord.out.bam.bai \
 Rscripts/alpine_fitbiasmodel.R
 	mkdir -p $$(@D)
-	$(R) "--args gtf='$(3)' bam='$$(word 2,$$^)' readlength=$(4) minsize=$(5) maxsize=$(6) organism='$(7)' genomeVersion='$(8)' version=$(9) outdir='$$(@D)' subsample=$(10)" Rscripts/alpine_fitbiasmodel.R Rout/alpine_fitbiasmodel_$(1)$(2).Rout
+	$(R) "--args gtf='$(3)' bam='STAR$(2)/$(1)/$(1)_Aligned.sortedByCoord.out.bam' readlength=$(4) minsize=$(5) maxsize=$(6) organism='$(7)' genomeVersion='$(8)' version=$(9) outdir='$$(@D)' subsample=$(10)" Rscripts/alpine_fitbiasmodel.R Rout/alpine_fitbiasmodel_$(1)$(2).Rout
 endef
 $(eval $(call fitbiasrule,20151016.A-Cortex_RNA,,$(gtf),126,100,300,Homo_sapiens,GRCh38,90,TRUE))
 $(eval $(call fitbiasrule,20170918.A-WT_4,,$(gtf),151,140,450,Homo_sapiens,GRCh38,90,TRUE))

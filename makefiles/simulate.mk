@@ -9,6 +9,9 @@ simulation/misannotated_utr/sample_01_1.fasta.gz: simulation/misannotated_utr/si
 simulation/misannotated_utr/sample_01_2.fasta.gz: simulation/misannotated_utr/sim_misannotated_utr_1_modified_genes.rds
 	touch $@
 
+simulation/misannotated_utr/sim_counts_matrix.rda: simulation/misannotated_utr/sim_misannotated_utr_1_modified_genes.rds
+	touch $@
+
 ## Convert fasta files to fastq
 simulation/misannotated_utr/sim_misannotated_utr_1_R2.fastq.gz: simulation/misannotated_utr/sample_01_1.fasta.gz \
 simulation/misannotated_utr/sample_01_2.fasta.gz
@@ -28,3 +31,4 @@ simulation/misannotated_utr/sample_01_2.fasta.gz
 
 simulation/misannotated_utr/sim_misannotated_utr_1_R1.fastq.gz: simulation/misannotated_utr/sim_misannotated_utr_1_R2.fastq.gz
 	touch $@
+

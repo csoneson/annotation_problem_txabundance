@@ -1,0 +1,48 @@
+args <- (commandArgs(trailingOnly = TRUE))
+for (i in 1:length(args)) {
+  eval(parse(text = args[[i]]))
+}
+
+print(scorerds)
+print(outrds)
+
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(tidyr)
+  library(ggplot2)
+  library(cowplot)
+})
+
+## Calculate the correlation between the Salmon transcript abundances obtained
+## with the cDNA+ncRNA annotation and those obtained with the CDS annotation,
+## for each gene. Then correlate this with the Salmon cDNA+ncRNA score.
+
+scores <- readRDS(scorerds)
+
+transcript <- scores$transcripts
+gene <- scores$genes
+
+txcorrs <- transcript %>% dplyr::filter(method %in% c("Salmon", "SalmonCDS")) %>%
+  dplyr::select(transcript, gene, count, method) %>% 
+  tidyr::spread(method, count) %>% 
+  replace(., is.na(.), 0) %>%
+  dplyr::group_by(gene) %>%
+  dplyr::summarize(correlation = cor(Salmon, SalmonCDS))
+
+gene <- gene %>% dplyr::filter(method == "Salmon") %>% 
+  dplyr::filter(uniqjuncfraction > 0.75) %>% 
+  dplyr::select(gene, score) %>%
+  dplyr::left_join(txcorrs, by = "gene")
+
+png(gsub("rds$", "png", outrds), width = 8, height = 7, 
+    unit = "in", res = 300)
+print(ggplot(gene, aes(x = correlation, y = score)) + geom_point(alpha = 0.3) + 
+        theme_bw() + 
+        xlab("Within-gene correlation between transcript abundance estimates from Salmon and SalmonCDS") + 
+        ylab("JCC score based on Salmon transcript abundance estimates") + 
+        geom_smooth())
+dev.off()
+
+saveRDS(NULL, file = outrds)
+date()
+sessionInfo()

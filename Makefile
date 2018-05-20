@@ -28,10 +28,10 @@ mmfracthreshold := 0.25
 .PHONY: all
 
 all: prepref quant alpineprep scalecov \
-preprefstringtie quantstringtie alpineprepstringtie scalecovstringtie \
+preprefstringtie quantstringtie alpineprepstringtie scalecovstringtie plotsstringtie \
 plots stats
 
-tmp: alpineprep quant
+tmp: alpineprep quant scalecov plots
 
 ## Include makefiles. These need to be included after the definition of the "all" rule, 
 ## otherwise the default rule will be the first one from these makefiles
@@ -142,14 +142,17 @@ minimap2salmon/$(nanopore_sample)/quant.sf
 ## Plots
 ########################################################################################################
 plots: $(foreach F,$(fastqfiles),figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F)).rds) \
-$(foreach F,$(fastqfiles),figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F))_stringtie_tx.rds) \
 figures/predicted_coverage_pattern_comparison/predicted_coverage_pattern_comparison_20151016.A-Cortex_RNA_20170918.A-WT_4.rds \
 $(foreach F,$(fastqfiles),figures/gene_scores/gene_scores_$(notdir $(F)).rds) \
-$(foreach F,$(fastqfiles),figures/gene_scores/gene_scores_$(notdir $(F))_stringtie_tx.rds) \
 $(foreach G,$(genes_to_plot),$(foreach F,$(fastqfiles),output_genewise/$(notdir $(F))/check/$(G).rds)) \
 $(foreach F,$(fastqfiles),figures/correlation_with_inferential_variance/correlation_with_inferential_variance_$(notdir $(F)).rds) \
 $(foreach F,$(fastqfiles),figures/correlation_between_methods/correlation_between_methods_$(notdir $(F)).rds) \
-figures/correlation_between_nanopore_and_illumina_scores/correlation_between_nanopore_and_illumina_scores_20170918.A-WT_4.rds
+figures/correlation_between_nanopore_and_illumina_scores/correlation_between_nanopore_and_illumina_scores_20170918.A-WT_4.rds \
+figures/correlation_with_true_abundances/correlation_with_true_abundances_sim_misannotated_utr_1.rds \
+$(foreach F,$(fastqfiles),figures/association_exoncdscorrelation_score/association_exoncdscorrelation_score_$(notdir $(F)).rds)
+
+plotsstringtie: $(foreach F,$(fastqfiles),figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F))_stringtie_tx.rds) \
+$(foreach F,$(fastqfiles),figures/gene_scores/gene_scores_$(notdir $(F))_stringtie_tx.rds)
 
 ########################################################################################################
 ## Stats

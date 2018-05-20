@@ -98,7 +98,17 @@ ebt.fit <- ebt.fit[txps.fit$cts > 500 & txps.fit$cts < 10000]
 length(ebt.fit)
 
 ## Get fragment width and read length
-w <- getFragmentWidths(bam.files, ebt.fit[[min(which(sapply(ebt.fit, length) > 1))]])
+m <- sort(which(sapply(ebt.fit, length) > 1))
+m0 <- 0
+w <- NULL
+while(is.null(w)) {
+  w <- tryCatch({
+    m0 <- m0 + 1
+    getFragmentWidths(bam.files, ebt.fit[[m[m0]]])
+  }, error = function(e) {
+    NULL
+  })
+}
 quantile(w, c(.025, .975))
 getReadLength(bam.files)
 

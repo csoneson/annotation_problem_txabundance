@@ -1,0 +1,113 @@
+
+R Under development (unstable) (2017-12-14 r73916) -- "Unsuffered Consequences"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> args <- (commandArgs(trailingOnly = TRUE))
+> for (i in 1:length(args)) {
++   eval(parse(text = args[[i]]))
++ }
+> 
+> quantmethods <- strsplit(quantmethods, ",")[[1]]
+> 
+> print(scorerds)
+[1] "output/sim_misannotated_utr_1_combined_coverages_with_scores.rds"
+> print(quantmethods)
+[1] "hera"      "kallisto"  "RSEM"      "Salmon"    "SalmonBWA" "SalmonCDS"
+[7] "StringTie"
+> print(outrds)
+[1] "figures/correlation_between_methods/correlation_between_methods_sim_misannotated_utr_1.rds"
+> 
+> suppressPackageStartupMessages({
++   library(dplyr)
++   library(ggplot2)
++   library(cowplot)
++   library(GGally)
++ })
+> 
+> source("Rscripts/helper_plot_functions.R")
+> 
+> ## Read scores
+> scores <- readRDS(scorerds)$genes
+> 
+> ## Filter
+> ## For consistency, expression filtering is done using Salmon counts
+> highexpression <- scores %>% dplyr::filter(method == "Salmon" & count > 1000) %>% 
++   dplyr::pull(gene)
+> scores_wide <- scores %>% dplyr::filter(method %in% quantmethods & uniqjuncfraction >= 0.75 & 
++                                           gene %in% highexpression) %>%
++   dplyr::select(gene, method, score) %>% 
++   tidyr::spread(method, score) %>% as.data.frame() %>% tibble::column_to_rownames("gene")
+> 
+> ## Pairs plot
+> png(gsub("\\.rds$", "_pairs.png", outrds), width = 8, height = 8, unit = "in", res = 300)
+> print(ggpairs(scores_wide,
++               lower = list(continuous = wrap("points", alpha = 0.3, size = 0.25)),
++               upper = list(continuous = combinecor)) + 
++         theme_bw())
+There were 28 warnings (use warnings() to see them)
+> dev.off()
+null device 
+          1 
+> 
+> ## Dendrogram
+> png(gsub("\\.rds$", "_clustering.png", outrds), width = 5, height = 5, unit = "in", res = 300)
+> cormat <- cor(scores_wide, use = "pairwise.complete.obs")
+> distmat <- as.dist(sqrt(2*(1 - cormat)))
+> hcl <- hclust(distmat)
+> nodePar <- list(pch = c(NA, 19), col = "black")
+> plot(as.dendrogram(hcl), type = "rectangle", ylab = "Dissimilarity", nodePar = nodePar)
+> dev.off()
+null device 
+          1 
+> 
+> saveRDS(NULL, file = outrds)
+> date()
+[1] "Sun May 20 17:33:31 2018"
+> sessionInfo()
+R Under development (unstable) (2017-12-14 r73916)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 16.04.4 LTS
+
+Matrix products: default
+BLAS: /usr/local/R/R-devel/lib/libRblas.so
+LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
+ [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
+ [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
+[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] bindrcpp_0.2.2 GGally_1.3.2   cowplot_0.9.2  ggplot2_2.2.1  dplyr_0.7.4   
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_0.12.16       bindr_0.1.1        magrittr_1.5       tidyselect_0.2.4  
+ [5] munsell_0.4.3      colorspace_1.3-2   R6_2.2.2           rlang_0.2.0       
+ [9] stringr_1.3.0      plyr_1.8.4         tools_3.5.0        grid_3.5.0        
+[13] gtable_0.2.0       lazyeval_0.2.1     assertthat_0.2.0   tibble_1.4.2      
+[17] purrr_0.2.4        RColorBrewer_1.1-2 reshape2_1.4.3     tidyr_0.8.0       
+[21] glue_1.2.0         labeling_0.3       stringi_1.1.7      compiler_3.5.0    
+[25] pillar_1.2.1       scales_0.5.0       reshape_0.8.7      pkgconfig_2.0.1   
+> 
+> proc.time()
+   user  system elapsed 
+ 34.356   0.472  35.136 

@@ -39,29 +39,7 @@ Type 'q()' to quit R.
 +   library(GGally)
 + })
 > 
-> ## Define new panel function for ggpairs, to show both Pearson and Spearman correlation
-> combinecor <- function(data, mapping, color = I("black"), sizeRange = c(1, 5), ...) {
-+   
-+   # get the x and y data to use the other code
-+   x <- eval(mapping$x, data)
-+   y <- eval(mapping$y, data)
-+   
-+   ct1 <- cor(x, y, method = "pearson", use = "pairwise.complete.obs")
-+   ct2 <- cor(x, y, method = "spearman", use = "pairwise.complete.obs")
-+   
-+   # since we can't print it to get the strsize, just use the max size range
-+   cex <- max(sizeRange)
-+   
-+   
-+   # plot the cor value
-+   ggally_text(
-+     label = paste0("Pearson: \n", signif(ct1, 3), "\nSpearman: \n", signif(ct2, 3)), 
-+     mapping = mapping,
-+     xP = 0.5, yP = 0.5, 
-+     color = color,
-+     ...
-+   ) 
-+ }
+> source("Rscripts/helper_plot_functions.R")
 > 
 > ## Read scores
 > scores <- readRDS(scorerds)$genes
@@ -99,7 +77,7 @@ null device
 > 
 > saveRDS(NULL, file = outrds)
 > date()
-[1] "Mon May 14 12:59:14 2018"
+[1] "Sun May 20 17:32:56 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -132,4 +110,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
- 41.928   2.264  44.332 
+ 39.368   0.532  40.209 

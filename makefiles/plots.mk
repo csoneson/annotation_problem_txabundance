@@ -64,7 +64,8 @@ $(foreach F,$(fastqfiles),$(eval $(call infvarrule,$(notdir $(F)),,salmon/cDNAnc
 ## ==================================================================================== ##
 ## Correlation between scores from different methods
 define corrmethodrule
-figures/correlation_between_methods/correlation_between_methods_$(1)$(2).rds: output/$(1)$(2)_combined_coverages_with_scores.rds Rscripts/plot_correlation_between_methods.R
+figures/correlation_between_methods/correlation_between_methods_$(1)$(2).rds: output/$(1)$(2)_combined_coverages_with_scores.rds \
+Rscripts/plot_correlation_between_methods.R Rscripts/helper_plot_functions.R
 	mkdir -p $$(@D)
 	$(R) "--args scorerds='$$(word 1,$$^)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,StringTie' outrds='$$@'" Rscripts/plot_correlation_between_methods.R Rout/plot_correlation_between_methods_$(1)$(2).Rout
 endef
@@ -77,3 +78,36 @@ figures/correlation_between_nanopore_and_illumina_scores/correlation_between_nan
 	$(R) "--args scorerds='$$(word 1,$$^)' targetmethod='WubMinimap2Nanopore' outrds='$$@'" Rscripts/plot_nanopore_vs_illumina_scores.R Rout/plot_nanopore_vs_illumina_scores_$(1)$(2).Rout
 endef
 $(eval $(call corrnanomethodrule,20170918.A-WT_4,))
+
+## Correlation between estimated and true transcript abundances for simulated data
+define corrtruthrule
+figures/correlation_with_true_abundances/correlation_with_true_abundances_$(1)$(2).rds: output/$(1)$(2)_combined_coverages_with_scores.rds \
+$(3)/sim_counts_matrix.rda $(3)/$(1)_modified_genes.rds Rscripts/plot_estimated_abundance_accuracy.R Rscripts/helper_plot_functions.R
+	mkdir -p $$(@D)
+	$(R) "--args scorerds='$$(word 1,$$^)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,StringTie' truthrda='$$(word 2,$$^)' truthmodgenesrds='$$(word 3,$$^)' outrds='$$@'" Rscripts/plot_estimated_abundance_accuracy.R Rout/plot_estimated_abundance_accuracy_$(1)$(2).Rout
+endef
+$(eval $(call corrtruthrule,sim_misannotated_utr_1,,simulation/misannotated_utr))
+
+## Correlation between the within-gene Salmon/SalmonCDS abundance correlation and the Salmon score
+define corrsalmonrule
+figures/association_exoncdscorrelation_score/association_exoncdscorrelation_score_$(1)$(2).rds: output/$(1)$(2)_combined_coverages_with_scores.rds \
+Rscripts/plot_association_exoncdscorrelation_score.R
+	mkdir -p $$(@D)
+	$(R) "--args scorerds='$$(word 1,$$^)' outrds='$$@'" Rscripts/plot_association_exoncdscorrelation_score.R Rout/plot_association_exoncdscorrelation_score_$(1)$(2).Rout
+endef
+$(foreach F,$(fastqfiles),$(eval $(call corrsalmonrule,$(notdir $(F)),)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

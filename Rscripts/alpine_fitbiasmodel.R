@@ -1,3 +1,25 @@
+################################################################################
+##                                                                            ##
+## Fit bias model with alpine                                                 ##
+##                                                                            ##
+## Inputs:                                                                    ##
+## * gtf: gtf file                                                            ##
+## * bam: bam file, used to extract "medium to highly expressed genes" to fit ##
+##        the bias model                                                      ##
+## * readlength: read length                                                  ##
+## * minsize, maxsize: minimal and maximal fragment length                    ##
+## * organism: organism                                                       ##
+## * genomeVersion: genome version                                            ##
+## * version: Ensembl version                                                 ##
+## * outdir: output directory                                                 ##
+## * subsample: whether to use only a subset of the "eligible" genes to fit   ##
+##              the model                                                     ##
+##                                                                            ##
+## Outputs:                                                                   ##
+## * A bias model and a list of exons by transcript                           ##
+##                                                                            ##
+################################################################################
+
 args <- (commandArgs(trailingOnly = TRUE))
 for (i in 1:length(args)) {
   eval(parse(text = args[[i]]))

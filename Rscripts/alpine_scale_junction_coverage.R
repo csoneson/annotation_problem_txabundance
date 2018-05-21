@@ -64,11 +64,19 @@ allcovs <- allcovs %>%
   dplyr::distinct() %>% 
   dplyr::mutate(method = method)
 
+## Get coverage "note" for each transcript
+covnotes <- sapply(transcripts, function(tx) {
+  predcovs[[tx]]$note
+})
+
 ## Add gene info to transcript quant table
 quants <- quants %>% dplyr::left_join(tx2gene %>% dplyr::select(tx, gene, symbol), 
                                       by = c("transcript" = "tx")) %>%
   dplyr::mutate(method = method) %>% 
-  dplyr::select(transcript, gene, symbol, count, TPM, method)
+  dplyr::left_join(data.frame(transcript = names(covnotes), 
+                              covnote = covnotes, 
+                              stringsAsFactors = FALSE), by = "transcript") %>%
+  dplyr::select(transcript, gene, symbol, count, TPM, method, covnote)
 
 saveRDS(list(scaledcovs = scaledcovs, allcovs = allcovs, quants = quants), 
         file = outrds)

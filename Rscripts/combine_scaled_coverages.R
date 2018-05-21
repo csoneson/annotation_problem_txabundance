@@ -103,7 +103,8 @@ allquants_gene <- allquants %>% dplyr::group_by(gene, method) %>%
   dplyr::summarize(count = sum(count),
                    TPM = sum(TPM),
                    nbr_expressed_transcripts = sum(TPM > 0),
-                   nbr_expressed_transcripts_5p = sum(TPMrel > 0.05)) %>%
+                   nbr_expressed_transcripts_5p = sum(TPMrel > 0.05),
+                   covOKfraction = length(which(covnote == "covOK"))/length(covnote)) %>%
   dplyr::ungroup()
 
 ## Add gene characteristics

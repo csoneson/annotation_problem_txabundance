@@ -1,9 +1,20 @@
+################################################################################
+##                                                                            ##
+## Add the rows corresponding to "gene" features to a gtf file from StringTie ##
+##                                                                            ##
+## Inputs:                                                                    ##
+## * ingtf: gtf file from StringTie                                           ##
+## * outgtf: output gtf file with gene features added                         ##
+##                                                                            ##
+## Outputs:                                                                   ##
+## * A gtf file with gene features added                                      ##
+##                                                                            ##
+################################################################################
+
 args <- (commandArgs(trailingOnly = TRUE))
 for (i in 1:length(args)) {
   eval(parse(text = args[[i]]))
 }
-
-## Add the "gene" rows to a StringTie gtf
 
 print(ingtf)
 print(outgtf)

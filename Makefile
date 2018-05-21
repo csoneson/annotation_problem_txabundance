@@ -22,6 +22,10 @@ nthreads := 24
 ## included when calculating the "MM-aware" score
 mmfracthreshold := 0.25
 
+## Define the unique junction read threshold. Genes with less than this number of uniquely mapping 
+## junction reads will be excluded from comparisons and evaluations
+uniqjuncreadsthreshold := 25
+
 ## ==================================================================================== ##
 ##                                    Main rules                                        ##
 ## ==================================================================================== ##
@@ -29,7 +33,7 @@ mmfracthreshold := 0.25
 
 all: prepref quant alpineprep scalecov \
 preprefstringtie quantstringtie alpineprepstringtie scalecovstringtie plotsstringtie \
-plots stats
+plots stats nanopore simulation
 
 tmp: alpineprep quant scalecov plots
 
@@ -148,7 +152,7 @@ $(foreach G,$(genes_to_plot),$(foreach F,$(fastqfiles),output_genewise/$(notdir 
 $(foreach F,$(fastqfiles),figures/correlation_with_inferential_variance/correlation_with_inferential_variance_$(notdir $(F)).rds) \
 $(foreach F,$(fastqfiles),figures/correlation_between_methods/correlation_between_methods_$(notdir $(F)).rds) \
 figures/correlation_between_nanopore_and_illumina_scores/correlation_between_nanopore_and_illumina_scores_20170918.A-WT_4.rds \
-figures/correlation_with_true_abundances/correlation_with_true_abundances_sim_misannotated_utr_1.rds \
+$(foreach F,$(fastqfiles),figures/correlation_with_true_abundances/correlation_with_true_abundances_$(notdir $(F)).rds) \
 $(foreach F,$(fastqfiles),figures/association_exoncdscorrelation_score/association_exoncdscorrelation_score_$(notdir $(F)).rds)
 
 plotsstringtie: $(foreach F,$(fastqfiles),figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F))_stringtie_tx.rds) \

@@ -1,3 +1,17 @@
+################################################################################
+##                                                                            ##
+## Add the gene symbol to a tx2gene data frame                                ##
+##                                                                            ##
+## Inputs:                                                                    ##
+## * tx2gene: tx2gene data frame                                              ##
+## * info: data frame with gene and symbol columns                            ##
+## * outrds: output file where the extended tx2gene data frame will be saved  ##
+##                                                                            ##
+## Outputs:                                                                   ##
+## * An extended tx2gene data frame                                           ##
+##                                                                            ##
+################################################################################
+
 args <- (commandArgs(trailingOnly = TRUE))
 for (i in 1:length(args)) {
   eval(parse(text = args[[i]]))

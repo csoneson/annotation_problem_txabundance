@@ -139,7 +139,8 @@ Joining, by = c("seqnames", "start", "end", "gene")
 +   dplyr::summarize(count = sum(count),
 +                    TPM = sum(TPM),
 +                    nbr_expressed_transcripts = sum(TPM > 0),
-+                    nbr_expressed_transcripts_5p = sum(TPMrel > 0.05)) %>%
++                    nbr_expressed_transcripts_5p = sum(TPMrel > 0.05),
++                    covOKfraction = length(which(covnote == "covOK"))/length(covnote)) %>%
 +   dplyr::ungroup()
 > 
 > ## Add gene characteristics
@@ -212,8 +213,8 @@ loaded via a namespace (and not attached):
  [5] pillar_1.2.1     glue_1.2.0       tibble_1.4.2     Rcpp_0.12.16    
  [9] pkgconfig_2.0.1  rlang_0.2.0      bindr_0.1.1     
 > date()
-[1] "Sat May 19 20:19:35 2018"
+[1] "Mon May 21 00:47:06 2018"
 > 
 > proc.time()
    user  system elapsed 
-332.800   2.884 336.234 
+366.028   2.832 370.006 

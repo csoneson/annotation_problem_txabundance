@@ -5,7 +5,7 @@ define obsvspredrule
 figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(1)$(2).rds: output/$(1)$(2)_combined_coverages_with_scores.rds \
 Rscripts/plot_observed_vs_predicted_junction_coverage.R
 	mkdir -p $$(@D)
-	$(R) "--args combcovrds='$$<' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,StringTie' outrds='$$@'" Rscripts/plot_observed_vs_predicted_junction_coverage.R Rout/plot_observed_vs_predicted_junction_coverage_$(1)$(2).Rout
+	$(R) "--args scorerds='$$<' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,StringTie' uniqjuncreadsthreshold=$(uniqjuncreadsthreshold) fracuniqjuncreadsthreshold=0.75 outrds='$$@'" Rscripts/plot_observed_vs_predicted_junction_coverage.R Rout/plot_observed_vs_predicted_junction_coverage_$(1)$(2).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call obsvspredrule,$(notdir $(F)),)))
 $(foreach F,$(fastqfiles),$(eval $(call obsvspredrule,$(notdir $(F)),_stringtie_tx)))
@@ -26,7 +26,7 @@ define plotscorerule
 figures/gene_scores/gene_scores_$(1)$(2).rds: output/$(1)$(2)_combined_coverages_with_scores.rds \
 Rscripts/plot_score_distribution.R
 	mkdir -p $$(@D)
-	$(R) "--args scorerds='$$(word 1,$$^)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,StringTie' outrds='$$@'" Rscripts/plot_score_distribution.R Rout/plot_score_distribution_$(1)$(2).Rout
+	$(R) "--args scorerds='$$(word 1,$$^)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,StringTie' uniqjuncreadsthresholds='0,$(uniqjuncreadsthreshold)' outrds='$$@'" Rscripts/plot_score_distribution.R Rout/plot_score_distribution_$(1)$(2).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call plotscorerule,$(notdir $(F)),)))
 $(foreach F,$(fastqfiles),$(eval $(call plotscorerule,$(notdir $(F)),_stringtie_tx)))
@@ -55,7 +55,7 @@ define infvarrule
 figures/correlation_with_inferential_variance/correlation_with_inferential_variance_$(1)$(2).rds: \
 output/$(1)$(2)_combined_coverages_with_scores.rds $(3)/$(1)/quant.sf $(4) Rscripts/plot_correlation_with_inferential_variance.R
 	mkdir -p $$(@D)
-	$(R) "--args scorerds='$$(word 1,$$^)' salmondir='$(3)/$(1)' tx2gene='$(4)' outrds='$$@'" Rscripts/plot_correlation_with_inferential_variance.R Rout/plot_correlation_with_inferential_variance_$(1)$(2).Rout
+	$(R) "--args scorerds='$$(word 1,$$^)' salmondir='$(3)/$(1)' uniqjuncreadsthreshold=$(uniqjuncreadsthreshold) tx2gene='$(4)' outrds='$$@'" Rscripts/plot_correlation_with_inferential_variance.R Rout/plot_correlation_with_inferential_variance_$(1)$(2).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call infvarrule,$(notdir $(F)),,salmon/cDNAncRNA,$(tx2gene))))
 
@@ -67,7 +67,7 @@ define corrmethodrule
 figures/correlation_between_methods/correlation_between_methods_$(1)$(2).rds: output/$(1)$(2)_combined_coverages_with_scores.rds \
 Rscripts/plot_correlation_between_methods.R Rscripts/helper_plot_functions.R
 	mkdir -p $$(@D)
-	$(R) "--args scorerds='$$(word 1,$$^)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,StringTie' outrds='$$@'" Rscripts/plot_correlation_between_methods.R Rout/plot_correlation_between_methods_$(1)$(2).Rout
+	$(R) "--args scorerds='$$(word 1,$$^)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,StringTie' uniqjuncreadsthreshold=$(uniqjuncreadsthreshold) outrds='$$@'" Rscripts/plot_correlation_between_methods.R Rout/plot_correlation_between_methods_$(1)$(2).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call corrmethodrule,$(notdir $(F)),)))
 
@@ -75,18 +75,19 @@ $(foreach F,$(fastqfiles),$(eval $(call corrmethodrule,$(notdir $(F)),)))
 define corrnanomethodrule
 figures/correlation_between_nanopore_and_illumina_scores/correlation_between_nanopore_and_illumina_scores_$(1)$(2).rds: output/$(1)$(2)_combined_coverages_with_scores.rds Rscripts/plot_nanopore_vs_illumina_scores.R
 	mkdir -p $$(@D)
-	$(R) "--args scorerds='$$(word 1,$$^)' targetmethod='WubMinimap2Nanopore' outrds='$$@'" Rscripts/plot_nanopore_vs_illumina_scores.R Rout/plot_nanopore_vs_illumina_scores_$(1)$(2).Rout
+	$(R) "--args scorerds='$$(word 1,$$^)' targetmethod='WubMinimap2Nanopore' uniqjuncreadsthreshold=$(uniqjuncreadsthreshold) outrds='$$@'" Rscripts/plot_nanopore_vs_illumina_scores.R Rout/plot_nanopore_vs_illumina_scores_$(1)$(2).Rout
 endef
 $(eval $(call corrnanomethodrule,20170918.A-WT_4,))
 
 ## Correlation between estimated and true transcript abundances for simulated data
 define corrtruthrule
 figures/correlation_with_true_abundances/correlation_with_true_abundances_$(1)$(2).rds: output/$(1)$(2)_combined_coverages_with_scores.rds \
-$(3)/sim_counts_matrix.rda $(3)/$(1)_modified_genes.rds Rscripts/plot_estimated_abundance_accuracy.R Rscripts/helper_plot_functions.R
+$(3) $(4) Rscripts/plot_estimated_abundance_accuracy.R Rscripts/helper_plot_functions.R
 	mkdir -p $$(@D)
-	$(R) "--args scorerds='$$(word 1,$$^)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,StringTie' truthrda='$$(word 2,$$^)' truthmodgenesrds='$$(word 3,$$^)' outrds='$$@'" Rscripts/plot_estimated_abundance_accuracy.R Rout/plot_estimated_abundance_accuracy_$(1)$(2).Rout
+	$(R) "--args scorerds='$$(word 1,$$^)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,StringTie' truthrda='$(3)' truthmodgenesrds='$(4)' outrds='$$@'" Rscripts/plot_estimated_abundance_accuracy.R Rout/plot_estimated_abundance_accuracy_$(1)$(2).Rout
 endef
-$(eval $(call corrtruthrule,sim_misannotated_utr_1,,simulation/misannotated_utr))
+$(eval $(call corrtruthrule,sim_misannotated_utr_1,,simulation/misannotated_utr/sim_counts_matrix.rda,simulation/misannotated_utr/sim_misannotated_utr_1_modified_genes.rds))
+$(foreach F,$(fastqfilesreal),$(eval $(call corrtruthrule,$(notdir $(F)),,,)))
 
 ## Correlation between the within-gene Salmon/SalmonCDS abundance correlation and the Salmon score
 define corrsalmonrule

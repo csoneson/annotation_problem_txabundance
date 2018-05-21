@@ -51,16 +51,16 @@ Type 'q()' to quit R.
 > quantmethods <- strsplit(quantmethods, ",")[[1]]
 > 
 > print(scorerds)
-[1] "output/sim_misannotated_utr_1_combined_coverages_with_scores.rds"
+[1] "output/20170918.A-WT_4_combined_coverages_with_scores.rds"
 > print(quantmethods)
 [1] "hera"      "kallisto"  "RSEM"      "Salmon"    "SalmonBWA" "SalmonCDS"
 [7] "StringTie"
 > print(truthrda)
-[1] "simulation/misannotated_utr/sim_counts_matrix.rda"
+[1] ""
 > print(truthmodgenesrds)
-[1] "simulation/misannotated_utr/sim_misannotated_utr_1_modified_genes.rds"
+[1] ""
 > print(outrds)
-[1] "figures/correlation_with_true_abundances/correlation_with_true_abundances_sim_misannotated_utr_1.rds"
+[1] "figures/correlation_with_true_abundances/correlation_with_true_abundances_20170918.A-WT_4.rds"
 > 
 > suppressPackageStartupMessages({
 +   library(dplyr)
@@ -179,12 +179,10 @@ null device
 +   dev.off()
 +   
 + }
-null device 
-          1 
 > 
 > saveRDS(NULL, file = outrds)
 > date()
-[1] "Mon May 21 20:35:45 2018"
+[1] "Mon May 21 20:19:21 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -211,12 +209,12 @@ loaded via a namespace (and not attached):
  [1] Rcpp_0.12.16       bindr_0.1.1        magrittr_1.5       tidyselect_0.2.4  
  [5] munsell_0.4.3      colorspace_1.3-2   R6_2.2.2           rlang_0.2.0       
  [9] stringr_1.3.0      plyr_1.8.4         tools_3.5.0        grid_3.5.0        
-[13] gtable_0.2.0       digest_0.6.15      lazyeval_0.2.1     assertthat_0.2.0  
-[17] tibble_1.4.2       reshape2_1.4.3     purrr_0.2.4        RColorBrewer_1.1-2
-[21] glue_1.2.0         labeling_0.3       stringi_1.1.7      compiler_3.5.0    
-[25] pillar_1.2.1       scales_0.5.0       reshape_0.8.7      pkgconfig_2.0.1   
+[13] gtable_0.2.0       lazyeval_0.2.1     assertthat_0.2.0   tibble_1.4.2      
+[17] reshape2_1.4.3     purrr_0.2.4        RColorBrewer_1.1-2 glue_1.2.0        
+[21] labeling_0.3       stringi_1.1.7      compiler_3.5.0     pillar_1.2.1      
+[25] scales_0.5.0       reshape_0.8.7      pkgconfig_2.0.1   
 > 
 > 
 > proc.time()
-    user   system  elapsed 
-1230.096   11.920 1243.572 
+   user  system elapsed 
+258.112   1.092 259.388 

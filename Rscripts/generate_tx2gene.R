@@ -1,3 +1,18 @@
+################################################################################
+##                                                                            ##
+## Generate transcript-to-gene conversion table                               ##
+##                                                                            ##
+## Inputs:                                                                    ##
+## * cdna: cDNA fasta file (from Ensembl)                                     ##
+## * ncrna: ncRNA fasta file (from Ensembl)                                   ##
+## * cds: CDS fasta file (from Ensembl)                                       ##
+## * outrds: output file                                                      ##
+##                                                                            ##
+## Outputs:                                                                   ##
+## * A transcript-to-gene conversion table                                    ##
+##                                                                            ##
+################################################################################
+
 args <- (commandArgs(trailingOnly = TRUE))
 for (i in 1:length(args)) {
   eval(parse(text = args[[i]]))
@@ -8,8 +23,10 @@ print(ncrna)
 print(cds)
 print(outrds)
 
-suppressPackageStartupMessages(library(Biostrings))
-suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages({
+  library(Biostrings)
+  library(dplyr)
+})
 
 cdna <- readDNAStringSet(cdna)
 ncrna <- readDNAStringSet(ncrna)

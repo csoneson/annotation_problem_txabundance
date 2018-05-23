@@ -1,3 +1,21 @@
+################################################################################
+##                                                                            ##
+## Simulate reads from transcripts with misannotated 3'UTRs                   ##
+##                                                                            ##
+## Inputs:                                                                    ##
+## * gtf: gtf file                                                            ##
+## * txfasta: transcriptome fasta file                                        ##
+## * outfasta: fasta file where the modified transcripts will be written      ##
+## * readdir: directory where the reads will be written                       ##
+## * readbasename: basename for the simulation                                ##
+## * readlen: read length                                                     ##
+##                                                                            ##
+## Outputs:                                                                   ##
+## * Simulated fasta.gz read files from polyester, and files with true        ##
+##   abundances                                                               ##
+##                                                                            ##
+################################################################################
+
 args <- (commandArgs(trailingOnly = TRUE))
 for (i in 1:length(args)) {
   eval(parse(text = args[[i]]))

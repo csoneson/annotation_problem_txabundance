@@ -1,3 +1,17 @@
+################################################################################
+##                                                                            ##
+## Calculate gene characteristics                                             ##
+##                                                                            ##
+## Inputs:                                                                    ##
+## * gtf: gtf file                                                            ##
+## * txome: transcriptome fasta file                                          ##
+## * outrds: output file                                                      ##
+##                                                                            ##
+## Outputs:                                                                   ##
+## * A data frame with gene characteristics                                   ##
+##                                                                            ##
+################################################################################
+
 args <- (commandArgs(trailingOnly = TRUE))
 for (i in 1:length(args)) {
   eval(parse(text = args[[i]]))

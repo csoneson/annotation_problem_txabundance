@@ -1,3 +1,17 @@
+################################################################################
+##                                                                            ##
+## Generate genemodels for visualization with Gviz                            ##
+##                                                                            ##
+## Inputs:                                                                    ##
+## * gtf: gtf file                                                            ##
+## * outrds: output file                                                      ##
+##                                                                            ##
+## Outputs:                                                                   ##
+## * A list of two GRanges objects containing gene models based on exons and  ##
+##   CDSs, respectively                                                       ##
+##                                                                            ##
+################################################################################
+
 args <- (commandArgs(trailingOnly = TRUE))
 for (i in 1:length(args)) {
   eval(parse(text = args[[i]]))

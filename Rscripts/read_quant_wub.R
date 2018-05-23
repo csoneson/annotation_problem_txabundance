@@ -1,6 +1,12 @@
-## Read Wub bam_count_reads.tsv file
+################################################################################
+##                                                                            ##
+## Help function to read bam_count_reads.tsv file from Wub                    ##
+##                                                                            ##
+################################################################################
 
-suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages({
+  library(dplyr)
+})
 
 read_quant <- function(file, avefraglength) {
   read.delim(file, header = TRUE, as.is = TRUE) %>%

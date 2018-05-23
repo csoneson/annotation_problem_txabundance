@@ -1,6 +1,12 @@
-## Read kallisto abundance.tsv
+################################################################################
+##                                                                            ##
+## Help function to read abundance.tsv file from kallisto                     ##
+##                                                                            ##
+################################################################################
 
-suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages({
+  library(dplyr)
+})
 
 read_quant <- function(file, avefraglength) {
   read.delim(file, header = TRUE, as.is = TRUE) %>%

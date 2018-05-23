@@ -1,8 +1,14 @@
-## Read StringTie gtf
+################################################################################
+##                                                                            ##
+## Help function to read gtf output file from StringTie                       ##
+##                                                                            ##
+################################################################################
 
-suppressPackageStartupMessages(library(rtracklayer))
-suppressPackageStartupMessages(library(GenomicFeatures))
-suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages({
+  library(rtracklayer)
+  library(GenomicFeatures)
+  library(dplyr)
+})
 
 read_quant <- function(file, avefraglength) {
   gtf <- import(file)

@@ -1,3 +1,16 @@
+################################################################################
+##                                                                            ##
+## Generate transcript-to-gene conversion table from gtf file                 ##
+##                                                                            ##
+## Inputs:                                                                    ##
+## * gtf: gtf file                                                            ##
+## * outrds: output file                                                      ##
+##                                                                            ##
+## Outputs:                                                                   ##
+## * A transcript-to-gene conversion table                                    ##
+##                                                                            ##
+################################################################################
+
 args <- (commandArgs(trailingOnly = TRUE))
 for (i in 1:length(args)) {
   eval(parse(text = args[[i]]))

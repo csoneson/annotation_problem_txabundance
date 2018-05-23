@@ -1,3 +1,20 @@
+################################################################################
+##                                                                            ##
+## Compare coverage patterns between samples                                  ##
+##                                                                            ##
+## Inputs:                                                                    ##
+## * predcov1: object with predicted transcript coverage patterns for first   ##
+##             sample                                                         ##
+## * predcov2: object with predicted transcript coverage patterns for second  ##
+##             sample                                                         ##
+## * outrds: output file                                                      ##
+##                                                                            ##
+## Outputs:                                                                   ##
+## * A pdf figure with the distribution of correlation coefficients for       ##
+##   transcript coverage patterns in the two samples, across all transcripts  ##
+##                                                                            ##
+################################################################################
+
 args <- (commandArgs(trailingOnly = TRUE))
 for (i in 1:length(args)) {
   eval(parse(text = args[[i]]))

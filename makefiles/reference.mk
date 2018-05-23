@@ -25,7 +25,7 @@ $(tx2geneext): $(tx2gene) $(gtf) Rscripts/extend_tx2gene.R
 	$(R) "--args tx2gene='$(tx2gene)' gtf='$(gtf)' outrds='$@'" Rscripts/extend_tx2gene.R Rout/extend_tx2gene.Rout
 
 ## Flatten the gtf file and generate a separate gtf file with introns (gene range\union of exons)
-$(flatgtfintrons): $(gtf)
+$(flatgtfintrons): $(gtf) Rscripts/generate_exon_and_intron_gtfs.R
 	$(R) "--args ingtf='$(gtf)' outexongtf='$(flatgtfexons)' outintrongtf='$(flatgtfintrons)'" Rscripts/generate_exon_and_intron_gtfs.R Rout/generate_exon_and_intron_gtfs.Rout
 
 $(flatgtfexons): $(flatgtfintrons)

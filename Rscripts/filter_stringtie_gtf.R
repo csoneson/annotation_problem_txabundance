@@ -1,3 +1,18 @@
+################################################################################
+##                                                                            ##
+## Filter a StringTie output gtf to exclude transcripts with unknown strand   ##
+##                                                                            ##
+## Inputs:                                                                    ##
+## * ingtf: input gtf (from StringTie)                                        ##
+## * outgtf: output gtf                                                       ##
+##                                                                            ##
+## Outputs:                                                                   ##
+## * A gtf file where transcripts with unknown strand have been excluded, and ##
+##   gene_id and transcript_ids have been replaced with ref_gene_id and       ##
+##   reference_id whenever applicable.                                        ##
+##                                                                            ##
+################################################################################
+
 args <- (commandArgs(trailingOnly = TRUE))
 for (i in 1:length(args)) {
   eval(parse(text = args[[i]]))

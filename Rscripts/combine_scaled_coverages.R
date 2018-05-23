@@ -1,20 +1,46 @@
+################################################################################
+##                                                                            ##
+## Combine scaled junction coverages from different methods                   ##
+##                                                                            ##
+## Inputs:                                                                    ##
+## * junctioncovSTAR: junction coverages from STAR (uniquely and multimapping ##
+##                    reads)                                                  ##
+## * junctioncovSalmon: junction coverages and abundances from Salmon         ##
+## * junctioncovSalmonBWA: junction coverages and abundances from SalmonBWA   ##
+## * junctioncovSalmonCDS: junction coverages and abundances from SalmonCDS   ##
+## * junctioncovhera: junction coverages and abundances from hera             ##
+## * junctioncovkallisto: junction coverages and abundances from kallisto     ##
+## * junctioncovRSEM: junction coverages and abundances from RSEM             ##
+## * junctioncovStringTie: junction coverages and abundances from StringTie   ##
+## * junctioncovNanopore: junction coverages and abundances from Nanopore     ##
+## * genecharacteristics: table with gene characteristics                     ##
+## * exoncountstxt: text file with exon counts for each gene                  ##
+## * introncountstxt: text file with intron counts for each gene              ##
+## * outrds: output file                                                      ##
+##                                                                            ##
+## Outputs:                                                                   ##
+## * A table with combined junction coverages, one with all transcript        ##
+##   abundances and one with gene abundance estimates                         ##
+##                                                                            ##
+################################################################################
+
 args <- (commandArgs(trailingOnly = TRUE))
 for (i in 1:length(args)) {
   eval(parse(text = args[[i]]))
 }
 
-print(junctioncovSTAR) ## Junction reads from STAR
-print(junctioncovSalmon) ## Salmon quantifications
-print(junctioncovSalmonBWA) ## Salmon quantifications in alignment mode (after BWA)
-print(junctioncovSalmonCDS) ## Salmon quantifications based on CDSs only
-print(junctioncovhera) ## Hera quantifications
-print(junctioncovkallisto) ## kallisto quantifications
-print(junctioncovRSEM) ## RSEM quantifications
-print(junctioncovStringTie) ## StringTie quantifications
-print(junctioncovNanopore) ## If present, nanopore results
-print(genecharacteristics) ## Gene-level characteristics
-print(exoncountstxt) ## Exon counts for each gene
-print(introncountstxt) ## Intron counts for each gene
+print(junctioncovSTAR)
+print(junctioncovSalmon)
+print(junctioncovSalmonBWA)
+print(junctioncovSalmonCDS)
+print(junctioncovhera)
+print(junctioncovkallisto)
+print(junctioncovRSEM)
+print(junctioncovStringTie)
+print(junctioncovNanopore)
+print(genecharacteristics)
+print(exoncountstxt)
+print(introncountstxt)
 print(outrds)
 
 suppressPackageStartupMessages({

@@ -1,3 +1,18 @@
+################################################################################
+##                                                                            ##
+## Extend a tx2gene table with transcript only included in the gtf file       ##
+##                                                                            ##
+## Inputs:                                                                    ##
+## * tx2gene: data frame with transcript-to-gene conversion information       ##
+## * gtf: gtf file                                                            ##
+## * outrds: output file                                                      ##
+##                                                                            ##
+## Outputs:                                                                   ##
+## * A tx2gene table extended with the transcripts only included in the gtf   ##
+##   file                                                                     ##
+##                                                                            ##
+################################################################################
+
 args <- (commandArgs(trailingOnly = TRUE))
 for (i in 1:length(args)) {
   eval(parse(text = args[[i]]))
@@ -7,10 +22,10 @@ print(tx2gene)
 print(gtf)
 print(outrds)
 
-suppressPackageStartupMessages(library(rtracklayer))
-suppressPackageStartupMessages(library(dplyr))
-
-## Extend tx2gene with the transcripts only included in the gtf file
+suppressPackageStartupMessages({
+  library(rtracklayer)
+  library(dplyr)
+})
 
 tx2gene <- readRDS(tx2gene)
 gtf <- import(gtf)

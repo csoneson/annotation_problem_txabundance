@@ -1,17 +1,43 @@
+################################################################################
+##                                                                            ##
+## Generate summary plots for one or more genes                               ##
+##                                                                            ##
+## Inputs:                                                                    ##
+## * gene: gene of interest, or file listing genes of interest (one per row)  ##
+## * bigwig: bigwig file of alignments for visualization                      ##
+## * bigwignanopore: a second bigwig file, if applicable (for nanopore data)  ##
+## * genemodels: gene models for Gviz                                         ##
+## * scorerds: object with junction coverages, transcript abundances and gene ##
+##             scores                                                         ##
+## * ncores: number of genes to process in parallel                           ##
+## * outdir: output directory                                                 ##
+## * libid: library ID, will be added to the start of all output file names   ##
+## * checkdir: directory where (empty) rds files ("time stamps") will be      ##
+##             written                                                        ##
+##                                                                            ##
+## Outputs:                                                                   ##
+## * A pdf figure with coverage patterns, gene models and junction scores for ##
+##   each gene of interest                                                    ##
+## * Text files with transcript abundances (counts/TPMs) for each gene of     ##
+##   interest                                                                 ##
+## * A text file with junction coverages for each gene of interest            ##
+##                                                                            ##
+################################################################################
+
 args <- (commandArgs(trailingOnly = TRUE))
 for (i in 1:length(args)) {
   eval(parse(text = args[[i]]))
 }
 
-print(gene)  ## gene of interest, or file listing collection of genes (one per row)
-print(bigwig)  ## bigwig file for visualization
-print(bigwignanopore)  ## second bigwig file (nanopore)
-print(genemodels)  ## gene models 
-print(combcovrds)  ## combined junction coverages
-print(ncores)  ## number of cores for parallel computations
-print(outdir)  ## output directory
-print(libid)  ## string that will be added to the beginning of all output files (library ID)
-print(checkdir)  ## directory to write (empty) rds files (time stamps)
+print(gene)
+print(bigwig)
+print(bigwignanopore)
+print(genemodels) 
+print(scorerds)
+print(ncores)
+print(outdir)
+print(libid)
+print(checkdir)
 
 suppressPackageStartupMessages({
   library(dplyr)
@@ -25,7 +51,7 @@ source("Rscripts/helper_plot_tracks.R")
 ## Read gene models for Gviz plot (pregenerated from gtf to save time) and
 ## quantifications
 genemodels <- readRDS(genemodels)
-combcov <- readRDS(combcovrds)
+scores <- readRDS(scorerds)
 
 ## Determine which gene(s) to investigate
 if (file.exists(gene)) {
@@ -36,7 +62,7 @@ if (file.exists(gene)) {
 
 ## Investigate each gene
 mclapply(genes, function(currgene) {
-  jl <- combcov$junctions %>% dplyr::filter(gene == currgene) %>%
+  jl <- scores$junctions %>% dplyr::filter(gene == currgene) %>%
     dplyr::mutate(junctionid2 = junctionid) %>%
     dplyr::mutate(junctionid2 = replace(junctionid2, 
                                         abs(scaled.cov - uniqreads) < mean(uniqreads), 
@@ -91,14 +117,14 @@ mclapply(genes, function(currgene) {
               file = paste0(outdir, "/jcov/", libid, currgene, "_jscaledcov.txt"),
               quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
   
-  write.table(combcov$transcripts %>% dplyr::filter(gene == currgene) %>% 
+  write.table(scores$transcripts %>% dplyr::filter(gene == currgene) %>% 
                 dplyr::select(transcript, method, TPM) %>%
                 dplyr::mutate(TPM = round(TPM, 2)) %>% 
                 tidyr::spread(method, TPM),
               file = paste0(outdir, "/tpm/", libid, currgene, "_tpm.txt"),
               quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
   
-  write.table(combcov$transcripts %>% dplyr::filter(gene == currgene) %>% 
+  write.table(scores$transcripts %>% dplyr::filter(gene == currgene) %>% 
                 dplyr::select(transcript, method, count) %>%
                 dplyr::mutate(count = round(count, 2)) %>% 
                 tidyr::spread(method, count),

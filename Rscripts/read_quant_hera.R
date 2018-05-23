@@ -1,6 +1,12 @@
-## Read Hera abundance.tsv
+################################################################################
+##                                                                            ##
+## Help function to read abundance.tsv file from hera                         ##
+##                                                                            ##
+################################################################################
 
-suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages({
+  library(dplyr)
+})
 
 read_quant <- function(file, avefraglength) {
   read.delim(file, header = TRUE, as.is = TRUE) %>%

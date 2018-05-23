@@ -1,6 +1,15 @@
-suppressPackageStartupMessages(library(rtracklayer))
-suppressPackageStartupMessages(library(Gviz))
-suppressPackageStartupMessages(library(GenomicRanges))
+################################################################################
+##                                                                            ##
+## Helper functions for generating genemodels for Gviz and plotting Gviz      ##
+## tracks                                                                     ##
+##                                                                            ##
+################################################################################
+
+suppressPackageStartupMessages({
+  library(rtracklayer)
+  library(Gviz)
+  library(GenomicRanges)
+})
 
 create_genemodels <- function(gtf_file, seltype = "exon") {
   genemodels <- import(gtf_file)

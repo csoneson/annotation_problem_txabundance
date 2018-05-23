@@ -1,3 +1,18 @@
+################################################################################
+##                                                                            ##
+## Generate "flattened" exon and intron gtf files                             ##
+##                                                                            ##
+## Inputs:                                                                    ##
+## * ingtf: input gtf file                                                    ##
+## * outexongtf: output gtf file with "flattened" exons                       ##
+## * outintrongtf: output gtf with intronic sequences (denoted with           ##
+##                 type="exon" to allow default read counting)                ##
+##                                                                            ##
+## Outputs:                                                                   ##
+## * Two gtf files with flattened exon and intron regions                     ##
+##                                                                            ##
+################################################################################
+
 args <- (commandArgs(trailingOnly = TRUE))
 for (i in 1:length(args)) {
   eval(parse(text = args[[i]]))

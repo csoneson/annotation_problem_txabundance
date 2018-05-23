@@ -1,3 +1,18 @@
+################################################################################
+##                                                                            ##
+## Summarize predicted coverage status across transcripts                     ##
+##                                                                            ##
+## Inputs:                                                                    ##
+## * covrds: object with predicted coverage patterns for all transcripts      ##
+## * outtxt: output text file                                                 ##
+##                                                                            ##
+## Outputs:                                                                   ##
+## * A text file with the number of transcripts with "valid" coverage         ##
+##   prediction (covOK) as well as the number where the prediction failed for ##
+##   one of various reasons                                                   ##
+##                                                                            ##
+################################################################################
+
 args <- (commandArgs(trailingOnly = TRUE))
 for (i in 1:length(args)) {
   eval(parse(text = args[[i]]))

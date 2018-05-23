@@ -1,12 +1,30 @@
+################################################################################
+##                                                                            ##
+## Predict the coverage profile of each transcript and the number of reads    ##
+## mapping across each junction                                               ##
+##                                                                            ##
+## Inputs:                                                                    ##
+## * bam: bam file                                                            ##
+## * biasmodels: information about the alpine bias model (output of           ##
+##               alpine_fitbiasmodel.R)                                       ##
+## * ncores: number of transcripts to process in parallel                     ##
+## * outrds: the name of the output file                                      ##
+##                                                                            ##
+## Outputs:                                                                   ##
+## * Predicted coverage patterns for all transcripts, and predicted number of ##
+##   reads spanning each junction                                             ##
+##                                                                            ##
+################################################################################
+
 args <- (commandArgs(trailingOnly = TRUE))
 for (i in 1:length(args)) {
   eval(parse(text = args[[i]]))
 }
 
-print(bam)  ## bam file
-print(biasmodels)  ## bias model object (output of alpine_fitbiasmodel.R)
-print(ncores)  ## number of cores for parallel computations
-print(outrds)  ## output file
+print(bam)
+print(biasmodels)
+print(ncores)
+print(outrds)
 
 suppressPackageStartupMessages({
   library(alpine)

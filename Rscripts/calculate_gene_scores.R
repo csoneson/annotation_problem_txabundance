@@ -1,3 +1,22 @@
+################################################################################
+##                                                                            ##
+## Calculate gene scores and "normalized" junction coverages                  ##
+##                                                                            ##
+## Inputs:                                                                    ##
+## * combcovrds: object with junction coverage information for all methods    ##
+##               (output from combine_scaled_coverages.R)                     ##
+## * mmfracthreshold: threshold on the fraction of multimapping reads.        ##
+##                    Junctions with more than this fraction will not be      ##
+##                    used to calculate the score.                            ##
+## * outrds: output file                                                      ##
+##                                                                            ##
+## Outputs:                                                                   ##
+## * An extended input object, with scores added to the gene table and        ##
+##   "normalized" junction coverage values (scaled to the same sum as the     ##
+##   observed junction coverages in the gene) to the junction table           ##
+##                                                                            ##
+################################################################################
+
 args <- (commandArgs(trailingOnly = TRUE))
 for (i in 1:length(args)) {
   eval(parse(text = args[[i]]))

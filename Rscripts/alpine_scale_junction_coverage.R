@@ -1,15 +1,37 @@
+################################################################################
+##                                                                            ##
+## Scale predicted junction coverages based on estimated transcript           ##
+## abundances                                                                 ##
+##                                                                            ##
+## Inputs:                                                                    ##
+## * predcovrds: predicted transcript coverage patterns and junction          ##
+##               coverages (output from alpine_get_predicted_coverage.R)      ##
+## * txquants: file with transcript abundances                                ##
+## * quantreadscript: script to read the transcript quantifications. Should   ##
+##                    contain a function named read_quant()                   ##
+## * strandspec: yes or no, is the data strand-specific                       ##
+## * tx2gene: data frame with transcript-to-gene conversion info              ##
+## * method: method name to add to the quantification table                   ##
+## * outrds: output file                                                      ##
+##                                                                            ##
+## Outputs:                                                                   ##
+## * Predicted junction coverages for all junctions, and a table with all     ##
+##   transcript abundances                                                    ##
+##                                                                            ##
+################################################################################
+
 args <- (commandArgs(trailingOnly = TRUE))
 for (i in 1:length(args)) {
   eval(parse(text = args[[i]]))
 }
 
-print(predcovrds)  ## predicted transcript and junction coverage
-print(txquants)  ## transcript quantification file
-print(quantreadscript)  ## script containing a function "read_quant()"
-print(strandspec)  ## "yes" or "no"
-print(tx2gene)  ## link transcripts to genes
-print(method)  ## method ID to add to the quantification table
-print(outrds)  ## output file
+print(predcovrds)
+print(txquants)
+print(quantreadscript)
+print(strandspec)
+print(tx2gene)
+print(method)
+print(outrds)
 
 suppressPackageStartupMessages({
   library(alpine)

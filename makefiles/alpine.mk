@@ -32,6 +32,7 @@ $(4) $(5) $(6) Rscripts/alpine_scale_junction_coverage.R
 endef
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,,Salmon,salmon/cDNAncRNA/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,,SalmonBWA,salmonbwa/cDNAncRNA/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,,SalmonKeepDup,salmon/cDNAncRNAkeepdup/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,,SalmonCDS,salmon/cds/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,,kallisto,kallisto/cDNAncRNA/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_kallisto.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,,RSEM,RSEM/cDNAncRNA/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA.isoforms.results,Rscripts/read_quant_rsem.R,$(tx2geneext),yes))
@@ -40,6 +41,7 @@ $(eval $(call juncscalerule,20151016.A-Cortex_RNA,,StringTie,stringtie_onlyref/2
 
 $(eval $(call juncscalerule,20170918.A-WT_4,,Salmon,salmon/cDNAncRNA/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,,SalmonBWA,salmonbwa/cDNAncRNA/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
+$(eval $(call juncscalerule,20170918.A-WT_4,,SalmonKeepDup,salmon/cDNAncRNAkeepdup/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,,SalmonCDS,salmon/cds/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,,kallisto,kallisto/cDNAncRNA/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_kallisto.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,,RSEM,RSEM/cDNAncRNA/20170918.A-WT_4/20170918.A-WT_4.isoforms.results,Rscripts/read_quant_rsem.R,$(tx2geneext),yes))
@@ -50,6 +52,7 @@ $(eval $(call juncscalerule,20170918.A-WT_4,,WubMinimap2Nanopore,minimap2wub/201
 
 $(eval $(call juncscalerule,sim_misannotated_utr_1,,Salmon,salmon/cDNAncRNA/sim_misannotated_utr_1/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,sim_misannotated_utr_1,,SalmonBWA,salmonbwa/cDNAncRNA/sim_misannotated_utr_1/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
+$(eval $(call juncscalerule,sim_misannotated_utr_1,,SalmonKeepDup,salmon/cDNAncRNAkeepdup/sim_misannotated_utr_1/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,sim_misannotated_utr_1,,SalmonCDS,salmon/cds/sim_misannotated_utr_1/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,sim_misannotated_utr_1,,kallisto,kallisto/cDNAncRNA/sim_misannotated_utr_1/abundance.tsv,Rscripts/read_quant_kallisto.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,sim_misannotated_utr_1,,RSEM,RSEM/cDNAncRNA/sim_misannotated_utr_1/sim_misannotated_utr_1.isoforms.results,Rscripts/read_quant_rsem.R,$(tx2geneext),yes))
@@ -84,9 +87,9 @@ alpine/$(1)$(2)/scaled_junction_coverage_Salmon.rds alpine/$(1)$(2)/scaled_junct
 alpine/$(1)$(2)/scaled_junction_coverage_RSEM.rds alpine/$(1)$(2)/scaled_junction_coverage_StringTie.rds \
 alpine/$(1)$(2)/scaled_junction_coverage_SalmonBWA.rds alpine/$(1)$(2)/scaled_junction_coverage_kallisto.rds \
 output/gene_characteristics.rds featureCounts/$(1)/$(1)_STAR_exons.txt featureCounts/$(1)/$(1)_STAR_introns.txt \
-Rscripts/combine_scaled_coverages.R $(3) $(4) 
+alpine/$(1)$(2)/scaled_junction_coverage_SalmonKeepDup.rds Rscripts/combine_scaled_coverages.R $(3) $(4) 
 	mkdir -p $$(@D)
-	$(R) "--args junctioncovSTAR='STAR$(2)/$(1)/$(1)_SJ.out.tab' junctioncovSalmon='$$(word 2,$$^)' junctioncovSalmonBWA='$$(word 6,$$^)' junctioncovSalmonCDS='$(4)' junctioncovNanopore='$(3)' junctioncovhera='$$(word 3,$$^)' junctioncovkallisto='$$(word 7,$$^)' junctioncovRSEM='$$(word 4,$$^)' junctioncovStringTie='$$(word 5,$$^)' genecharacteristics='$$(word 8,$$^)' exoncountstxt='$$(word 9,$$^)' introncountstxt='$$(word 10,$$^)' outrds='$$@'" Rscripts/combine_scaled_coverages.R Rout/combine_scaled_coverages_$(1)$(2).Rout
+	$(R) "--args junctioncovSTAR='STAR$(2)/$(1)/$(1)_SJ.out.tab' junctioncovSalmon='$$(word 2,$$^)' junctioncovSalmonBWA='$$(word 6,$$^)' junctioncovSalmonKeepDup='$$(word 11,$$^)' junctioncovSalmonCDS='$(4)' junctioncovNanopore='$(3)' junctioncovhera='$$(word 3,$$^)' junctioncovkallisto='$$(word 7,$$^)' junctioncovRSEM='$$(word 4,$$^)' junctioncovStringTie='$$(word 5,$$^)' genecharacteristics='$$(word 8,$$^)' exoncountstxt='$$(word 9,$$^)' introncountstxt='$$(word 10,$$^)' outrds='$$@'" Rscripts/combine_scaled_coverages.R Rout/combine_scaled_coverages_$(1)$(2).Rout
 endef
 $(eval $(call combcovrule,20151016.A-Cortex_RNA,,,alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_SalmonCDS.rds))
 $(eval $(call combcovrule,20170918.A-WT_4,,alpine/20170918.A-WT_4/scaled_junction_coverage_WubMinimap2Nanopore.rds,alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonCDS.rds))

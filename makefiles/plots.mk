@@ -98,7 +98,16 @@ Rscripts/plot_association_exoncdscorrelation_score.R
 endef
 $(foreach F,$(fastqfiles),$(eval $(call corrsalmonrule,$(notdir $(F)),)))
 
-
+## ==================================================================================== ##
+##                         performance on simulated data                                ##
+## ==================================================================================== ##
+define simplotrule
+figures/performance_simulated_data/performance_simulated_data_$(1)$(2).rds: output/$(1)$(2)_combined_coverages_with_scores.rds \
+$(3) $(4) Rscripts/plot_performance_simdata.R
+	mkdir -p $$(@D)
+	$(R) "--args scorerds='$$(word 1,$$^)' truthrda='$(3)' truthmodgenesrds='$(4)' gtf='$(5)' uniqjuncreadsthreshold=$(uniqjuncreadsthreshold) outrds='$$@'" Rscripts/plot_performance_simdata.R Rout/plot_performance_simdata_$(1)$(2).Rout
+endef
+$(eval $(call simplotrule,sim_misannotated_utr_1,,simulation/misannotated_utr/sim_counts_matrix.rda,simulation/misannotated_utr/sim_misannotated_utr_1_modified_genes.rds,$(gtf)))
 
 
 

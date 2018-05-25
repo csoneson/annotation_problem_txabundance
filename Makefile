@@ -11,9 +11,9 @@ fastqfilessim := simulation/misannotated_utr/sim_misannotated_utr_1
 fastqfiles := $(fastqfilesreal) $(fastqfilessim)
 
 ## Abundance quantification methods
-quantmethods20151016.A-Cortex_RNA := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS
-quantmethods20170918.A-WT_4 := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS SalmonMinimap2Nanopore WubMinimap2Nanopore
-quantmethodssim_misannotated_utr_1 := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS
+quantmethods20151016.A-Cortex_RNA := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup
+quantmethods20170918.A-WT_4 := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup SalmonMinimap2Nanopore WubMinimap2Nanopore
+quantmethodssim_misannotated_utr_1 := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup
 quantmethodsstringtie := Salmon SalmonBWA kallisto RSEM StringTie hera
 
 nthreads := 24
@@ -64,6 +64,7 @@ $(tx2geneext) \
 $(flatgtfexons) \
 $(salmoncdnancrnaindex)/hash.bin \
 $(salmoncdsindex)/hash.bin \
+$(salmonkeepdupindex)/hash.bin \
 $(kallistocdnancrnaindex) \
 reference/bwa/Homo_sapiens.GRCh38.cdna.ncrna/Homo_sapiens.GRCh38.cdna.ncrna.fa.sa \
 reference/RSEM/Homo_sapiens.GRCh38.rsem.cdna.ncrna/Homo_sapiens.GRCh38.rsem.cdna.ncrna.n2g.idx.fa \
@@ -75,6 +76,7 @@ $(gvizgenemodels)
 
 ## Align and quantify each sample
 quant: $(foreach F,$(fastqfiles),salmon/cDNAncRNA/$(notdir $(F))/quant.sf) \
+$(foreach F,$(fastqfiles),salmon/cDNAncRNAkeepdup/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),salmon/cds/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),kallisto/cDNAncRNA/$(notdir $(F))/abundance.tsv) \
 $(foreach F,$(fastqfiles),salmonbwa/cDNAncRNA/$(notdir $(F))/quant.sf) \
@@ -153,7 +155,8 @@ $(foreach F,$(fastqfiles),figures/correlation_with_inferential_variance/correlat
 $(foreach F,$(fastqfiles),figures/correlation_between_methods/correlation_between_methods_$(notdir $(F)).rds) \
 figures/correlation_between_nanopore_and_illumina_scores/correlation_between_nanopore_and_illumina_scores_20170918.A-WT_4.rds \
 $(foreach F,$(fastqfiles),figures/correlation_with_true_abundances/correlation_with_true_abundances_$(notdir $(F)).rds) \
-$(foreach F,$(fastqfiles),figures/association_exoncdscorrelation_score/association_exoncdscorrelation_score_$(notdir $(F)).rds)
+$(foreach F,$(fastqfiles),figures/association_exoncdscorrelation_score/association_exoncdscorrelation_score_$(notdir $(F)).rds) \
+$(foreach F,$(fastqfilessim),figures/performance_simulated_data/performance_simulated_data_$(notdir $(F)).rds)
 
 plotsstringtie: $(foreach F,$(fastqfiles),figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F))_stringtie_tx.rds) \
 $(foreach F,$(fastqfiles),figures/gene_scores/gene_scores_$(notdir $(F))_stringtie_tx.rds)

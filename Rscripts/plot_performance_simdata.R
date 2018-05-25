@@ -82,21 +82,19 @@ gene_summary <- transcripts %>%
 ## Plot relative contributions to gene count/TPM from the different transcript
 ## categories
 png(gsub("\\.rds$", "_count.png", outrds), width = 7, height = 7, unit = "in", res = 300)
-print(ggplot(gene_summary, aes(x = tr_type, y = count, color = utr_selected)) + 
+print(ggplot(gene_summary, aes(x = utr_selected, y = count, color = tr_type)) + 
         geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method) + 
-        theme_bw() + scale_color_manual(values = c(long = "#9900cc", short = "#009933"),
-                                        name = "Selected 3'UTR") + 
-        theme(axis.text.x = element_text(angle = 75, vjust = 1, hjust = 1)) + 
-        xlab("") + ylab("Relative contribution to gene count"))
+        theme_bw() + scale_color_manual(values = c("#9900cc", "#009933", "#0099cc"),
+                                        name = "Transcript class") + 
+        xlab("Selected 3'UTR") + ylab("Relative contribution to gene count"))
 dev.off()
 
 png(gsub("\\.rds$", "_tpm.png", outrds), width = 7, height = 7, unit = "in", res = 300)
-print(ggplot(gene_summary, aes(x = tr_type, y = TPM, color = utr_selected)) + 
+print(ggplot(gene_summary, aes(x = utr_selected, y = TPM, color = tr_type)) + 
         geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method) + 
-        theme_bw() + scale_color_manual(values = c(long = "#9900cc", short = "#009933"),
-                                        name = "Selected 3'UTR") + 
-        theme(axis.text.x = element_text(angle = 75, vjust = 1, hjust = 1)) + 
-        xlab("") + ylab("Relative contribution to gene TPM"))
+        theme_bw() + scale_color_manual(values = c("#9900cc", "#009933", "#0099cc"),
+                                        name = "Transcript class") + 
+        xlab("Selected 3'UTR") + ylab("Relative contribution to gene TPM"))
 dev.off()
 
 ## Plot scores for modified and unmodified genes

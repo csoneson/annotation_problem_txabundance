@@ -1,37 +1,41 @@
-bwa := /home/charlotte/software/bwa/bwa
+#bwa := /home/charlotte/software/bwa/bwa
+STAR := /home/charlotte/software/STAR-2.5.3a/bin/Linux_x86_64/STAR
 salmon := /home/charlotte/software/Salmon-0.9.1_linux_x86_64/bin/salmon
 
-define bwacopyrule
-$(1): $(2)
-	mkdir -p $$(@D)
-	scp $(2) $(1)
-endef
-$(foreach F,$(fastqfiles),$(eval $(call bwacopyrule,reference/bwa/$(notdir $(F))_stringtie_tx/$(notdir $(F))_stringtie_tx.fa,stringtie/$(notdir $(F))/$(notdir $(F))_stringtie_tx.fa)))
+STARindextxome := reference/STAR/Homo_sapiens.GRCh38.cdna.ncrna_STAR2.5.3a
 
-define bwaindexrule
-$(1).sa: $(1)
-	$(bwa) index $(1)
+define startxindexrule
+$(1)/SA: $(2)
+	mkdir -p $$(@D)
+	$(STAR) --runMode genomeGenerate --runThreadN $(nthreads) --genomeDir $(1) \
+	--genomeFastaFiles $(2) --limitGenomeGenerateRAM 153509114410
 endef
-$(eval $(call bwaindexrule,reference/bwa/Homo_sapiens.GRCh38.cdna.ncrna/Homo_sapiens.GRCh38.cdna.ncrna.fa))
-$(foreach F,$(fastqfiles),$(eval $(call bwaindexrule,reference/bwa/$(notdir $(F))_stringtie_tx/$(notdir $(F))_stringtie_tx.fa)))
+$(eval $(call startxindexrule,$(STARindextxome),$(txome)))
+$(foreach F,$(fastqfiles),$(eval $(call startxindexrule,reference/STAR/$(notdir $(F))_stringtie_tx_STAR2.5.3a,stringtie/$(notdir $(F))/$(notdir $(F))_stringtie_tx.fa)))
+
 
 ## ==================================================================================== ##
-##                                  BWA + Salmon                                        ##
+##                                 STAR + Salmon                                        ##
 ## ==================================================================================== ##
-## Run BWA
-define bwarule
-$(4)/$(2)/$(2).bam: $(3).sa $(1)_R1.fastq.gz $(1)_R2.fastq.gz
+## Run STAR to align to the transcriptome
+define startxrule
+$(4)/$(2)/$(2)_Aligned.out.bam: $(3)/SA $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
-	$(bwa) mem -t $(nthreads) $(3) $(1)_R1.fastq.gz $(1)_R2.fastq.gz | $(samtools) view -b -F 0x0800 -@ $(nthreads) - > $$@
+	$(STAR) --genomeDir $(3) \
+	--readFilesIn $(1)_R1.fastq.gz $(1)_R2.fastq.gz \
+	--runThreadN $(nthreads) --outFileNamePrefix $(4)/$(2)/$(2)_ \
+	--outFilterMultimapNmax 200 --outFilterMismatchNmax 99999 --outFilterMismatchNoverLmax 0.2 \
+	--alignIntronMin 1000 --alignIntronMax 0 --limitOutSAMoneReadBytes 1000000 \
+	--outSAMtype BAM Unsorted --readFilesCommand gunzip -c 
 endef
-$(foreach F,$(fastqfiles),$(eval $(call bwarule,$(F),$(notdir $(F)),reference/bwa/Homo_sapiens.GRCh38.cdna.ncrna/Homo_sapiens.GRCh38.cdna.ncrna.fa,bwa/cDNAncRNA)))
-$(foreach F,$(fastqfiles),$(eval $(call bwarule,$(F),$(notdir $(F)),reference/bwa/$(notdir $(F))_stringtie_tx/$(notdir $(F))_stringtie_tx.fa,bwa_stringtie_tx)))
+$(foreach F,$(fastqfiles),$(eval $(call startxrule,$(F),$(notdir $(F)),$(STARindextxome),STARtxome)))
+$(foreach F,$(fastqfiles),$(eval $(call startxrule,$(F),$(notdir $(F)),reference/STAR/$(notdir $(F))_stringtie_tx_STAR2.5.3a,STARtxome_stringtie_tx)))
 
 ## Run Salmon in alignment-based mode
-define salmonbwarule
-$(2)/$(1)/quant.sf: $(3)/$(1)/$(1).bam $(4)
+define salmonstarrule
+$(2)/$(1)/quant.sf: $(3)/$(1)/$(1)_Aligned.out.bam $(4)
 	mkdir -p $$(@D)
 	$(salmon) quant -l A -a $$(word 1,$$^) -t $(4) -p $(nthreads) --seqBias --gcBias -o $$(@D) 
 endef
-$(foreach F,$(fastqfiles),$(eval $(call salmonbwarule,$(notdir $(F)),salmonbwa/cDNAncRNA,bwa/cDNAncRNA,$(txome))))
-$(foreach F,$(fastqfiles),$(eval $(call salmonbwarule,$(notdir $(F)),salmonbwa_stringtie_tx,bwa_stringtie_tx,reference/bwa/$(notdir $(F))_stringtie_tx/$(notdir $(F))_stringtie_tx.fa)))
+$(foreach F,$(fastqfiles),$(eval $(call salmonstarrule,$(notdir $(F)),salmonstartx,STARtxome,$(txome))))
+$(foreach F,$(fastqfiles),$(eval $(call salmonstarrule,$(notdir $(F)),salmonstartx_stringtie_tx,STARtxome_stringtie_tx,stringtie/$(notdir $(F))/$(notdir $(F))_stringtie_tx.fa)))

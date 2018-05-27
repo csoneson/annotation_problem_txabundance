@@ -110,5 +110,6 @@ print(ggplot(genes, aes(x = geneclass, y = score, color = geneclass)) +
         xlab(""))
 dev.off()
 
+saveRDS(NULL, file = outrds)
 date()
 sessionInfo()

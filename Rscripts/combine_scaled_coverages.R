@@ -72,7 +72,6 @@ jcov <- rbind(jcov, jcovnostrand)
 ## Read and merge junction coverages predicted by each method
 jcovscaled <- do.call(rbind, list(readRDS(junctioncovSalmon)$allcovs,
                                   readRDS(junctioncovSalmonBWA)$allcovs,
-                                  readRDS(junctioncovSalmonKeepDup)$allcovs,
                                   readRDS(junctioncovhera)$allcovs,
                                   readRDS(junctioncovkallisto)$allcovs,
                                   readRDS(junctioncovRSEM)$allcovs,
@@ -82,6 +81,9 @@ if (junctioncovNanopore != "") {
 }
 if (junctioncovSalmonCDS != "") {
   jcovscaled <- rbind(jcovscaled, readRDS(junctioncovSalmonCDS)$allcovs)
+}
+if (junctioncovSalmonKeepDup != "") {
+  jcovscaled <- rbind(jcovscaled, readRDS(junctioncovSalmonKeepDup)$allcovs)
 }
 
 ## Count the number of junctions per gene
@@ -114,7 +116,6 @@ jcovscaled <- jcovscaled %>% dplyr::left_join(j0) %>%
 ## Read and combine transcript quantifications
 allquants <- do.call(rbind, list(readRDS(junctioncovSalmon)$quants,
                                  readRDS(junctioncovSalmonBWA)$quants,
-                                 readRDS(junctioncovSalmonKeepDup)$quants,
                                  readRDS(junctioncovhera)$quants,
                                  readRDS(junctioncovkallisto)$quants,
                                  readRDS(junctioncovRSEM)$quants,
@@ -125,6 +126,9 @@ if (junctioncovNanopore != "") {
 }
 if (junctioncovSalmonCDS != "") {
   allquants <- rbind(allquants, readRDS(junctioncovSalmonCDS)$quants)
+}
+if (junctioncovSalmonKeepDup != "") {
+  allquants <- rbind(allquants, readRDS(junctioncovSalmonKeepDup)$quants)
 }
 
 ## Summarize abundances on gene level

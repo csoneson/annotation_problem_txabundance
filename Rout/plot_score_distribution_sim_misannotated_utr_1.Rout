@@ -55,8 +55,8 @@ Type 'q()' to quit R.
 > print(scorerds)
 [1] "output/sim_misannotated_utr_1_combined_coverages_with_scores.rds"
 > print(quantmethods)
-[1] "hera"      "kallisto"  "RSEM"      "Salmon"    "SalmonBWA" "SalmonCDS"
-[7] "StringTie"
+[1] "hera"          "kallisto"      "RSEM"          "Salmon"       
+[5] "SalmonBWA"     "SalmonCDS"     "SalmonKeepDup" "StringTie"    
 > print(uniqjuncreadsthresholds)
 [1]  0 25
 > print(outrds)
@@ -287,8 +287,8 @@ loaded via a namespace (and not attached):
 [17] munsell_0.4.3    compiler_3.5.0   colorspace_1.3-2 pkgconfig_2.0.1 
 [21] tidyselect_0.2.4 bindr_0.1.1      tibble_1.4.2    
 > date()
-[1] "Mon May 21 13:28:11 2018"
+[1] "Sat May 26 19:36:01 2018"
 > 
 > proc.time()
-   user  system elapsed 
-540.408  54.988 596.064 
+    user   system  elapsed 
+ 856.232  479.336 1337.133 

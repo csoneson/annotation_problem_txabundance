@@ -17,28 +17,54 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+> ################################################################################
+> ##                                                                            ##
+> ## Generate summary plots for one or more genes                               ##
+> ##                                                                            ##
+> ## Inputs:                                                                    ##
+> ## * gene: gene of interest, or file listing genes of interest (one per row)  ##
+> ## * bigwig: bigwig file of alignments for visualization                      ##
+> ## * bigwignanopore: a second bigwig file, if applicable (for nanopore data)  ##
+> ## * genemodels: gene models for Gviz                                         ##
+> ## * scorerds: object with junction coverages, transcript abundances and gene ##
+> ##             scores                                                         ##
+> ## * ncores: number of genes to process in parallel                           ##
+> ## * outdir: output directory                                                 ##
+> ## * libid: library ID, will be added to the start of all output file names   ##
+> ## * checkdir: directory where (empty) rds files ("time stamps") will be      ##
+> ##             written                                                        ##
+> ##                                                                            ##
+> ## Outputs:                                                                   ##
+> ## * A pdf figure with coverage patterns, gene models and junction scores for ##
+> ##   each gene of interest                                                    ##
+> ## * Text files with transcript abundances (counts/TPMs) for each gene of     ##
+> ##   interest                                                                 ##
+> ## * A text file with junction coverages for each gene of interest            ##
+> ##                                                                            ##
+> ################################################################################
+> 
 > args <- (commandArgs(trailingOnly = TRUE))
 > for (i in 1:length(args)) {
 +   eval(parse(text = args[[i]]))
 + }
 > 
-> print(gene)  ## gene of interest, or file listing collection of genes (one per row)
+> print(gene)
 [1] "ENSG00000185070"
-> print(bigwig)  ## bigwig file for visualization
+> print(bigwig)
 [1] "STARbigwig/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bw"
-> print(bigwignanopore)  ## second bigwig file (nanopore)
+> print(bigwignanopore)
 [1] ""
-> print(genemodels)  ## gene models 
+> print(genemodels) 
 [1] "reference/Gviz/Homo_sapiens.GRCh38.90_gviz_genemodels.rds"
-> print(combcovrds)  ## combined junction coverages
+> print(scorerds)
 [1] "output/20151016.A-Cortex_RNA_combined_coverages_with_scores.rds"
-> print(ncores)  ## number of cores for parallel computations
+> print(ncores)
 [1] 1
-> print(outdir)  ## output directory
+> print(outdir)
 [1] "output_genewise/20151016.A-Cortex_RNA"
-> print(libid)  ## string that will be added to the beginning of all output files (library ID)
+> print(libid)
 [1] "20151016.A-Cortex_RNA_"
-> print(checkdir)  ## directory to write (empty) rds files (time stamps)
+> print(checkdir)
 [1] "output_genewise/20151016.A-Cortex_RNA/check"
 > 
 > suppressPackageStartupMessages({
@@ -53,7 +79,7 @@ Type 'q()' to quit R.
 > ## Read gene models for Gviz plot (pregenerated from gtf to save time) and
 > ## quantifications
 > genemodels <- readRDS(genemodels)
-> combcov <- readRDS(combcovrds)
+> scores <- readRDS(scorerds)
 > 
 > ## Determine which gene(s) to investigate
 > if (file.exists(gene)) {
@@ -64,7 +90,7 @@ Type 'q()' to quit R.
 > 
 > ## Investigate each gene
 > mclapply(genes, function(currgene) {
-+   jl <- combcov$junctions %>% dplyr::filter(gene == currgene) %>%
++   jl <- scores$junctions %>% dplyr::filter(gene == currgene) %>%
 +     dplyr::mutate(junctionid2 = junctionid) %>%
 +     dplyr::mutate(junctionid2 = replace(junctionid2, 
 +                                         abs(scaled.cov - uniqreads) < mean(uniqreads), 
@@ -119,14 +145,14 @@ Type 'q()' to quit R.
 +               file = paste0(outdir, "/jcov/", libid, currgene, "_jscaledcov.txt"),
 +               quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
 +   
-+   write.table(combcov$transcripts %>% dplyr::filter(gene == currgene) %>% 
++   write.table(scores$transcripts %>% dplyr::filter(gene == currgene) %>% 
 +                 dplyr::select(transcript, method, TPM) %>%
 +                 dplyr::mutate(TPM = round(TPM, 2)) %>% 
 +                 tidyr::spread(method, TPM),
 +               file = paste0(outdir, "/tpm/", libid, currgene, "_tpm.txt"),
 +               quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
 +   
-+   write.table(combcov$transcripts %>% dplyr::filter(gene == currgene) %>% 
++   write.table(scores$transcripts %>% dplyr::filter(gene == currgene) %>% 
 +                 dplyr::select(transcript, method, count) %>%
 +                 dplyr::mutate(count = round(count, 2)) %>% 
 +                 tidyr::spread(method, count),
@@ -208,9 +234,9 @@ loaded via a namespace (and not attached):
 [79] Rcpp_0.12.16                rpart_4.1-13               
 [81] acepack_1.4.1               tidyselect_0.2.4           
 > date()
-[1] "Mon May 21 01:26:26 2018"
+[1] "Sat May 26 10:55:56 2018"
 > 
 > 
 > proc.time()
    user  system elapsed 
-106.168   3.820 110.318 
+ 81.048   3.812  84.970 

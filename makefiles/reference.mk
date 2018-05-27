@@ -14,6 +14,8 @@ tx2geneext := reference/Homo_sapiens.GRCh38.90_tx2gene_ext.rds
 flatgtfexons := reference/Homo_sapiens.GRCh38.90.reduced.exons.gtf
 flatgtfintrons := reference/Homo_sapiens.GRCh38.90.introns.gtf
 
+gffread := /home/charlotte/software/gffread-0.9.12.Linux_x86_64/gffread
+
 $(txome): $(cdna) $(ncrna)
 	cat $(cdna) $(ncrna) > $(txome)
 
@@ -62,4 +64,20 @@ output/gene_characteristics.rds: $(gtf) $(txome) Rscripts/calculate_gene_charact
 $(gvizgenemodels): $(gtf) Rscripts/generate_genemodels.R Rscripts/helper_plot_tracks.R
 	mkdir -p $(@D)
 	$(R) "--args gtf='$(gtf)' outrds='$@'" Rscripts/generate_genemodels.R Rout/generate_genemodels.Rout
+
+## ==================================================================================== ##
+##                                CHESS annotation                                      ##
+## ==================================================================================== ##
+reference_chess/chess2.0_assembly_fixed.gtf: reference_chess/chess2.0_assembly.gff reference_chess/chess2.0.genes Rscripts/fix_chess_gtf.R
+	$(R) "--args ingtf='$(word 1,$^)' ingenes='$(word 2,$^)' outgtf='$@'" Rscripts/fix_chess_gtf.R Rout/fix_chess_gtf.Rout
+
+reference_chess/chess2.0_assembly_fixed.fa: reference_chess/chess2.0_assembly_fixed.gtf $(genome)
+	$(gffread) -w $@ -g $(genome) $<
+
+reference_chess/chess2.0_assembly_fixed_tx2gene.rds: reference_chess/chess2.0_assembly_fixed.gtf Rscripts/generate_tx2gene_from_gtf.R
+	$(R) "--args gtf='$<' outrds='$@'" Rscripts/generate_tx2gene_from_gtf.R Rout/generate_tx2gene_from_gtf_chess.Rout
+
+
+
+
 

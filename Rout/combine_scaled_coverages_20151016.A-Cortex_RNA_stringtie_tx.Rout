@@ -17,34 +17,64 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+> ################################################################################
+> ##                                                                            ##
+> ## Combine scaled junction coverages from different methods                   ##
+> ##                                                                            ##
+> ## Inputs:                                                                    ##
+> ## * junctioncovSTAR: junction coverages from STAR (uniquely and multimapping ##
+> ##                    reads)                                                  ##
+> ## * junctioncovSalmon: junction coverages and abundances from Salmon         ##
+> ## * junctioncovSalmonBWA: junction coverages and abundances from SalmonBWA   ##
+> ## * junctioncovSalmonKeepDup: junction coverages and abundances from         ##
+> ##                             SalmonKeepDup                                  ##
+> ## * junctioncovSalmonCDS: junction coverages and abundances from SalmonCDS   ##
+> ## * junctioncovhera: junction coverages and abundances from hera             ##
+> ## * junctioncovkallisto: junction coverages and abundances from kallisto     ##
+> ## * junctioncovRSEM: junction coverages and abundances from RSEM             ##
+> ## * junctioncovStringTie: junction coverages and abundances from StringTie   ##
+> ## * junctioncovNanopore: junction coverages and abundances from Nanopore     ##
+> ## * genecharacteristics: table with gene characteristics                     ##
+> ## * exoncountstxt: text file with exon counts for each gene                  ##
+> ## * introncountstxt: text file with intron counts for each gene              ##
+> ## * outrds: output file                                                      ##
+> ##                                                                            ##
+> ## Outputs:                                                                   ##
+> ## * A table with combined junction coverages, one with all transcript        ##
+> ##   abundances and one with gene abundance estimates                         ##
+> ##                                                                            ##
+> ################################################################################
+> 
 > args <- (commandArgs(trailingOnly = TRUE))
 > for (i in 1:length(args)) {
 +   eval(parse(text = args[[i]]))
 + }
 > 
-> print(junctioncovSTAR) ## Junction reads from STAR
+> print(junctioncovSTAR)
 [1] "STAR_stringtie_tx/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_SJ.out.tab"
-> print(junctioncovSalmon) ## Salmon quantifications
+> print(junctioncovSalmon)
 [1] "alpine/20151016.A-Cortex_RNA_stringtie_tx/scaled_junction_coverage_Salmon.rds"
-> print(junctioncovSalmonBWA) ## Salmon quantifications in alignment mode (after BWA)
+> print(junctioncovSalmonBWA)
 [1] "alpine/20151016.A-Cortex_RNA_stringtie_tx/scaled_junction_coverage_SalmonBWA.rds"
-> print(junctioncovSalmonCDS) ## Salmon quantifications based on CDSs only
+> print(junctioncovSalmonKeepDup)
 [1] ""
-> print(junctioncovhera) ## Hera quantifications
+> print(junctioncovSalmonCDS)
+[1] ""
+> print(junctioncovhera)
 [1] "alpine/20151016.A-Cortex_RNA_stringtie_tx/scaled_junction_coverage_hera.rds"
-> print(junctioncovkallisto) ## kallisto quantifications
+> print(junctioncovkallisto)
 [1] "alpine/20151016.A-Cortex_RNA_stringtie_tx/scaled_junction_coverage_kallisto.rds"
-> print(junctioncovRSEM) ## RSEM quantifications
+> print(junctioncovRSEM)
 [1] "alpine/20151016.A-Cortex_RNA_stringtie_tx/scaled_junction_coverage_RSEM.rds"
-> print(junctioncovStringTie) ## StringTie quantifications
+> print(junctioncovStringTie)
 [1] "alpine/20151016.A-Cortex_RNA_stringtie_tx/scaled_junction_coverage_StringTie.rds"
-> print(junctioncovNanopore) ## If present, nanopore results
+> print(junctioncovNanopore)
 [1] ""
-> print(genecharacteristics) ## Gene-level characteristics
+> print(genecharacteristics)
 [1] "output/gene_characteristics.rds"
-> print(exoncountstxt) ## Exon counts for each gene
+> print(exoncountstxt)
 [1] "featureCounts/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_STAR_exons.txt"
-> print(introncountstxt) ## Intron counts for each gene
+> print(introncountstxt)
 [1] "featureCounts/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_STAR_introns.txt"
 > print(outrds)
 [1] "output/20151016.A-Cortex_RNA_stringtie_tx_combined_coverages.rds"
@@ -84,6 +114,9 @@ Type 'q()' to quit R.
 + }
 > if (junctioncovSalmonCDS != "") {
 +   jcovscaled <- rbind(jcovscaled, readRDS(junctioncovSalmonCDS)$allcovs)
++ }
+> if (junctioncovSalmonKeepDup != "") {
++   jcovscaled <- rbind(jcovscaled, readRDS(junctioncovSalmonKeepDup)$allcovs)
 + }
 > 
 > ## Count the number of junctions per gene
@@ -130,6 +163,9 @@ Joining, by = c("seqnames", "start", "end", "gene")
 + }
 > if (junctioncovSalmonCDS != "") {
 +   allquants <- rbind(allquants, readRDS(junctioncovSalmonCDS)$quants)
++ }
+> if (junctioncovSalmonKeepDup != "") {
++   allquants <- rbind(allquants, readRDS(junctioncovSalmonKeepDup)$quants)
 + }
 > 
 > ## Summarize abundances on gene level
@@ -213,8 +249,8 @@ loaded via a namespace (and not attached):
  [5] pillar_1.2.1     glue_1.2.0       tibble_1.4.2     Rcpp_0.12.16    
  [9] pkgconfig_2.0.1  rlang_0.2.0      bindr_0.1.1     
 > date()
-[1] "Mon May 21 01:51:56 2018"
+[1] "Fri May 25 22:23:12 2018"
 > 
 > proc.time()
    user  system elapsed 
-363.292   3.984 368.039 
+339.260   2.932 342.775 

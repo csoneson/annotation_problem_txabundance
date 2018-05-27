@@ -54,8 +54,8 @@ Type 'q()' to quit R.
 > print(scorerds)
 [1] "output/20151016.A-Cortex_RNA_combined_coverages_with_scores.rds"
 > print(quantmethods)
-[1] "hera"      "kallisto"  "RSEM"      "Salmon"    "SalmonBWA" "SalmonCDS"
-[7] "StringTie"
+[1] "hera"          "kallisto"      "RSEM"          "Salmon"       
+[5] "SalmonBWA"     "SalmonCDS"     "SalmonKeepDup" "StringTie"    
 > print(uniqjuncreadsthreshold)
 [1] 25
 > print(fracuniqjuncreadsthreshold)
@@ -224,7 +224,7 @@ null device
 > saveRDS(NULL, outrds)
 > 
 > date()
-[1] "Mon May 21 16:50:27 2018"
+[1] "Sat May 26 19:19:30 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -257,4 +257,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-269.504   2.864 272.567 
+331.980  13.576 346.065 

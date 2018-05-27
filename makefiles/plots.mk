@@ -5,7 +5,7 @@ define obsvspredrule
 figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(1)$(2).rds: output/$(1)$(2)_combined_coverages_with_scores.rds \
 Rscripts/plot_observed_vs_predicted_junction_coverage.R
 	mkdir -p $$(@D)
-	$(R) "--args scorerds='$$<' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,StringTie' uniqjuncreadsthreshold=$(uniqjuncreadsthreshold) fracuniqjuncreadsthreshold=0.75 outrds='$$@'" Rscripts/plot_observed_vs_predicted_junction_coverage.R Rout/plot_observed_vs_predicted_junction_coverage_$(1)$(2).Rout
+	$(R) "--args scorerds='$$<' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,SalmonKeepDup,StringTie' uniqjuncreadsthreshold=$(uniqjuncreadsthreshold) fracuniqjuncreadsthreshold=0.75 outrds='$$@'" Rscripts/plot_observed_vs_predicted_junction_coverage.R Rout/plot_observed_vs_predicted_junction_coverage_$(1)$(2).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call obsvspredrule,$(notdir $(F)),)))
 $(foreach F,$(fastqfiles),$(eval $(call obsvspredrule,$(notdir $(F)),_stringtie_tx)))
@@ -26,7 +26,7 @@ define plotscorerule
 figures/gene_scores/gene_scores_$(1)$(2).rds: output/$(1)$(2)_combined_coverages_with_scores.rds \
 Rscripts/plot_score_distribution.R
 	mkdir -p $$(@D)
-	$(R) "--args scorerds='$$(word 1,$$^)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,StringTie' uniqjuncreadsthresholds='0,$(uniqjuncreadsthreshold)' outrds='$$@'" Rscripts/plot_score_distribution.R Rout/plot_score_distribution_$(1)$(2).Rout
+	$(R) "--args scorerds='$$(word 1,$$^)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,SalmonKeepDup,StringTie' uniqjuncreadsthresholds='0,$(uniqjuncreadsthreshold)' outrds='$$@'" Rscripts/plot_score_distribution.R Rout/plot_score_distribution_$(1)$(2).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call plotscorerule,$(notdir $(F)),)))
 $(foreach F,$(fastqfiles),$(eval $(call plotscorerule,$(notdir $(F)),_stringtie_tx)))
@@ -42,7 +42,7 @@ $(gvizgenemodels) $(5) Rscripts/plot_genewise_results.R
 	mkdir -p output_genewise/$(1)$(2)/tpm
 	mkdir -p output_genewise/$(1)$(2)/count
 	mkdir -p output_genewise/$(1)$(2)/check
-	$(R) "--args gene='$(3)' bigwig='$$(word 1,$$^)' bigwignanopore='$(5)' genemodels='$(gvizgenemodels)' combcovrds='$$(word 2,$$^)' ncores=$(4) outdir='output_genewise/$(1)$(2)' libid='$(1)_' checkdir='output_genewise/$(1)$(2)/check'" Rscripts/plot_genewise_results.R Rout/plot_genewise_results_$(1)$(2)_$(3).Rout
+	$(R) "--args gene='$(3)' bigwig='$$(word 1,$$^)' bigwignanopore='$(5)' genemodels='$(gvizgenemodels)' scorerds='$$(word 2,$$^)' ncores=$(4) outdir='output_genewise/$(1)$(2)' libid='$(1)_' checkdir='output_genewise/$(1)$(2)/check'" Rscripts/plot_genewise_results.R Rout/plot_genewise_results_$(1)$(2)_$(3).Rout
 endef
 $(foreach G,$(genes_to_plot),$(foreach F,20151016.A-Cortex_RNA,$(eval $(call geneplotrule,$(F),,$(G),1,))))
 $(foreach G,$(genes_to_plot),$(foreach F,20170918.A-WT_4,$(eval $(call geneplotrule,$(F),,$(G),1,minimap2genomebigwig/20171207_1645_p2557_4017_2_ALLREADS.pass_minimap2_genome_s.bw))))
@@ -67,7 +67,7 @@ define corrmethodrule
 figures/correlation_between_methods/correlation_between_methods_$(1)$(2).rds: output/$(1)$(2)_combined_coverages_with_scores.rds \
 Rscripts/plot_correlation_between_methods.R Rscripts/helper_plot_functions.R
 	mkdir -p $$(@D)
-	$(R) "--args scorerds='$$(word 1,$$^)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,StringTie' uniqjuncreadsthreshold=$(uniqjuncreadsthreshold) outrds='$$@'" Rscripts/plot_correlation_between_methods.R Rout/plot_correlation_between_methods_$(1)$(2).Rout
+	$(R) "--args scorerds='$$(word 1,$$^)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,SalmonKeepDup,StringTie' uniqjuncreadsthreshold=$(uniqjuncreadsthreshold) outrds='$$@'" Rscripts/plot_correlation_between_methods.R Rout/plot_correlation_between_methods_$(1)$(2).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call corrmethodrule,$(notdir $(F)),)))
 
@@ -84,7 +84,7 @@ define corrtruthrule
 figures/correlation_with_true_abundances/correlation_with_true_abundances_$(1)$(2).rds: output/$(1)$(2)_combined_coverages_with_scores.rds \
 $(3) $(4) Rscripts/plot_estimated_abundance_accuracy.R Rscripts/helper_plot_functions.R
 	mkdir -p $$(@D)
-	$(R) "--args scorerds='$$(word 1,$$^)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,StringTie' truthrda='$(3)' truthmodgenesrds='$(4)' outrds='$$@'" Rscripts/plot_estimated_abundance_accuracy.R Rout/plot_estimated_abundance_accuracy_$(1)$(2).Rout
+	$(R) "--args scorerds='$$(word 1,$$^)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonBWA,SalmonCDS,SalmonKeepDup,StringTie' truthrda='$(3)' truthmodgenesrds='$(4)' outrds='$$@'" Rscripts/plot_estimated_abundance_accuracy.R Rout/plot_estimated_abundance_accuracy_$(1)$(2).Rout
 endef
 $(eval $(call corrtruthrule,sim_misannotated_utr_1,,simulation/misannotated_utr/sim_counts_matrix.rda,simulation/misannotated_utr/sim_misannotated_utr_1_modified_genes.rds))
 $(foreach F,$(fastqfilesreal),$(eval $(call corrtruthrule,$(notdir $(F)),,,)))

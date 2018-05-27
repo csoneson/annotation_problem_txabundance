@@ -6,7 +6,7 @@
 ## * junctioncovSTAR: junction coverages from STAR (uniquely and multimapping ##
 ##                    reads)                                                  ##
 ## * junctioncovSalmon: junction coverages and abundances from Salmon         ##
-## * junctioncovSalmonBWA: junction coverages and abundances from SalmonBWA   ##
+## * junctioncovSalmonSTAR: junction coverages and abundances from SalmonSTAR ##
 ## * junctioncovSalmonKeepDup: junction coverages and abundances from         ##
 ##                             SalmonKeepDup                                  ##
 ## * junctioncovSalmonCDS: junction coverages and abundances from SalmonCDS   ##
@@ -33,7 +33,7 @@ for (i in 1:length(args)) {
 
 print(junctioncovSTAR)
 print(junctioncovSalmon)
-print(junctioncovSalmonBWA)
+print(junctioncovSalmonSTAR)
 print(junctioncovSalmonKeepDup)
 print(junctioncovSalmonCDS)
 print(junctioncovhera)
@@ -71,7 +71,7 @@ jcov <- rbind(jcov, jcovnostrand)
 
 ## Read and merge junction coverages predicted by each method
 jcovscaled <- do.call(rbind, list(readRDS(junctioncovSalmon)$allcovs,
-                                  readRDS(junctioncovSalmonBWA)$allcovs,
+                                  readRDS(junctioncovSalmonSTAR)$allcovs,
                                   readRDS(junctioncovhera)$allcovs,
                                   readRDS(junctioncovkallisto)$allcovs,
                                   readRDS(junctioncovRSEM)$allcovs,
@@ -115,7 +115,7 @@ jcovscaled <- jcovscaled %>% dplyr::left_join(j0) %>%
 
 ## Read and combine transcript quantifications
 allquants <- do.call(rbind, list(readRDS(junctioncovSalmon)$quants,
-                                 readRDS(junctioncovSalmonBWA)$quants,
+                                 readRDS(junctioncovSalmonSTAR)$quants,
                                  readRDS(junctioncovhera)$quants,
                                  readRDS(junctioncovkallisto)$quants,
                                  readRDS(junctioncovRSEM)$quants,

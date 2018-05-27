@@ -49,7 +49,7 @@ write.table(scores_sub, file = outtxt, row.names = FALSE, col.names = TRUE,
 ## Shared high-scoring genes
 scores_shared <- 
   scores %>% dplyr::filter(method %in% c("hera", "kallisto", "RSEM", "Salmon",
-                                         "SalmonBWA", "StringTie") & 
+                                         "SalmonSTAR", "StringTie") & 
                              score >= 0.6 & uniqjuncreads > uniqjuncreadsthreshold & 
                              uniqjuncfraction > 0.75 & intron_exon_ratio < 0.1) %>% 
   dplyr::group_by(gene) %>% dplyr::mutate(n = length(method)) %>% 

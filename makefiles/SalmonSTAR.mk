@@ -1,4 +1,3 @@
-#bwa := /home/charlotte/software/bwa/bwa
 STAR := /home/charlotte/software/STAR-2.5.3a/bin/Linux_x86_64/STAR
 salmon := /home/charlotte/software/Salmon-0.9.1_linux_x86_64/bin/salmon
 

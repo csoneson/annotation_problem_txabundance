@@ -11,10 +11,10 @@ fastqfilessim := simulation/misannotated_utr/sim_misannotated_utr_1
 fastqfiles := $(fastqfilesreal) $(fastqfilessim)
 
 ## Abundance quantification methods
-quantmethods20151016.A-Cortex_RNA := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup
-quantmethods20170918.A-WT_4 := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup SalmonMinimap2Nanopore WubMinimap2Nanopore
-quantmethodssim_misannotated_utr_1 := Salmon SalmonBWA kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup
-quantmethodsstringtie := Salmon SalmonBWA kallisto RSEM StringTie hera
+quantmethods20151016.A-Cortex_RNA := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup
+quantmethods20170918.A-WT_4 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup SalmonMinimap2Nanopore WubMinimap2Nanopore
+quantmethodssim_misannotated_utr_1 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup
+quantmethodsstringtie := Salmon SalmonSTAR kallisto RSEM StringTie hera
 
 nthreads := 24
 
@@ -43,7 +43,7 @@ include makefiles/reference.mk
 include makefiles/genes_to_plot.mk
 include makefiles/Salmon.mk
 include makefiles/hera.mk
-include makefiles/SalmonBWA.mk
+include makefiles/SalmonSTAR.mk
 include makefiles/StringTie.mk
 include makefiles/kallisto.mk
 include makefiles/RSEM.mk
@@ -66,7 +66,7 @@ $(salmoncdnancrnaindex)/hash.bin \
 $(salmoncdsindex)/hash.bin \
 $(salmonkeepdupindex)/hash.bin \
 $(kallistocdnancrnaindex) \
-reference/bwa/Homo_sapiens.GRCh38.cdna.ncrna/Homo_sapiens.GRCh38.cdna.ncrna.fa.sa \
+$(STARindextxome)/SA \
 reference/RSEM/Homo_sapiens.GRCh38.rsem.cdna.ncrna/Homo_sapiens.GRCh38.rsem.cdna.ncrna.n2g.idx.fa \
 $(STARindexnogtf)/chrNameLength.txt \
 reference/hera/Homo_sapiens.GRCh38/index \
@@ -79,7 +79,7 @@ quant: $(foreach F,$(fastqfiles),salmon/cDNAncRNA/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),salmon/cDNAncRNAkeepdup/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),salmon/cds/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),kallisto/cDNAncRNA/$(notdir $(F))/abundance.tsv) \
-$(foreach F,$(fastqfiles),salmonbwa/cDNAncRNA/$(notdir $(F))/quant.sf) \
+$(foreach F,$(fastqfiles),salmonstartx/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),RSEM/cDNAncRNA/$(notdir $(F))/$(notdir $(F)).isoforms.results) \
 $(foreach F,$(fastqfiles),STAR/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoord.out.bam.bai) \
 $(foreach F,$(fastqfiles),STARbigwig/$(notdir $(F))_Aligned.sortedByCoord.out.bw) \
@@ -105,7 +105,7 @@ preprefstringtie: $(foreach F,$(fastqfiles),reference/$(notdir $(F))_stringtie_t
 $(foreach F,$(fastqfiles),reference/$(notdir $(F))_stringtie_tx_tx2gene_withsymbol.rds) \
 $(foreach F,$(fastqfiles),reference/salmon/$(notdir $(F))_stringtie_tx_sidx_v0.9.1/hash.bin) \
 $(foreach F,$(fastqfiles),reference/kallisto/$(notdir $(F))_stringtie_tx_kidx_v0.44.0) \
-$(foreach F,$(fastqfiles),reference/bwa/$(notdir $(F))_stringtie_tx/$(notdir $(F))_stringtie_tx.fa.sa) \
+$(foreach F,$(fastqfiles),reference/STAR/$(notdir $(F))_stringtie_tx_STAR2.5.3a/SA) \
 $(foreach F,$(fastqfiles),reference/$(notdir $(F))_stringtie_tx_rsemgene2tx.txt) \
 $(foreach F,$(fastqfiles),reference/RSEM/$(notdir $(F))_stringtie_tx/$(notdir $(F))_stringtie_tx.n2g.idx.fa) \
 $(foreach F,$(fastqfiles),reference/hera/$(notdir $(F))_stringtie_tx/index) \
@@ -116,7 +116,7 @@ $(foreach F,$(fastqfiles),stringtie/$(notdir $(F))/$(notdir $(F))_stringtie_tx.f
 ## Align and quantify each sample
 quantstringtie: $(foreach F,$(fastqfiles),salmon_stringtie_tx/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),kallisto_stringtie_tx/$(notdir $(F))/abundance.tsv) \
-$(foreach F,$(fastqfiles),salmonbwa_stringtie_tx/$(notdir $(F))/quant.sf) \
+$(foreach F,$(fastqfiles),salmonstartx_stringtie_tx/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),RSEM_stringtie_tx/$(notdir $(F))/$(notdir $(F)).isoforms.results) \
 $(foreach F,$(fastqfiles),STAR_stringtie_tx/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoord.out.bam.bai) \
 $(foreach F,$(fastqfiles),hera_stringtie_tx/$(notdir $(F))/abundance.tsv)

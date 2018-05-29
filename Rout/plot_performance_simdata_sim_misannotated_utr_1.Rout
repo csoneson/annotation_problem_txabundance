@@ -125,7 +125,7 @@ null device
 +                                         name = "Transcript class") + 
 +         xlab("Selected 3'UTR") + ylab("Relative contribution to gene TPM"))
 Warning message:
-Removed 44 rows containing non-finite values (stat_boxplot). 
+Removed 47 rows containing non-finite values (stat_boxplot). 
 > dev.off()
 null device 
           1 
@@ -149,7 +149,7 @@ null device
 > 
 > saveRDS(NULL, file = outrds)
 > date()
-[1] "Sat May 26 19:16:23 2018"
+[1] "Mon May 28 14:01:46 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -199,4 +199,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-154.560   4.688 159.527 
+133.888   2.820 136.925 

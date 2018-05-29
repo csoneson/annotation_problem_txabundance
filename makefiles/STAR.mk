@@ -27,6 +27,7 @@ STAR$(3)/$(2)/$(2)_Aligned.sortedByCoord.out.bam: $(STARindexnogtf)/SA $(4) $(1)
 endef
 $(foreach F,$(fastqfiles),$(eval $(call starrule,$(F),$(notdir $(F)),,$(gtf),150)))
 $(foreach F,$(fastqfiles),$(eval $(call starrule,$(F),$(notdir $(F)),_stringtie_tx,stringtie/$(notdir $(F))/$(notdir $(F))_filtered.gtf,150)))
+$(foreach F,$(fastqfilesreal),$(eval $(call starrule,$(F),$(notdir $(F)),_chess,$(gtf_chess),150)))
 
 ## Index STAR bam file
 define starindexrule
@@ -36,6 +37,7 @@ STAR$(2)/$(1)/$(1)_Aligned.sortedByCoord.out.bam
 endef
 $(foreach F,$(fastqfiles),$(eval $(call starindexrule,$(notdir $(F)),)))
 $(foreach F,$(fastqfiles),$(eval $(call starindexrule,$(notdir $(F)),_stringtie_tx)))
+$(foreach F,$(fastqfilesreal),$(eval $(call starindexrule,$(notdir $(F)),_chess)))
 
 ## Count reads mapping to exons and introns with featureCounts
 define featurecountsrule

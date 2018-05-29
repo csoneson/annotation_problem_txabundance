@@ -14,26 +14,31 @@ $(hisat2index).1.ht2: $(genome)
 $(hisat2ss): $(gtf)
 	python $(hisat2)/hisat2_extract_splice_sites.py $(gtf) > $(hisat2ss)
 
+reference/hisat2splicesites_chess2.0_assembly_fixed.txt: $(gtf_chess)
+	python $(hisat2)/hisat2_extract_splice_sites.py $(gtf_chess) > $@
+
 ## ==================================================================================== ##
 ##                              HISAT2 + StringTie                                      ##
 ## ==================================================================================== ##
 ## Run HISAT2
 define hisat2rule
-HISAT2/$(2)/$(2).bam: $(hisat2index).1.ht2 $(hisat2ss) $(1)_R1.fastq.gz $(1)_R2.fastq.gz
+HISAT2$(3)/$(2)/$(2).bam: $(hisat2index).1.ht2 $(4) $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 	mkdir -p $$(@D)
 	$(hisat2)/hisat2 -p $(nthreads) -x $(hisat2index) --dta -1 $(1)_R1.fastq.gz -2 $(1)_R2.fastq.gz \
-	--known-splicesite-infile $(hisat2ss) --summary-file $$@_summary.txt | \
+	--known-splicesite-infile $(4) --summary-file $$@_summary.txt | \
 	$(samtools) view -b -@ $(nthreads) - | $(samtools) sort -o $$@ -T $(2)tmp -@ $(nthreads) - 
 endef
-$(foreach F,$(fastqfiles),$(eval $(call hisat2rule,$(F),$(notdir $(F)))))
+$(foreach F,$(fastqfiles),$(eval $(call hisat2rule,$(F),$(notdir $(F)),,$(hisat2ss))))
+$(foreach F,$(fastqfilesreal),$(eval $(call hisat2rule,$(F),$(notdir $(F)),_chess,reference/hisat2splicesites_chess2.0_assembly_fixed.txt)))
 
 ## Run StringTie without assembly of new transcripts
 define stringtierefrule
-stringtie_onlyref/$(1)/$(1).gtf: HISAT2/$(1)/$(1).bam $(gtf)
+stringtie_onlyref$(3)/$(1)/$(1).gtf: HISAT2$(3)/$(1)/$(1).bam $(4)
 	mkdir -p $$(@D)
-	$(stringtie) $$< -o $$@ -p $(nthreads) -G $(gtf) -e -A $$@.tab $(2)
+	$(stringtie) $$< -o $$@ -p $(nthreads) -G $(4) -e -A $$@.tab $(2)
 endef
-$(foreach F,$(fastqfiles),$(eval $(call stringtierefrule,$(notdir $(F)),--rf)))
+$(foreach F,$(fastqfiles),$(eval $(call stringtierefrule,$(notdir $(F)),--rf,,$(gtf))))
+$(foreach F,$(fastqfilesreal),$(eval $(call stringtierefrule,$(notdir $(F)),--rf,_chess,$(gtf_chess))))
 
 ## Run StringTie with assembly of new transcripts
 define stringtierule

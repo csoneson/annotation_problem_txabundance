@@ -39,6 +39,8 @@ suppressPackageStartupMessages({
   library(dplyr)
   library(tidyr)
   library(ggplot2)
+  library(GenomicRanges)
+  library(GenomicFeatures)
 })
 
 scores <- readRDS(scorerds)
@@ -54,6 +56,12 @@ utrs <- as.data.frame(gtf) %>% dplyr::filter(type == "three_prime_utr") %>%
   dplyr::summarize(start = min(start), end = max(end), width = sum(width), 
                    seqnames = seqnames[1], gene_id = gene_id[1], strand = strand[1])
 
+## Get the total length of each transcript
+exonunions <- as.data.frame(gtf) %>% dplyr::filter(type == "exon") %>%
+  dplyr::group_by(transcript_id) %>%
+  dplyr::summarize(start = min(start), end = max(end), width = sum(width),
+                   seqnames = seqnames[1], gene_id = gene_id[1], strand = strand[1])
+
 ## Set up data frame with information about modified transcripts
 modtrans <- data.frame(
   mod_transcript = grep("utrfrom", rownames(counts_matrix), value = TRUE), 
@@ -62,7 +70,44 @@ modtrans <- data.frame(
   dplyr::mutate(internal_tx_utrlength = utrs$width[match(internal_tx, utrs$transcript_id)],
                 utr_tx_utrlength = utrs$width[match(utr_tx, utrs$transcript_id)]) %>%
   dplyr::mutate(gene = transcripts$gene[match(internal_tx, transcripts$transcript)]) %>%
-  dplyr::mutate(utr_selected = ifelse(internal_tx_utrlength > utr_tx_utrlength, "short", "long"))
+  dplyr::mutate(utr_selected = ifelse(internal_tx_utrlength > utr_tx_utrlength, "short", "long")) %>%
+  dplyr::mutate(utr_fraction_of_length = utr_tx_utrlength/(exonunions$width[match(internal_tx, exonunions$transcript_id)] - internal_tx_utrlength + utr_tx_utrlength))
+
+## Generate GRangesList with one entry per modified transcript
+txdb <- makeTxDbFromGRanges(gtf)
+ebt <- exonsBy(txdb, "tx", use.names = TRUE)
+utrs0 <- subset(gtf, type == "three_prime_utr")
+L <- as(lapply(seq_len(nrow(modtrans)), function(i) {
+  utrtx <- ebt[[modtrans$utr_tx[i]]]
+  inttx <- ebt[[modtrans$internal_tx[i]]]
+  utrutrtx <- subset(utrs0, transcript_id == modtrans$utr_tx[i])
+  utrinttx <- subset(utrs0, transcript_id == modtrans$internal_tx[i])
+  GenomicRanges::reduce(GenomicRanges::union(GenomicRanges::setdiff(inttx, utrinttx), utrutrtx))
+}), "GRangesList")
+names(L) <- paste0(modtrans$internal_tx, "_utrfrom_", modtrans$utr_tx)
+
+## Find overlaps between modified transcripts and annotated ones
+ol <- findOverlaps(L, ebt)
+
+## Find most similar transcript for each modified transcript
+jaccards <- as.data.frame(t(sapply(seq_len(length(ol)), function(i) {
+  pin <- GenomicRanges::intersect(L[[queryHits(ol)[i]]], ebt[[subjectHits(ol)[i]]])
+  pun <- GenomicRanges::union(L[[queryHits(ol)[i]]], ebt[[subjectHits(ol)[i]]])
+  overlap <- sum(width(pin))/sum(width(pun))
+  c(queryHits(ol)[i], subjectHits(ol)[i], overlap)
+})))
+jaccards <- jaccards %>% 
+  dplyr::rename(modified_tx = V1, reference_tx = V2, Jaccard = V3) %>%
+  dplyr::mutate(modified_tx = names(L)[modified_tx],
+                reference_tx = names(ebt)[reference_tx]) %>%
+  dplyr::mutate(modified_gene = transcripts$gene[match(sapply(strsplit(modified_tx, "_utrfrom"), .subset, 1), transcripts$transcript)],
+                reference_gene = transcripts$gene[match(reference_tx, transcripts$transcript)]) %>%
+  dplyr::filter(modified_gene == reference_gene) %>% 
+  dplyr::group_by(modified_tx) %>% 
+  dplyr::summarize(reference_tx = reference_tx[which.max(Jaccard)], 
+                   Jaccard = Jaccard[which.max(Jaccard)])
+
+summary(jaccards$Jaccard)
 
 ## Subset transcript abundance table to only the transcripts in the modified genes
 gene_summary <- transcripts %>% 
@@ -71,29 +116,64 @@ gene_summary <- transcripts %>%
                                  "Contributing internal structure", 
                                  ifelse(transcript %in% modtrans$utr_tx, 
                                         "Contributing 3'UTR", "Other"))) %>%
-  dplyr::left_join(modtrans %>% dplyr::select(gene, utr_selected)) %>%
-  dplyr::select(gene, count, TPM, tr_type, utr_selected, method) %>%
-  dplyr::group_by(gene, utr_selected, tr_type, method) %>% 
-  dplyr::summarize(count = sum(count), TPM = sum(TPM)) %>% dplyr::ungroup() %>%
-  dplyr::group_by(gene, method) %>% dplyr::mutate(count = count/sum(count),
-                                                  TPM = TPM/sum(TPM)) %>%
-  dplyr::ungroup()
+  dplyr::mutate(tr_type2 = ifelse(transcript %in% jaccards$reference_tx, 
+                                  "Most similar reference transcript", "Other")) %>% 
+  dplyr::left_join(modtrans %>% dplyr::select(gene, utr_selected, utr_fraction_of_length)) %>%
+  dplyr::select(gene, count, TPM, tr_type, utr_selected, method, tr_type2, utr_fraction_of_length)
 
 ## Plot relative contributions to gene count/TPM from the different transcript
 ## categories
 png(gsub("\\.rds$", "_count.png", outrds), width = 7, height = 7, unit = "in", res = 300)
-print(ggplot(gene_summary, aes(x = utr_selected, y = count, color = tr_type)) + 
+print(ggplot(gene_summary %>%
+               dplyr::group_by(gene, utr_selected, tr_type, method, utr_fraction_of_length) %>% 
+               dplyr::summarize(count = sum(count), TPM = sum(TPM)) %>% dplyr::ungroup() %>%
+               dplyr::group_by(gene, method) %>% dplyr::mutate(count = count/sum(count),
+                                                               TPM = TPM/sum(TPM)) %>%
+               dplyr::ungroup(), 
+             aes(x = utr_selected, y = count, color = tr_type)) + 
         geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method) + 
         theme_bw() + scale_color_manual(values = c("#9900cc", "#009933", "#0099cc"),
                                         name = "Transcript class") + 
         xlab("Selected 3'UTR") + ylab("Relative contribution to gene count"))
 dev.off()
 
+png(gsub("\\.rds$", "_count2.png", outrds), width = 7, height = 7, unit = "in", res = 300)
+print(ggplot(gene_summary %>%
+               dplyr::group_by(gene, utr_selected, tr_type2, method, utr_fraction_of_length) %>% 
+               dplyr::summarize(count = sum(count), TPM = sum(TPM)) %>% dplyr::ungroup() %>%
+               dplyr::group_by(gene, method) %>% dplyr::mutate(count = count/sum(count),
+                                                               TPM = TPM/sum(TPM)) %>%
+               dplyr::ungroup(), 
+             aes(x = tr_type2, y = count, color = tr_type2)) + 
+        geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method) + 
+        theme_bw() + 
+        xlab("Selected 3'UTR") + ylab("Relative contribution to gene count"))
+dev.off()
+
 png(gsub("\\.rds$", "_tpm.png", outrds), width = 7, height = 7, unit = "in", res = 300)
-print(ggplot(gene_summary, aes(x = utr_selected, y = TPM, color = tr_type)) + 
+print(ggplot(gene_summary %>%
+               dplyr::group_by(gene, utr_selected, tr_type, method, utr_fraction_of_length) %>% 
+               dplyr::summarize(count = sum(count), TPM = sum(TPM)) %>% dplyr::ungroup() %>%
+               dplyr::group_by(gene, method) %>% dplyr::mutate(count = count/sum(count),
+                                                               TPM = TPM/sum(TPM)) %>%
+               dplyr::ungroup(), 
+             aes(x = utr_selected, y = TPM, color = tr_type)) + 
         geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method) + 
         theme_bw() + scale_color_manual(values = c("#9900cc", "#009933", "#0099cc"),
                                         name = "Transcript class") + 
+        xlab("Selected 3'UTR") + ylab("Relative contribution to gene TPM"))
+dev.off()
+
+png(gsub("\\.rds$", "_tpm2.png", outrds), width = 7, height = 7, unit = "in", res = 300)
+print(ggplot(gene_summary %>%
+               dplyr::group_by(gene, utr_selected, tr_type2, method, utr_fraction_of_length) %>% 
+               dplyr::summarize(count = sum(count), TPM = sum(TPM)) %>% dplyr::ungroup() %>%
+               dplyr::group_by(gene, method) %>% dplyr::mutate(count = count/sum(count),
+                                                               TPM = TPM/sum(TPM)) %>%
+               dplyr::ungroup(), 
+             aes(x = tr_type2, y = TPM, color = tr_type2)) + 
+        geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method) + 
+        theme_bw() + 
         xlab("Selected 3'UTR") + ylab("Relative contribution to gene TPM"))
 dev.off()
 
@@ -109,6 +189,16 @@ print(ggplot(genes, aes(x = geneclass, y = score, color = geneclass)) +
                            name = "Gene class") + 
         xlab(""))
 dev.off()
+
+png(gsub("\\.rds$", "_scores2.png", outrds), width = 7, height = 7, unit = "in", res = 300)
+print(ggplot(genes %>% dplyr::left_join(gene_summary %>% 
+                                          dplyr::select(gene, method, utr_fraction_of_length) %>% 
+                                          dplyr::distinct()),
+             aes(x = utr_fraction_of_length, y = score)) + 
+        geom_point(alpha = 0.3, size = 0.3) + geom_smooth() +  
+        facet_wrap(~ method) + theme_bw())
+dev.off()
+
 
 saveRDS(NULL, file = outrds)
 date()

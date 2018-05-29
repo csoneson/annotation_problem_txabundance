@@ -11,7 +11,7 @@ $(1)/SA: $(2)
 endef
 $(eval $(call startxindexrule,$(STARindextxome),$(txome)))
 $(foreach F,$(fastqfiles),$(eval $(call startxindexrule,reference/STAR/$(notdir $(F))_stringtie_tx_STAR2.5.3a,stringtie/$(notdir $(F))/$(notdir $(F))_stringtie_tx.fa)))
-
+$(eval $(call startxindexrule,reference/STAR/chess2.0_assembly_fixed_STAR2.5.3a,$(txome_chess)))
 
 ## ==================================================================================== ##
 ##                                 STAR + Salmon                                        ##
@@ -29,6 +29,7 @@ $(4)/$(2)/$(2)_Aligned.out.bam: $(3)/SA $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 endef
 $(foreach F,$(fastqfiles),$(eval $(call startxrule,$(F),$(notdir $(F)),$(STARindextxome),STARtxome)))
 $(foreach F,$(fastqfiles),$(eval $(call startxrule,$(F),$(notdir $(F)),reference/STAR/$(notdir $(F))_stringtie_tx_STAR2.5.3a,STARtxome_stringtie_tx)))
+$(foreach F,$(fastqfilesreal),$(eval $(call startxrule,$(F),$(notdir $(F)),reference/STAR/chess2.0_assembly_fixed_STAR2.5.3a,STARtxome_chess)))
 
 ## Run Salmon in alignment-based mode
 define salmonstarrule
@@ -38,3 +39,4 @@ $(2)/$(1)/quant.sf: $(3)/$(1)/$(1)_Aligned.out.bam $(4)
 endef
 $(foreach F,$(fastqfiles),$(eval $(call salmonstarrule,$(notdir $(F)),salmonstartx,STARtxome,$(txome))))
 $(foreach F,$(fastqfiles),$(eval $(call salmonstarrule,$(notdir $(F)),salmonstartx_stringtie_tx,STARtxome_stringtie_tx,stringtie/$(notdir $(F))/$(notdir $(F))_stringtie_tx.fa)))
+$(foerach F,$(fastqfilesreal),$(eval $(call salmonstarrule,$(notdir $(F)),salmonstartx_chess,STARtxome_chess,$(txome_chess))))

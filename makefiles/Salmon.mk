@@ -13,6 +13,8 @@ $(eval $(call salmonindexrule,$(salmoncdnancrnaindex),$(txome),))
 $(eval $(call salmonindexrule,$(salmoncdsindex),$(cds),))
 $(eval $(call salmonindexrule,$(salmonkeepdupindex),$(txome),--keepDuplicates))
 $(foreach F,$(fastqfiles),$(eval $(call salmonindexrule,reference/salmon/$(notdir $(F))_stringtie_tx_sidx_v0.9.1,stringtie/$(notdir $(F))/$(notdir $(F))_stringtie_tx.fa,)))
+$(eval $(call salmonindexrule,reference/salmon/chess2.0_assembly_fixed_sidx_v0.9.1,$(txome_chess),))
+$(eval $(call salmonindexrule,reference/salmon/chess2.0_assembly_fixed_keepdup_sidx_v0.9.1,$(txome_chess),--keepDuplicates))
 
 ## Run Salmon
 define salmonrule
@@ -24,3 +26,5 @@ $(foreach F,$(fastqfiles),$(eval $(call salmonrule,$(F),$(notdir $(F)),$(salmonc
 $(foreach F,$(fastqfiles),$(eval $(call salmonrule,$(F),$(notdir $(F)),$(salmoncdsindex),salmon/cds,)))
 $(foreach F,$(fastqfiles),$(eval $(call salmonrule,$(F),$(notdir $(F)),reference/salmon/$(notdir $(F))_stringtie_tx_sidx_v0.9.1,salmon_stringtie_tx,)))
 $(foreach F,$(fastqfiles),$(eval $(call salmonrule,$(F),$(notdir $(F)),$(salmonkeepdupindex),salmon/cDNAncRNAkeepdup,)))
+$(foreach F,$(fastqfilesreal),$(eval $(call salmonrule,$(F),$(notdir $(F)),reference/salmon/chess2.0_assembly_fixed_sidx_v0.9.1,salmon_chess,--numBootstraps 100)))
+$(foreach F,$(fastqfilesreal),$(eval $(call salmonrule,$(F),$(notdir $(F)),reference/salmon/chess2.0_assembly_fixed_keepdup_sidx_v0.9.1,salmon_chesskepdup,)))

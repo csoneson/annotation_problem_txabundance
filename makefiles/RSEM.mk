@@ -6,6 +6,7 @@ reference/$(1)_rsemgene2tx.txt: $(2) Rscripts/generate_rsemgene2tx.R
 endef
 $(eval $(call gene2txrule,Homo_sapiens.GRCh38.90,$(tx2gene)))
 $(foreach F,$(fastqfiles),$(eval $(call gene2txrule,$(notdir $(F))_stringtie_tx,reference/$(notdir $(F))_stringtie_tx_tx2gene.rds)))
+$(eval $(call gene2txrule,chess2.0_assembly_fixed,$(tx2gene_chess)))
 
 define rsemindexrule
 reference/RSEM/$(1)/$(1).n2g.idx.fa: $(2) $(3)
@@ -15,6 +16,7 @@ reference/RSEM/$(1)/$(1).n2g.idx.fa: $(2) $(3)
 endef
 $(eval $(call rsemindexrule,Homo_sapiens.GRCh38.rsem.cdna.ncrna,$(txome),reference/Homo_sapiens.GRCh38.90_rsemgene2tx.txt))
 $(foreach F,$(fastqfiles),$(eval $(call rsemindexrule,$(notdir $(F))_stringtie_tx,stringtie/$(notdir $(F))/$(notdir $(F))_stringtie_tx.fa,reference/$(notdir $(F))_stringtie_tx_rsemgene2tx.txt)))
+$(eval $(call rsemindexrule,chess2.0_assembly_fixed,$(txome_chess),reference/chess2.0_assembly_fixed_rsemgene2tx.txt))
 
 ## ==================================================================================== ##
 ##                                     RSEM                                             ##
@@ -28,3 +30,4 @@ $(4)/$(2)/$(2).isoforms.results: $(3).n2g.idx.fa $(1)_R1.fastq.gz $(1)_R2.fastq.
 endef
 $(foreach F,$(fastqfiles),$(eval $(call rsemrule,$(F),$(notdir $(F)),reference/RSEM/Homo_sapiens.GRCh38.rsem.cdna.ncrna/Homo_sapiens.GRCh38.rsem.cdna.ncrna,RSEM/cDNAncRNA)))
 $(foreach F,$(fastqfiles),$(eval $(call rsemrule,$(F),$(notdir $(F)),reference/RSEM/$(notdir $(F))_stringtie_tx/$(notdir $(F))_stringtie_tx,RSEM_stringtie_tx)))
+$(foreach F,$(fastqfilesreal),$(eval $(call rsemrule,$(F),$(notdir $(F)),reference/RSEM/chess2.0_assembly_fixed/chess2.0_assembly_fixed,RSEM_chess)))

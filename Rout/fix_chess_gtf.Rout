@@ -25,6 +25,7 @@ Type 'q()' to quit R.
 > ## * ingtf: input gtf from CHESS                                              ##
 > ## * ingenes: list of genes present in CHESS gtf file, with Entrez IDs        ##
 > ## * outgtf: output gtf file                                                  ##
+> ## * outinfo: output file containing mapping between gene IDs and symbols     ##
 > ##                                                                            ##
 > ## Outputs:                                                                   ##
 > ## * Modified gtf file                                                        ##
@@ -42,12 +43,15 @@ Type 'q()' to quit R.
 [1] "reference_chess/chess2.0.genes"
 > print(outgtf)
 [1] "reference_chess/chess2.0_assembly_fixed.gtf"
+> print(outinfo)
+[1] "reference_chess/gene_id_to_symbol.rds"
 > 
 > suppressPackageStartupMessages({
 +   library(GenomeInfoDb)
 +   library(rtracklayer)
 +   library(readr)
 +   library(org.Hs.eg.db)
++   library(dplyr)
 + })
 > 
 > ## Read list of genes and add Ensembl ID where it is available
@@ -98,10 +102,17 @@ Type 'q()' to quit R.
 > mcols(gtf) <- mcols(gtf)[, c("source", "type", "score", "phase", "gene_id", 
 +                              "transcript_id", "exon_id", "gene_name", "transcript_name")]
 > 
+> gtf <- subset(gtf, source != "tRNAscan-SE")
+> 
+> ## Save a file with the conversion between gene ID and "symbol" (here, Ensembl ID)
+> saveRDS(as.data.frame(mcols(gtf)) %>% dplyr::select(gene_id, gene_name) %>%
++           dplyr::rename(gene = gene_id, symbol = gene_name),
++         file = outinfo)
+> 
 > rtracklayer::export(gtf, outgtf, format = "gtf")
 > 
 > date()
-[1] "Sun May 27 16:01:39 2018"
+[1] "Mon May 28 19:13:22 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -122,29 +133,32 @@ attached base packages:
 [8] methods   base     
 
 other attached packages:
- [1] org.Hs.eg.db_3.6.0    AnnotationDbi_1.41.5  Biobase_2.39.2       
- [4] readr_1.1.1           rtracklayer_1.39.12   GenomicRanges_1.31.23
- [7] GenomeInfoDb_1.15.5   IRanges_2.13.28       S4Vectors_0.17.42    
-[10] BiocGenerics_0.26.0  
+ [1] dplyr_0.7.4           org.Hs.eg.db_3.6.0    AnnotationDbi_1.41.5 
+ [4] Biobase_2.39.2        readr_1.1.1           rtracklayer_1.39.12  
+ [7] GenomicRanges_1.31.23 GenomeInfoDb_1.15.5   IRanges_2.13.28      
+[10] S4Vectors_0.17.42     BiocGenerics_0.26.0  
 
 loaded via a namespace (and not attached):
- [1] Rcpp_0.12.16                compiler_3.5.0             
- [3] pillar_1.2.1                XVector_0.20.0             
- [5] bitops_1.0-6                tools_3.5.0                
- [7] zlibbioc_1.26.0             digest_0.6.15              
- [9] bit_1.1-12                  RSQLite_2.1.0              
-[11] memoise_1.1.0               tibble_1.4.2               
-[13] lattice_0.20-35             pkgconfig_2.0.1            
-[15] rlang_0.2.0                 Matrix_1.2-14              
-[17] DelayedArray_0.5.30         DBI_0.8                    
-[19] GenomeInfoDbData_1.1.0      Biostrings_2.47.12         
-[21] hms_0.4.2                   bit64_0.9-7                
-[23] grid_3.5.0                  R6_2.2.2                   
-[25] XML_3.98-1.11               BiocParallel_1.13.3        
-[27] blob_1.1.1                  Rsamtools_1.31.3           
-[29] matrixStats_0.53.1          GenomicAlignments_1.15.13  
-[31] SummarizedExperiment_1.9.16 RCurl_1.95-4.10            
+ [1] Rcpp_0.12.16                bindr_0.1.1                
+ [3] compiler_3.5.0              pillar_1.2.1               
+ [5] XVector_0.20.0              bitops_1.0-6               
+ [7] tools_3.5.0                 zlibbioc_1.26.0            
+ [9] digest_0.6.15               bit_1.1-12                 
+[11] RSQLite_2.1.0               memoise_1.1.0              
+[13] tibble_1.4.2                lattice_0.20-35            
+[15] pkgconfig_2.0.1             rlang_0.2.0                
+[17] Matrix_1.2-14               DelayedArray_0.5.30        
+[19] DBI_0.8                     bindrcpp_0.2.2             
+[21] GenomeInfoDbData_1.1.0      Biostrings_2.47.12         
+[23] hms_0.4.2                   bit64_0.9-7                
+[25] grid_3.5.0                  glue_1.2.0                 
+[27] R6_2.2.2                    XML_3.98-1.11              
+[29] BiocParallel_1.13.3         magrittr_1.5               
+[31] blob_1.1.1                  Rsamtools_1.31.3           
+[33] matrixStats_0.53.1          GenomicAlignments_1.15.13  
+[35] assertthat_0.2.0            SummarizedExperiment_1.9.16
+[37] RCurl_1.95-4.10            
 > 
 > proc.time()
    user  system elapsed 
-464.020  43.532 508.529 
+423.500  10.548 435.432 

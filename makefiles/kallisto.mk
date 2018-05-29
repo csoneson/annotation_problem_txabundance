@@ -10,6 +10,7 @@ $(1): $(2)
 endef
 $(eval $(call kallistoindexrule,$(kallistocdnancrnaindex),$(txome)))
 $(foreach F,$(fastqfiles),$(eval $(call kallistoindexrule,reference/kallisto/$(notdir $(F))_stringtie_tx_kidx_v0.44.0,stringtie/$(notdir $(F))/$(notdir $(F))_stringtie_tx.fa)))
+$(eval $(call kallistoindexrule,reference/kallisto/chess2.0_assembly_fixed_kidx_v0.44.0,$(txome_chess)))
 
 ## ==================================================================================== ##
 ##                                   kallisto                                           ##
@@ -22,3 +23,4 @@ $(4)/$(2)/abundance.tsv: $(3) $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 endef
 $(foreach F,$(fastqfiles),$(eval $(call kallistorule,$(F),$(notdir $(F)),$(kallistocdnancrnaindex),kallisto/cDNAncRNA,--rf-stranded)))
 $(foreach F,$(fastqfiles),$(eval $(call kallistorule,$(F),$(notdir $(F)),reference/kallisto/$(notdir $(F))_stringtie_tx_kidx_v0.44.0,kallisto_stringtie_tx,--rf-stranded)))
+$(foreach F,$(fastqfilesreal),$(eval $(call kallistorule,$(F),$(notdir $(F)),reference/kallisto/chess2.0_assembly_fixed_kidx_v0.44.0,kallisto_chess,--rf-stranded)))

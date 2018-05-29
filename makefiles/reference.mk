@@ -68,14 +68,26 @@ $(gvizgenemodels): $(gtf) Rscripts/generate_genemodels.R Rscripts/helper_plot_tr
 ## ==================================================================================== ##
 ##                                CHESS annotation                                      ##
 ## ==================================================================================== ##
-reference_chess/chess2.0_assembly_fixed.gtf: reference_chess/chess2.0_assembly.gff reference_chess/chess2.0.genes Rscripts/fix_chess_gtf.R
-	$(R) "--args ingtf='$(word 1,$^)' ingenes='$(word 2,$^)' outgtf='$@'" Rscripts/fix_chess_gtf.R Rout/fix_chess_gtf.Rout
+gtf_chess := reference_chess/chess2.0_assembly_fixed.gtf
+txome_chess := reference_chess/chess2.0_assembly_fixed.fa
+tx2gene_chess := reference_chess/chess2.0_assembly_fixed_tx2gene.rds
+tx2gene_chess_withsymbol := reference_chess/chess2.0_assembly_fixed_tx2gene_withsymbol.rds
+info_chess := reference_chess/gene_id_to_symbol.rds
 
-reference_chess/chess2.0_assembly_fixed.fa: reference_chess/chess2.0_assembly_fixed.gtf $(genome)
+$(gtf_chess): reference_chess/chess2.0_assembly.gff reference_chess/chess2.0.genes Rscripts/fix_chess_gtf.R
+	$(R) "--args ingtf='$(word 1,$^)' ingenes='$(word 2,$^)' outgtf='$@' outinfo='$(info_chess)'" Rscripts/fix_chess_gtf.R Rout/fix_chess_gtf.Rout
+
+$(info_chess): $(gtf_chess)
+	touch $@
+
+$(txome_chess): $(gtf_chess) $(genome)
 	$(gffread) -w $@ -g $(genome) $<
 
-reference_chess/chess2.0_assembly_fixed_tx2gene.rds: reference_chess/chess2.0_assembly_fixed.gtf Rscripts/generate_tx2gene_from_gtf.R
+$(tx2gene_chess): $(gtf_chess) Rscripts/generate_tx2gene_from_gtf.R
 	$(R) "--args gtf='$<' outrds='$@'" Rscripts/generate_tx2gene_from_gtf.R Rout/generate_tx2gene_from_gtf_chess.Rout
+
+$(tx2gene_chess_withsymbol): $(tx2gene_chess) $(info_chess) Rscripts/add_symbol_to_tx2gene.R
+	$(R) "--args tx2gene='$(tx2gene_chess)' info='$(info_chess)' outrds='$@'" Rscripts/add_symbol_to_tx2gene.R Rout/add_symbol_to_tx2gene_chess.Rout
 
 
 

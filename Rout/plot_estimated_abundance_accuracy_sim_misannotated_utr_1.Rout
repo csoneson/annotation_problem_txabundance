@@ -54,7 +54,7 @@ Type 'q()' to quit R.
 [1] "output/sim_misannotated_utr_1_combined_coverages_with_scores.rds"
 > print(quantmethods)
 [1] "hera"          "kallisto"      "RSEM"          "Salmon"       
-[5] "SalmonBWA"     "SalmonCDS"     "SalmonKeepDup" "StringTie"    
+[5] "SalmonSTAR"    "SalmonCDS"     "SalmonKeepDup" "StringTie"    
 > print(truthrda)
 [1] "simulation/misannotated_utr/sim_counts_matrix.rda"
 > print(truthmodgenesrds)
@@ -184,7 +184,7 @@ null device
 > 
 > saveRDS(NULL, file = outrds)
 > date()
-[1] "Sat May 26 19:44:10 2018"
+[1] "Mon May 28 13:56:47 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -219,4 +219,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
     user   system  elapsed 
-1813.844    9.020 1825.898 
+1685.792   20.200 1709.215 

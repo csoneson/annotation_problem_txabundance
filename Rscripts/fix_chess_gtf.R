@@ -6,6 +6,7 @@
 ## * ingtf: input gtf from CHESS                                              ##
 ## * ingenes: list of genes present in CHESS gtf file, with Entrez IDs        ##
 ## * outgtf: output gtf file                                                  ##
+## * outinfo: output file containing mapping between gene IDs and symbols     ##
 ##                                                                            ##
 ## Outputs:                                                                   ##
 ## * Modified gtf file                                                        ##
@@ -20,12 +21,14 @@ for (i in 1:length(args)) {
 print(ingtf)
 print(ingenes)
 print(outgtf)
+print(outinfo)
 
 suppressPackageStartupMessages({
   library(GenomeInfoDb)
   library(rtracklayer)
   library(readr)
   library(org.Hs.eg.db)
+  library(dplyr)
 })
 
 ## Read list of genes and add Ensembl ID where it is available
@@ -74,6 +77,13 @@ gtf$exon_id[gtf$type == "exon"] <- paste0("E", seq_len(length(which(gtf$type == 
 
 mcols(gtf) <- mcols(gtf)[, c("source", "type", "score", "phase", "gene_id", 
                              "transcript_id", "exon_id", "gene_name", "transcript_name")]
+
+gtf <- subset(gtf, source != "tRNAscan-SE")
+
+## Save a file with the conversion between gene ID and "symbol" (here, Ensembl ID)
+saveRDS(as.data.frame(mcols(gtf)) %>% dplyr::select(gene_id, gene_name) %>%
+          dplyr::rename(gene = gene_id, symbol = gene_name),
+        file = outinfo)
 
 rtracklayer::export(gtf, outgtf, format = "gtf")
 

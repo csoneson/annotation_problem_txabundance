@@ -8,6 +8,7 @@ reference/hera/$(1)/index: $(genome) $(2)
 endef
 $(eval $(call heraindexrule,Homo_sapiens.GRCh38,$(gtf)))
 $(foreach F,$(fastqfiles),$(eval $(call heraindexrule,$(notdir $(F))_stringtie_tx,stringtie/$(notdir $(F))/$(notdir $(F))_filtered_withgene.gtf)))
+$(eval $(call heraindexrule,chess2.0_assembly_fixed,$(gtf_chess)))
 
 ## ==================================================================================== ##
 ##                                      HERA                                            ##
@@ -20,3 +21,4 @@ hera$(3)/$(2)/abundance.tsv: $(4)/index $(1)_R1.fastq.gz $(1)_R2.fastq.gz
 endef
 $(foreach F,$(fastqfiles),$(eval $(call herarule,$(F),$(notdir $(F)),,reference/hera/Homo_sapiens.GRCh38)))
 $(foreach F,$(fastqfiles),$(eval $(call herarule,$(F),$(notdir $(F)),_stringtie_tx,reference/hera/$(notdir $(F))_stringtie_tx)))
+$(foreach F,$(fastqfilesreal),$(eval $(call herarule,$(F),$(notdir $(F)),_chess,reference/hera/chess2.0_assembly_fixed)))

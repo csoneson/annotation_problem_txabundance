@@ -11,6 +11,8 @@ $(eval $(call fitbiasrule,sim_misannotated_utr_1,,$(gtf),125,230,370,Homo_sapien
 $(eval $(call fitbiasrule,20151016.A-Cortex_RNA,_stringtie_tx,stringtie/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_filtered.gtf,126,100,300,Homo_sapiens,GRCh38,90,TRUE))
 $(eval $(call fitbiasrule,20170918.A-WT_4,_stringtie_tx,stringtie/20170918.A-WT_4/20170918.A-WT_4_filtered.gtf,151,140,450,Homo_sapiens,GRCh38,90,TRUE))
 $(eval $(call fitbiasrule,sim_misannotated_utr_1,_stringtie_tx,stringtie/sim_misannotated_utr_1/sim_misannotated_utr_1_filtered.gtf,125,230,370,Homo_sapiens,GRCh38,90,TRUE))
+$(eval $(call fitbiasrule,20151016.A-Cortex_RNA,_chess,$(gtf_chess),126,100,300,Homo_sapiens,GRCh38,90,TRUE))
+$(eval $(call fitbiasrule,20170918.A-WT_4,_chess,$(gtf_chess),151,140,450,Homo_sapiens,GRCh38,90,TRUE))
 
 ## Predict transcript and junction coverage profiles for all transcripts that have at least one 
 ## junction and are longer than the fragment length
@@ -22,6 +24,7 @@ STAR$(2)/$(1)/$(1)_Aligned.sortedByCoord.out.bam Rscripts/alpine_get_predicted_c
 endef
 $(foreach F,$(fastqfiles),$(eval $(call predcovrule,$(notdir $(F)),)))
 $(foreach F,$(fastqfiles),$(eval $(call predcovrule,$(notdir $(F)),_stringtie_tx)))
+$(foreach F,$(fastqfilesreal),$(eval $(call predcovrule,$(notdir $(F)),_chess)))
 
 ## Scale junction coverage by transcript abundance estimates for each method
 define juncscalerule
@@ -80,6 +83,22 @@ $(eval $(call juncscalerule,sim_misannotated_utr_1,_stringtie_tx,RSEM,RSEM_strin
 $(eval $(call juncscalerule,sim_misannotated_utr_1,_stringtie_tx,hera,hera_stringtie_tx/sim_misannotated_utr_1/abundance.tsv,Rscripts/read_quant_hera.R,reference/sim_misannotated_utr_1_stringtie_tx_tx2gene_withsymbol.rds,yes))
 $(eval $(call juncscalerule,sim_misannotated_utr_1,_stringtie_tx,StringTie,stringtie/sim_misannotated_utr_1/sim_misannotated_utr_1_filtered.gtf,Rscripts/read_quant_stringtie.R,reference/sim_misannotated_utr_1_stringtie_tx_tx2gene_withsymbol.rds,yes))
 
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,_chess,Salmon,salmon_chess/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_chess_withsymbol),yes))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,_chess,SalmonSTAR,salmonstartx_chess/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_chess_withsymbol),yes))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,_chess,SalmonKeepDup,salmon_chesskeepdup/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_chess_withsymbol),yes))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,_chess,kallisto,kallisto_chess/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_kallisto.R,$(tx2gene_chess_withsymbol),yes))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,_chess,RSEM,RSEM_chess/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA.isoforms.results,Rscripts/read_quant_rsem.R,$(tx2gene_chess_withsymbol),yes))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,_chess,hera,hera_chess/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_hera.R,$(tx2gene_chess_withsymbol),yes))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,_chess,StringTie,stringtie_chess/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA.gtf,Rscripts/read_quant_stringtie.R,$(tx2gene_chess_withsymbol),yes))
+
+$(eval $(call juncscalerule,20170918.A-WT_4,_chess,Salmon,salmon_chess/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_chess_withsymbol),yes))
+$(eval $(call juncscalerule,20170918.A-WT_4,_chess,SalmonSTAR,salmonstartx_chess/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_chess_withsymbol),yes))
+$(eval $(call juncscalerule,20170918.A-WT_4,_chess,SalmonKeepDup,salmon_chesskepdup/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_chess_withsymbol),yes))
+$(eval $(call juncscalerule,20170918.A-WT_4,_chess,kallisto,kallisto_chess/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_kallisto.R,$(tx2gene_chess_withsymbol),yes))
+$(eval $(call juncscalerule,20170918.A-WT_4,_chess,RSEM,RSEM_chess/20170918.A-WT_4/20170918.A-WT_4.isoforms.results,Rscripts/read_quant_rsem.R,$(tx2gene_chess_withsymbol),yes))
+$(eval $(call juncscalerule,20170918.A-WT_4,_chess,hera,hera_chess/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_hera.R,$(tx2gene_chess_withsymbol),yes))
+$(eval $(call juncscalerule,20170918.A-WT_4,_chess,StringTie,stringtie_chess/20170918.A-WT_4/20170918.A-WT_4.gtf,Rscripts/read_quant_stringtie.R,$(tx2gene_chess_withsymbol),yes))
+
 ## Combine coverages for all methods
 define combcovrule
 output/$(1)$(2)_combined_coverages.rds: STAR$(2)/$(1)/$(1)_Aligned.sortedByCoord.out.bam \
@@ -97,6 +116,8 @@ $(eval $(call combcovrule,sim_misannotated_utr_1,,,alpine/sim_misannotated_utr_1
 $(eval $(call combcovrule,20151016.A-Cortex_RNA,_stringtie_tx,,,))
 $(eval $(call combcovrule,20170918.A-WT_4,_stringtie_tx,,,))
 $(eval $(call combcovrule,sim_misannotated_utr_1,_stringtie_tx,,,))
+$(eval $(call combcovrule,20151016.A-Cortex_RNA,_chess,,,))
+$(eval $(call combcovrule,20170918.A-WT_4,_chess,,,))
 
 ## Calculate gene scores and add to summary table
 define scorerule
@@ -106,6 +127,7 @@ Rscripts/calculate_gene_scores.R
 endef
 $(foreach F,$(fastqfiles),$(eval $(call scorerule,$(notdir $(F)),)))
 $(foreach F,$(fastqfiles),$(eval $(call scorerule,$(notdir $(F)),_stringtie_tx)))
+$(foreach F,$(fastqfilesreal),$(eval $(call scorerule,$(notdir $(F)),_chess)))
 
 
 

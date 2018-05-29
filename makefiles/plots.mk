@@ -9,6 +9,7 @@ Rscripts/plot_observed_vs_predicted_junction_coverage.R
 endef
 $(foreach F,$(fastqfiles),$(eval $(call obsvspredrule,$(notdir $(F)),)))
 $(foreach F,$(fastqfiles),$(eval $(call obsvspredrule,$(notdir $(F)),_stringtie_tx)))
+$(foreach F,$(fastqfilesreal),$(eval $(call obsvspredrule,$(notdir $(F)),_chess)))
 
 ## ==================================================================================== ##
 ##           compare predicted coverage patterns between samples                        ##
@@ -30,6 +31,7 @@ Rscripts/plot_score_distribution.R
 endef
 $(foreach F,$(fastqfiles),$(eval $(call plotscorerule,$(notdir $(F)),)))
 $(foreach F,$(fastqfiles),$(eval $(call plotscorerule,$(notdir $(F)),_stringtie_tx)))
+$(foreach F,$(fastqfilesreal),$(eval $(call plotscorerule,$(notdir $(F)),_chess)))
 
 ## ==================================================================================== ##
 ##                            genewise results/plots                                    ##

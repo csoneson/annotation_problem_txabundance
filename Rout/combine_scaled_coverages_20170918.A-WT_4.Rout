@@ -25,7 +25,7 @@ Type 'q()' to quit R.
 > ## * junctioncovSTAR: junction coverages from STAR (uniquely and multimapping ##
 > ##                    reads)                                                  ##
 > ## * junctioncovSalmon: junction coverages and abundances from Salmon         ##
-> ## * junctioncovSalmonBWA: junction coverages and abundances from SalmonBWA   ##
+> ## * junctioncovSalmonSTAR: junction coverages and abundances from SalmonSTAR ##
 > ## * junctioncovSalmonKeepDup: junction coverages and abundances from         ##
 > ##                             SalmonKeepDup                                  ##
 > ## * junctioncovSalmonCDS: junction coverages and abundances from SalmonCDS   ##
@@ -54,8 +54,8 @@ Type 'q()' to quit R.
 [1] "STAR/20170918.A-WT_4/20170918.A-WT_4_SJ.out.tab"
 > print(junctioncovSalmon)
 [1] "alpine/20170918.A-WT_4/scaled_junction_coverage_Salmon.rds"
-> print(junctioncovSalmonBWA)
-[1] "alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonBWA.rds"
+> print(junctioncovSalmonSTAR)
+[1] "alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonSTAR.rds"
 > print(junctioncovSalmonKeepDup)
 [1] "alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonKeepDup.rds"
 > print(junctioncovSalmonCDS)
@@ -104,7 +104,7 @@ Type 'q()' to quit R.
 > 
 > ## Read and merge junction coverages predicted by each method
 > jcovscaled <- do.call(rbind, list(readRDS(junctioncovSalmon)$allcovs,
-+                                   readRDS(junctioncovSalmonBWA)$allcovs,
++                                   readRDS(junctioncovSalmonSTAR)$allcovs,
 +                                   readRDS(junctioncovhera)$allcovs,
 +                                   readRDS(junctioncovkallisto)$allcovs,
 +                                   readRDS(junctioncovRSEM)$allcovs,
@@ -152,7 +152,7 @@ Joining, by = c("seqnames", "start", "end", "gene")
 > 
 > ## Read and combine transcript quantifications
 > allquants <- do.call(rbind, list(readRDS(junctioncovSalmon)$quants,
-+                                  readRDS(junctioncovSalmonBWA)$quants,
++                                  readRDS(junctioncovSalmonSTAR)$quants,
 +                                  readRDS(junctioncovhera)$quants,
 +                                  readRDS(junctioncovkallisto)$quants,
 +                                  readRDS(junctioncovRSEM)$quants,
@@ -249,8 +249,8 @@ loaded via a namespace (and not attached):
  [5] pillar_1.2.1     glue_1.2.0       tibble_1.4.2     Rcpp_0.12.16    
  [9] pkgconfig_2.0.1  rlang_0.2.0      bindr_0.1.1     
 > date()
-[1] "Fri May 25 22:00:42 2018"
+[1] "Mon May 28 00:14:21 2018"
 > 
 > proc.time()
    user  system elapsed 
-395.632   3.088 399.247 
+445.488   7.648 454.831 

@@ -30,6 +30,7 @@ for (i in 1:length(args)) {
 
 print(scorerds)
 print(truthrda)
+print(truthmodgenesrds)
 print(gtf)
 print(uniqjuncreadsthreshold)
 print(outrds)
@@ -62,56 +63,81 @@ exonunions <- as.data.frame(gtf) %>% dplyr::filter(type == "exon") %>%
   dplyr::summarize(start = min(start), end = max(end), width = sum(width),
                    seqnames = seqnames[1], gene_id = gene_id[1], strand = strand[1])
 
-## Set up data frame with information about modified transcripts
+## Set up data frame with information about modified transcripts.
+## utr_fraction_of_length = fraction of artificial transcript that is made up of
+## the 3'UTR 
+## utr_selected = "short" or "long", depending on which of the two
+## 3'UTRs that was used for the artificial transcript
 modtrans <- data.frame(
   mod_transcript = grep("utrfrom", rownames(counts_matrix), value = TRUE), 
   stringsAsFactors = FALSE) %>%
-  tidyr::separate(mod_transcript, into = c("internal_tx", "utr_tx"), sep = "_utrfrom_") %>%
+  tidyr::separate(mod_transcript, into = c("internal_tx", "utr_tx"), 
+                  sep = "_utrfrom_", remove = FALSE) %>%
   dplyr::mutate(internal_tx_utrlength = utrs$width[match(internal_tx, utrs$transcript_id)],
                 utr_tx_utrlength = utrs$width[match(utr_tx, utrs$transcript_id)]) %>%
   dplyr::mutate(gene = transcripts$gene[match(internal_tx, transcripts$transcript)]) %>%
   dplyr::mutate(utr_selected = ifelse(internal_tx_utrlength > utr_tx_utrlength, "short", "long")) %>%
   dplyr::mutate(utr_fraction_of_length = utr_tx_utrlength/(exonunions$width[match(internal_tx, exonunions$transcript_id)] - internal_tx_utrlength + utr_tx_utrlength))
 
-## Generate GRangesList with one entry per modified transcript
+png(gsub("\\.rds", "_utr_fraction_of_length.png"), width = 6, height = 6,
+    unit = "in", res = 300)
+print(ggplot(modtrans, aes(x = utr_selected, y = utr_fraction_of_length)) + 
+        geom_boxplot(outlier.size = 0.75) + theme_bw() + 
+        xlab("Selected 3'UTR for artificial transcript") + 
+        ylab("Fraction of artificial transcript made up of 3'UTR") + 
+        theme(axis.text = element_text(size = 13),
+              axis.title = element_text(size = 15)))
+dev.off()
+      
+## Generate GRangesList with one entry per artificial transcript. This will be
+## used to find the most similar annotated transcript to each artificial
+## transcript.
 txdb <- makeTxDbFromGRanges(gtf)
 ebt <- exonsBy(txdb, "tx", use.names = TRUE)
 utrs0 <- subset(gtf, type == "three_prime_utr")
 L <- as(lapply(seq_len(nrow(modtrans)), function(i) {
+  ## Full UTR-contributing transcript
   utrtx <- ebt[[modtrans$utr_tx[i]]]
+  ## Full internal structure-contributing transcript
   inttx <- ebt[[modtrans$internal_tx[i]]]
+  ## 3'UTR of UTR-contributing transcript
   utrutrtx <- subset(utrs0, transcript_id == modtrans$utr_tx[i])
+  ## 3'UTR of internal structure-contributing transcript
   utrinttx <- subset(utrs0, transcript_id == modtrans$internal_tx[i])
   GenomicRanges::reduce(GenomicRanges::union(GenomicRanges::setdiff(inttx, utrinttx), utrutrtx))
 }), "GRangesList")
-names(L) <- paste0(modtrans$internal_tx, "_utrfrom_", modtrans$utr_tx)
+names(L) <- modtrans$mod_transcript
 
 ## Find overlaps between modified transcripts and annotated ones
 ol <- findOverlaps(L, ebt)
 
-## Find most similar transcript for each modified transcript
-jaccards <- as.data.frame(t(sapply(seq_len(length(ol)), function(i) {
+## Find most similar transcript for each artificial transcript
+jaccards <- do.call(rbind, lapply(seq_len(length(ol)), function(i) {
   pin <- GenomicRanges::intersect(L[[queryHits(ol)[i]]], ebt[[subjectHits(ol)[i]]])
   pun <- GenomicRanges::union(L[[queryHits(ol)[i]]], ebt[[subjectHits(ol)[i]]])
   overlap <- sum(width(pin))/sum(width(pun))
-  c(queryHits(ol)[i], subjectHits(ol)[i], overlap)
-})))
+  data.frame(artificial_tx = queryHits(ol)[i], reference_tx = subjectHits(ol)[i], jaccard = overlap)
+}))
 jaccards <- jaccards %>% 
-  dplyr::rename(modified_tx = V1, reference_tx = V2, Jaccard = V3) %>%
-  dplyr::mutate(modified_tx = names(L)[modified_tx],
+  dplyr::mutate(artificial_tx = names(L)[artificial_tx],
                 reference_tx = names(ebt)[reference_tx]) %>%
-  dplyr::mutate(modified_gene = transcripts$gene[match(sapply(strsplit(modified_tx, "_utrfrom"), .subset, 1), transcripts$transcript)],
+  dplyr::mutate(modified_gene = transcripts$gene[match(sapply(strsplit(artificial_tx, "_utrfrom"), 
+                                                              .subset, 1), transcripts$transcript)],
                 reference_gene = transcripts$gene[match(reference_tx, transcripts$transcript)]) %>%
   dplyr::filter(modified_gene == reference_gene) %>% 
-  dplyr::group_by(modified_tx) %>% 
-  dplyr::summarize(reference_tx = reference_tx[which.max(Jaccard)], 
-                   Jaccard = Jaccard[which.max(Jaccard)])
+  dplyr::group_by(artificial_tx) %>% 
+  dplyr::summarize(reference_tx = reference_tx[which.max(jaccard)], 
+                   jaccard = jaccard[which.max(jaccard)])
 
-summary(jaccards$Jaccard)
+summary(jaccards$jaccard)
+
+## Remove transcripts that are identical to an annotated transcript from the
+## list of modified transcripts
+modtrans <- subset(modtrans, mod_transcript %in% jaccards$artificial_tx[jaccards$jaccard < 1])
 
 ## Subset transcript abundance table to only the transcripts in the modified genes
 gene_summary <- transcripts %>% 
-  dplyr::filter(gene %in% modgenes) %>%
+  dplyr::filter(gene %in% modtrans$gene) %>%
   dplyr::mutate(tr_type = ifelse(transcript %in% modtrans$internal_tx, 
                                  "Contributing internal structure", 
                                  ifelse(transcript %in% modtrans$utr_tx, 
@@ -119,7 +145,12 @@ gene_summary <- transcripts %>%
   dplyr::mutate(tr_type2 = ifelse(transcript %in% jaccards$reference_tx, 
                                   "Most similar reference transcript", "Other")) %>% 
   dplyr::left_join(modtrans %>% dplyr::select(gene, utr_selected, utr_fraction_of_length)) %>%
-  dplyr::select(gene, count, TPM, tr_type, utr_selected, method, tr_type2, utr_fraction_of_length)
+  dplyr::select(transcript, gene, count, TPM, tr_type, utr_selected, method, 
+                tr_type2, utr_fraction_of_length)
+
+sink(file = gsub("\\.rds$", "_transcript_types.txt", outrds))
+table(gene_summary$tr_type, gene_summary$tr_type2, gene_summary$method)
+sink()
 
 ## Plot relative contributions to gene count/TPM from the different transcript
 ## categories
@@ -146,7 +177,8 @@ print(ggplot(gene_summary %>%
                dplyr::ungroup(), 
              aes(x = tr_type2, y = count, color = tr_type2)) + 
         geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method) + 
-        theme_bw() + 
+        theme_bw() + scale_color_manual(values = c("#9900cc", "#009933"),
+                                        name = "Transcript class") + 
         xlab("Selected 3'UTR") + ylab("Relative contribution to gene count"))
 dev.off()
 

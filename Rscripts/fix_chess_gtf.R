@@ -75,6 +75,8 @@ gtf$transcript_id[gtf$type %in% c("exon", "CDS")] <-
 gtf$exon_id <- NA_character_
 gtf$exon_id[gtf$type == "exon"] <- paste0("E", seq_len(length(which(gtf$type == "exon"))))
 
+gtf$phase <- 0
+
 mcols(gtf) <- mcols(gtf)[, c("source", "type", "score", "phase", "gene_id", 
                              "transcript_id", "exon_id", "gene_name", "transcript_name")]
 

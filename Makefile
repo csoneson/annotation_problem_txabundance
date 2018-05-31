@@ -16,7 +16,7 @@ quantmethods20170918.A-WT_4 := Salmon SalmonSTAR kallisto RSEM StringTie hera Sa
 quantmethodssim_misannotated_utr_1 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup
 quantmethodsstringtie := Salmon SalmonSTAR kallisto RSEM StringTie hera
 
-nthreads := 16
+nthreads := 24
 
 ## Define the multimapping fraction threshold. Junctions with MM/(UM+MM)>mmfracthreshold will not be 
 ## included when calculating the "MM-aware" score
@@ -104,11 +104,11 @@ $(foreach F,$(fastqfiles),output/$(notdir $(F))_combined_coverages_with_scores.r
 preprefchess: $(gtf_chess) $(txome_chess) $(tx2gene_chess) \
 reference/salmon/chess2.0_assembly_fixed_sidx_v0.9.1/hash.bin \
 reference/salmon/chess2.0_assembly_fixed_keepdup_sidx_v0.9.1/hash.bin \
-reference/kallisto/chess2.0_assembly_fixed_kidx_v0.44.0 \
-reference/STAR/chess2.0_assembly_fixed_STAR2.5.3a/SA \
-reference/RSEM/chess2.0_assembly_fixed/chess2.0_assembly_fixed.n2g.idx.fa \
-reference/hera/chess2.0_assembly_fixed/index \
-reference/hisat2splicesites_chess2.0_assembly_fixed.txt
+reference/kallisto/chess2.0_assembly_fixed_kidx_v0.44.0
+
+alpineprepchess: $(foreach F,$(fastqfilesreal),STAR_chess/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoord.out.bam.bai) \
+$(foreach F,$(fastqfilesreal),alpine/$(notdir $(F))_chess/alpine_fitbiasmodel.rds) \
+$(foreach F,$(fastqfilesreal),alpine/$(notdir $(F))_chess/alpine_predicted_coverage.rds)
 
 ########################################################################################################
 ## Extended annotation (from StringTie)

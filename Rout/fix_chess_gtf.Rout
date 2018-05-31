@@ -99,6 +99,8 @@ Type 'q()' to quit R.
 > gtf$exon_id <- NA_character_
 > gtf$exon_id[gtf$type == "exon"] <- paste0("E", seq_len(length(which(gtf$type == "exon"))))
 > 
+> gtf$phase <- 0
+> 
 > mcols(gtf) <- mcols(gtf)[, c("source", "type", "score", "phase", "gene_id", 
 +                              "transcript_id", "exon_id", "gene_name", "transcript_name")]
 > 
@@ -112,7 +114,7 @@ Type 'q()' to quit R.
 > rtracklayer::export(gtf, outgtf, format = "gtf")
 > 
 > date()
-[1] "Mon May 28 19:13:22 2018"
+[1] "Wed May 30 14:00:52 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -161,4 +163,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-423.500  10.548 435.432 
+457.092   8.540 466.534 

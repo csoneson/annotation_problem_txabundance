@@ -18,7 +18,7 @@ figures/predicted_coverage_pattern_comparison/predicted_coverage_pattern_compari
 alpine/20151016.A-Cortex_RNA/alpine_predicted_coverage.rds \
 alpine/20170918.A-WT_4/alpine_predicted_coverage.rds Rscripts/plot_compare_predicted_coverage_patterns.R
 	mkdir -p $(@D)
-	$(R) "--args predcov1='$(word 1,$^)' predcov2='$(word 2,$^)' outrds='$@'" Rscripts/plot_compare_predicted_coverage_patterns.R Rout/plot_compare_predicted_coverage_patterns_20151016.A-Cortex_RNA_20170918.A-WT_4.Rout
+	$(R) "--args predcov1='$(word 1,$^)' predcov2='$(word 2,$^)' samplename1='Cortex' samplename2='HAP1' outrds='$@'" Rscripts/plot_compare_predicted_coverage_patterns.R Rout/plot_compare_predicted_coverage_patterns_20151016.A-Cortex_RNA_20170918.A-WT_4.Rout
 
 ## ==================================================================================== ##
 ##                            plot gene scores                                          ##

@@ -17,6 +17,25 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+> ################################################################################
+> ##                                                                            ##
+> ## Compare coverage patterns between samples                                  ##
+> ##                                                                            ##
+> ## Inputs:                                                                    ##
+> ## * predcov1: object with predicted transcript coverage patterns for first   ##
+> ##             sample                                                         ##
+> ## * predcov2: object with predicted transcript coverage patterns for second  ##
+> ##             sample                                                         ##
+> ## * samplename1: the sample name for the predcov1 file                       ##
+> ## * samplename2: the sample name for the predcov2 file                       ##
+> ## * outrds: output file                                                      ##
+> ##                                                                            ##
+> ## Outputs:                                                                   ##
+> ## * png figures with the distribution of correlation coefficients for        ##
+> ##   transcript coverage patterns in the two samples, across all transcripts  ##
+> ##                                                                            ##
+> ################################################################################
+> 
 > args <- (commandArgs(trailingOnly = TRUE))
 > for (i in 1:length(args)) {
 +   eval(parse(text = args[[i]]))
@@ -26,6 +45,10 @@ Type 'q()' to quit R.
 [1] "alpine/20151016.A-Cortex_RNA/alpine_predicted_coverage.rds"
 > print(predcov2)
 [1] "alpine/20170918.A-WT_4/alpine_predicted_coverage.rds"
+> print(samplename1)
+[1] "Cortex"
+> print(samplename2)
+[1] "HAP1"
 > print(outrds)
 [1] "figures/predicted_coverage_pattern_comparison/predicted_coverage_pattern_comparison_20151016.A-Cortex_RNA_20170918.A-WT_4.rds"
 > 
@@ -33,6 +56,7 @@ Type 'q()' to quit R.
 +   library(dplyr)
 +   library(ggplot2)
 +   library(GenomicRanges)
++   library(cowplot)
 + })
 > 
 > predcov1 <- readRDS(predcov1)
@@ -61,75 +85,3 @@ Type 'q()' to quit R.
 +   else 
 +     "oneUniform"
 + })
-> 
-> ## Fraction NA correlations
-> mean(is.na(cov_corrs))
-[1] 0.3838301
-> table(cov_types)
-cov_types
-bothUniform noneUniform  oneUniform 
-      23926      146019       30365 
-> 
-> ## Plot
-> stopifnot(all(names(cov_corrs) == names(cov_types)))
-> df <- data.frame(transcript = names(cov_corrs),
-+                  cov_corrs = cov_corrs,
-+                  cov_types = cov_types,
-+                  stringsAsFactors = FALSE)
-> 
-> pdf(gsub("rds$", "pdf", outrds))
-> print(ggplot(df, aes(x = cov_corrs)) + geom_histogram(bins = 100, fill = "lightblue") + 
-+         theme_bw() + xlab("Correlation of coverage patterns between samples") + 
-+         ylab("Frequency"))
-Warning message:
-Removed 76885 rows containing non-finite values (stat_bin). 
-> print(ggplot(df, aes(x = cov_corrs)) + geom_histogram(bins = 100, fill = "lightblue") + 
-+         theme_bw() + xlab("Correlation of coverage patterns between samples") + 
-+         ylab("Frequency") + facet_wrap(~cov_types, ncol = 1))
-Warning message:
-Removed 76885 rows containing non-finite values (stat_bin). 
-> dev.off()
-null device 
-          1 
-> 
-> saveRDS(df, file = outrds)
-> date()
-[1] "Fri May 11 11:46:15 2018"
-> sessionInfo()
-R Under development (unstable) (2017-12-14 r73916)
-Platform: x86_64-pc-linux-gnu (64-bit)
-Running under: Ubuntu 16.04.4 LTS
-
-Matrix products: default
-BLAS: /usr/local/R/R-devel/lib/libRblas.so
-LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
-
-locale:
- [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
- [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
- [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
-[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
-
-attached base packages:
-[1] parallel  stats4    stats     graphics  grDevices utils     datasets 
-[8] methods   base     
-
-other attached packages:
-[1] GenomicRanges_1.31.23 GenomeInfoDb_1.15.5   IRanges_2.13.28      
-[4] S4Vectors_0.17.42     BiocGenerics_0.26.0   ggplot2_2.2.1        
-[7] dplyr_0.7.4          
-
-loaded via a namespace (and not attached):
- [1] Rcpp_0.12.16           XVector_0.20.0         bindr_0.1.1           
- [4] magrittr_1.5           zlibbioc_1.26.0        munsell_0.4.3         
- [7] colorspace_1.3-2       R6_2.2.2               rlang_0.2.0           
-[10] plyr_1.8.4             grid_3.5.0             gtable_0.2.0          
-[13] lazyeval_0.2.1         assertthat_0.2.0       tibble_1.4.2          
-[16] bindrcpp_0.2.2         GenomeInfoDbData_1.1.0 bitops_1.0-6          
-[19] RCurl_1.95-4.10        glue_1.2.0             labeling_0.3          
-[22] compiler_3.5.0         pillar_1.2.1           scales_0.5.0          
-[25] pkgconfig_2.0.1       
-> 
-> proc.time()
-    user   system  elapsed 
-1651.768   52.744 1708.805 

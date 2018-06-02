@@ -50,6 +50,15 @@ $(foreach G,$(genes_to_plot),$(foreach F,20151016.A-Cortex_RNA,$(eval $(call gen
 $(foreach G,$(genes_to_plot),$(foreach F,20170918.A-WT_4,$(eval $(call geneplotrule,$(F),,$(G),1,minimap2genomebigwig/20171207_1645_p2557_4017_2_ALLREADS.pass_minimap2_genome_s.bw))))
 $(foreach G,$(genes_to_plot),$(foreach F,sim_misannotated_utr_1,$(eval $(call geneplotrule,$(F),,$(G),1,))))
 
+define geneplotrule2
+figures/genewise_summary/$(1)$(2)_$(3).png: STARbigwig/$(1)$(2)_Aligned.sortedByCoord.out.bw output/$(1)$(2)_combined_coverages_with_scores.rds \
+$(gvizgenemodels) $(5) Rscripts/plot_genewise_summary.R
+	mkdir -p $$(@D)
+	$(R) "--args usegene='$(3)' bigwig='$$(word 1,$$^)' genemodels='$(gvizgenemodels)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonSTAR,SalmonCDS,SalmonKeepDup,StringTie' scorerds='$$(word 2,$$^)' outpng='$$@'" Rscripts/plot_genewise_summary.R Rout/plot_genewise_summary_$(1)$(2)_$(3).Rout
+endef
+$(foreach G,$(genes_to_plot_summary),$(foreach F,20151016.A-Cortex_RNA,$(eval $(call geneplotrule2,$(F),,$(G)))))
+$(foreach G,$(genes_to_plot_summary),$(foreach F,20170918.A-WT_4,$(eval $(call geneplotrule2,$(F),,$(G)))))
+
 ## ==================================================================================== ##
 ##                    correlation with inferential variance                             ##
 ## ==================================================================================== ##

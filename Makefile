@@ -174,6 +174,8 @@ $(foreach F,$(fastqfilessim),figures/performance_simulated_data/performance_simu
 plotsstringtie: $(foreach F,$(fastqfiles),figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F))_stringtie_tx.rds) \
 $(foreach F,$(fastqfiles),figures/gene_scores/gene_scores_$(notdir $(F))_stringtie_tx.rds)
 
+plotssummary: $(foreach G,$(genes_to_plot_summary),$(foreach F,$(fastqfilesreal),figures/genewise_summary/$(notdir $(F))_$(G).png))
+
 ########################################################################################################
 ## Stats
 ########################################################################################################

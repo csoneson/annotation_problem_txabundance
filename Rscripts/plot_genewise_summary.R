@@ -6,16 +6,15 @@
 ## * gene: gene of interest, or file listing genes of interest (one per row)  ##
 ## * bigwig: bigwig file of alignments for visualization                      ##
 ## * genemodels: gene models for Gviz                                         ##
+## * quantmethods: string containing the quantification methods to consider,  ##
+##                 separated by commas (no spaces)                            ##
 ## * scorerds: object with junction coverages, transcript abundances and gene ##
 ##             scores                                                         ##
 ## * outfile: output pdf file                                                 ##
 ##                                                                            ##
 ## Outputs:                                                                   ##
-## * A pdf figure with coverage patterns, gene models and junction scores for ##
-##   each gene of interest                                                    ##
-## * Text files with transcript abundances (counts/TPMs) for each gene of     ##
-##   interest                                                                 ##
-## * A text file with junction coverages for each gene of interest            ##
+## * A png figure with coverage patterns, gene models and junction scores for ##
+##   each gene of interest, as well as TPM estimates                          ##
 ##                                                                            ##
 ################################################################################
 
@@ -24,11 +23,14 @@ for (i in 1:length(args)) {
   eval(parse(text = args[[i]]))
 }
 
+quantmethods <- strsplit(quantmethods, ",")[[1]]
+
 print(usegene)
 print(bigwig)
 print(genemodels) 
+print(quantmethods)
 print(scorerds)
-print(outfile)
+print(outpng)
 
 suppressPackageStartupMessages({
   library(dplyr)
@@ -37,7 +39,7 @@ suppressPackageStartupMessages({
   library(ggrepel)
   library(rtracklayer)
   library(Gviz)
-  library(scatterpies)
+  library(scatterpie)
 })
 
 options(ucscChromosomeNames = FALSE, envir = .GlobalEnv)
@@ -47,7 +49,8 @@ options(ucscChromosomeNames = FALSE, envir = .GlobalEnv)
 genemodels <- readRDS(genemodels)$genemodels_exon
 scores <- readRDS(scorerds)
 
-jl <- scores$junctions %>% dplyr::filter(gene == usegene)
+jl <- scores$junctions %>% dplyr::filter(gene == usegene & 
+                                           method %in% quantmethods)
 
 bwfiles <- structure(bigwig, names = "")
 bwcond <- structure("g1", names = "")
@@ -114,7 +117,7 @@ plotTracks(tracks, chromosome = show_chr,
            min.width = 0, min.distance = 0, collapse = FALSE)
 dev.off()
 
-tpms <- ggplot(scores$transcripts %>% dplyr::filter(gene == usegene) %>%
+tpms <- ggplot(scores$transcripts %>% dplyr::filter(gene == usegene & method %in% quantmethods) %>%
                  dplyr::mutate(transcript = factor(transcript, levels = levels(gm$transcript))),
                aes(x = method, y = TPM, fill = transcript)) + 
   geom_bar(stat = "identity", position = "fill") + 
@@ -128,9 +131,11 @@ for (tt in txs) {
 jl[, txs] <- sweep(jl[, txs], 1, rowSums(jl[, txs]), "/")
 
 jcov <- ggplot() + geom_abline(intercept = 0, slope = 1) + 
-  geom_scatterpie(aes(x = scaled.cov, y = uniqreads, r = 20), 
+  geom_scatterpie(aes(x = scaled.cov, y = uniqreads, r = max(scaled.cov)/13), 
                   cols = txs, data = jl, color = NA) + 
   facet_wrap(~ methodscore, nrow = 2) + 
+  coord_equal(ratio = 1) + 
+  expand_limits(x = range(c(jl$scaled.cov, jl$uniqreads)), y = range(c(jl$scaled.cov, jl$uniqreads))) + 
   scale_fill_manual(values = cols, name = "") + 
   xlab("Scaled predicted coverage") + 
   ylab("Number of uniquely mapped reads") + 
@@ -145,14 +150,15 @@ jcov <- ggplot() + geom_abline(intercept = 0, slope = 1) +
 #   ylab("Number of uniquely mapped reads") + 
 #   theme_bw() + theme(strip.text = element_text(size = 7))
 
-pdf(outfile, width = 12, height = 10)
+png(outpng, width = 12, height = 10, unit = "in", res = 400)
 print(cowplot::plot_grid(ggdraw() + draw_image(paste0("gviz", rn, ".png")),
                          plot_grid(tpms + theme(legend.position = "none"), 
                                    jcov + theme(legend.position = "none"), 
-                                   nrow = 1, labels = c("B", "C")), 
+                                   nrow = 1, labels = c("B", "C"), rel_widths = c(0.9, 1)), 
                          get_legend(tpms + theme(legend.direction = "horizontal",
                                                  legend.justification = "center",
-                                                 legend.box.just = "bottom")),
+                                                 legend.box.just = "bottom") + 
+                                      guides(fill = guide_legend(nrow = ifelse(length(txs) <= 8, 1, 2)))),
                          ncol = 1, rel_heights = c(1, 0.8, 0.1), 
                          labels = c("A", "", "")))
 dev.off()

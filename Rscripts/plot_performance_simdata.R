@@ -79,12 +79,12 @@ modtrans <- data.frame(
   dplyr::mutate(utr_selected = ifelse(internal_tx_utrlength > utr_tx_utrlength, "short", "long")) %>%
   dplyr::mutate(utr_fraction_of_length = utr_tx_utrlength/(exonunions$width[match(internal_tx, exonunions$transcript_id)] - internal_tx_utrlength + utr_tx_utrlength))
 
-png(gsub("\\.rds", "_utr_fraction_of_length.png"), width = 6, height = 6,
+png(gsub("\\.rds", "_utr_fraction_of_length.png", outrds), width = 6, height = 6,
     unit = "in", res = 300)
 print(ggplot(modtrans, aes(x = utr_selected, y = utr_fraction_of_length)) + 
         geom_boxplot(outlier.size = 0.75) + theme_bw() + 
         xlab("Selected 3'UTR for artificial transcript") + 
-        ylab("Fraction of artificial transcript made up of 3'UTR") + 
+        ylab("Fraction of artificial transcript consisting of 3'UTR") + 
         theme(axis.text = element_text(size = 13),
               axis.title = element_text(size = 15)))
 dev.off()
@@ -154,7 +154,7 @@ sink()
 
 ## Plot relative contributions to gene count/TPM from the different transcript
 ## categories
-png(gsub("\\.rds$", "_count.png", outrds), width = 7, height = 7, unit = "in", res = 300)
+png(gsub("\\.rds$", "_count.png", outrds), width = 10, height = 7, unit = "in", res = 300)
 print(ggplot(gene_summary %>%
                dplyr::group_by(gene, utr_selected, tr_type, method, utr_fraction_of_length) %>% 
                dplyr::summarize(count = sum(count), TPM = sum(TPM)) %>% dplyr::ungroup() %>%
@@ -162,13 +162,14 @@ print(ggplot(gene_summary %>%
                                                                TPM = TPM/sum(TPM)) %>%
                dplyr::ungroup(), 
              aes(x = utr_selected, y = count, color = tr_type)) + 
-        geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method) + 
+        geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method, nrow = 2) + 
         theme_bw() + scale_color_manual(values = c("#9900cc", "#009933", "#0099cc"),
                                         name = "Transcript class") + 
-        xlab("Selected 3'UTR") + ylab("Relative contribution to gene count"))
+        xlab("Selected 3'UTR") + ylab("Relative contribution to gene count") + 
+        theme(legend.position = "bottom"))
 dev.off()
 
-png(gsub("\\.rds$", "_count2.png", outrds), width = 7, height = 7, unit = "in", res = 300)
+png(gsub("\\.rds$", "_count2.png", outrds), width = 10, height = 7, unit = "in", res = 300)
 print(ggplot(gene_summary %>%
                dplyr::group_by(gene, utr_selected, tr_type2, method, utr_fraction_of_length) %>% 
                dplyr::summarize(count = sum(count), TPM = sum(TPM)) %>% dplyr::ungroup() %>%
@@ -176,13 +177,15 @@ print(ggplot(gene_summary %>%
                                                                TPM = TPM/sum(TPM)) %>%
                dplyr::ungroup(), 
              aes(x = tr_type2, y = count, color = tr_type2)) + 
-        geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method) + 
+        geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method, nrow = 2) + 
         theme_bw() + scale_color_manual(values = c("#9900cc", "#009933"),
-                                        name = "Transcript class") + 
-        xlab("Selected 3'UTR") + ylab("Relative contribution to gene count"))
+                                        name = "") + 
+        xlab("") + ylab("Relative contribution to gene count") + 
+        theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+              legend.position = "none"))
 dev.off()
 
-png(gsub("\\.rds$", "_tpm.png", outrds), width = 7, height = 7, unit = "in", res = 300)
+png(gsub("\\.rds$", "_tpm.png", outrds), width = 10, height = 7, unit = "in", res = 300)
 print(ggplot(gene_summary %>%
                dplyr::group_by(gene, utr_selected, tr_type, method, utr_fraction_of_length) %>% 
                dplyr::summarize(count = sum(count), TPM = sum(TPM)) %>% dplyr::ungroup() %>%
@@ -190,13 +193,14 @@ print(ggplot(gene_summary %>%
                                                                TPM = TPM/sum(TPM)) %>%
                dplyr::ungroup(), 
              aes(x = utr_selected, y = TPM, color = tr_type)) + 
-        geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method) + 
+        geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method, nrow = 2) + 
         theme_bw() + scale_color_manual(values = c("#9900cc", "#009933", "#0099cc"),
                                         name = "Transcript class") + 
-        xlab("Selected 3'UTR") + ylab("Relative contribution to gene TPM"))
+        xlab("Selected 3'UTR") + ylab("Relative contribution to gene TPM") + 
+        theme(legend.position = "bottom"))
 dev.off()
 
-png(gsub("\\.rds$", "_tpm2.png", outrds), width = 7, height = 7, unit = "in", res = 300)
+png(gsub("\\.rds$", "_tpm2.png", outrds), width = 10, height = 7, unit = "in", res = 300)
 print(ggplot(gene_summary %>%
                dplyr::group_by(gene, utr_selected, tr_type2, method, utr_fraction_of_length) %>% 
                dplyr::summarize(count = sum(count), TPM = sum(TPM)) %>% dplyr::ungroup() %>%
@@ -204,34 +208,38 @@ print(ggplot(gene_summary %>%
                                                                TPM = TPM/sum(TPM)) %>%
                dplyr::ungroup(), 
              aes(x = tr_type2, y = TPM, color = tr_type2)) + 
-        geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method) + 
-        theme_bw() + 
-        xlab("Selected 3'UTR") + ylab("Relative contribution to gene TPM"))
+        geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method, nrow = 2) + 
+        theme_bw() + scale_color_manual(values = c("#9900cc", "#009933"),
+                                        name = "") + 
+        xlab("") + ylab("Relative contribution to gene TPM") + 
+        theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+              legend.position = "none"))
 dev.off()
 
 ## Plot scores for modified and unmodified genes
 genes <- scores$genes %>% 
   dplyr::mutate(geneclass = ifelse(gene %in% modgenes, "modified", "unmodified")) %>%
   dplyr::filter(uniqjuncreads > uniqjuncreadsthreshold)
-png(gsub("\\.rds$", "_scores.png", outrds), width = 7, height = 7, unit = "in", res = 300)
+png(gsub("\\.rds$", "_scores.png", outrds), width = 10, height = 7, unit = "in", res = 300)
 print(ggplot(genes, aes(x = geneclass, y = score, color = geneclass)) + 
         geom_boxplot(outlier.size = 0.3) + 
-        facet_wrap(~ method) + theme_bw() + 
+        facet_wrap(~ method, nrow = 2) + theme_bw() + 
         scale_color_manual(values = c(modified = "#9900cc", unmodified = "#009933"),
                            name = "Gene class") + 
-        xlab(""))
+        xlab("") + theme(legend.position = "bottom"))
 dev.off()
 
-png(gsub("\\.rds$", "_scores2.png", outrds), width = 7, height = 7, unit = "in", res = 300)
+png(gsub("\\.rds$", "_scores2.png", outrds), width = 10, height = 7, unit = "in", res = 300)
 print(ggplot(genes %>% dplyr::left_join(gene_summary %>% 
                                           dplyr::select(gene, method, utr_fraction_of_length) %>% 
                                           dplyr::distinct()),
              aes(x = utr_fraction_of_length, y = score)) + 
         geom_point(alpha = 0.3, size = 0.3) + geom_smooth() +  
-        facet_wrap(~ method) + theme_bw())
+        facet_wrap(~ method, nrow = 2) + theme_bw() + 
+        xlab("Fraction of artificial transcript consisting of 3'UTR"))
 dev.off()
 
 
-saveRDS(NULL, file = outrds)
+saveRDS(list(genes = genes, gene_summary = gene_summary), file = outrds)
 date()
 sessionInfo()

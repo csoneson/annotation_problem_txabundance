@@ -51,6 +51,8 @@ Type 'q()' to quit R.
 [1] "output/sim_misannotated_utr_1_combined_coverages_with_scores.rds"
 > print(truthrda)
 [1] "simulation/misannotated_utr/sim_counts_matrix.rda"
+> print(truthmodgenesrds)
+[1] "simulation/misannotated_utr/sim_misannotated_utr_1_modified_genes.rds"
 > print(gtf)
 [1] "/home/Shared/data/annotation/Human/Ensembl_GRCh38.90/gtf/Homo_sapiens.GRCh38.90.gtf"
 > print(uniqjuncreadsthreshold)
@@ -63,6 +65,8 @@ Type 'q()' to quit R.
 +   library(dplyr)
 +   library(tidyr)
 +   library(ggplot2)
++   library(GenomicRanges)
++   library(GenomicFeatures)
 + })
 > 
 > scores <- readRDS(scorerds)
@@ -78,125 +82,8 @@ Type 'q()' to quit R.
 +   dplyr::summarize(start = min(start), end = max(end), width = sum(width), 
 +                    seqnames = seqnames[1], gene_id = gene_id[1], strand = strand[1])
 > 
-> ## Set up data frame with information about modified transcripts
-> modtrans <- data.frame(
-+   mod_transcript = grep("utrfrom", rownames(counts_matrix), value = TRUE), 
-+   stringsAsFactors = FALSE) %>%
-+   tidyr::separate(mod_transcript, into = c("internal_tx", "utr_tx"), sep = "_utrfrom_") %>%
-+   dplyr::mutate(internal_tx_utrlength = utrs$width[match(internal_tx, utrs$transcript_id)],
-+                 utr_tx_utrlength = utrs$width[match(utr_tx, utrs$transcript_id)]) %>%
-+   dplyr::mutate(gene = transcripts$gene[match(internal_tx, transcripts$transcript)]) %>%
-+   dplyr::mutate(utr_selected = ifelse(internal_tx_utrlength > utr_tx_utrlength, "short", "long"))
-> 
-> ## Subset transcript abundance table to only the transcripts in the modified genes
-> gene_summary <- transcripts %>% 
-+   dplyr::filter(gene %in% modgenes) %>%
-+   dplyr::mutate(tr_type = ifelse(transcript %in% modtrans$internal_tx, 
-+                                  "Contributing internal structure", 
-+                                  ifelse(transcript %in% modtrans$utr_tx, 
-+                                         "Contributing 3'UTR", "Other"))) %>%
-+   dplyr::left_join(modtrans %>% dplyr::select(gene, utr_selected)) %>%
-+   dplyr::select(gene, count, TPM, tr_type, utr_selected, method) %>%
-+   dplyr::group_by(gene, utr_selected, tr_type, method) %>% 
-+   dplyr::summarize(count = sum(count), TPM = sum(TPM)) %>% dplyr::ungroup() %>%
-+   dplyr::group_by(gene, method) %>% dplyr::mutate(count = count/sum(count),
-+                                                   TPM = TPM/sum(TPM)) %>%
-+   dplyr::ungroup()
-Joining, by = "gene"
-> 
-> ## Plot relative contributions to gene count/TPM from the different transcript
-> ## categories
-> png(gsub("\\.rds$", "_count.png", outrds), width = 7, height = 7, unit = "in", res = 300)
-> print(ggplot(gene_summary, aes(x = utr_selected, y = count, color = tr_type)) + 
-+         geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method) + 
-+         theme_bw() + scale_color_manual(values = c("#9900cc", "#009933", "#0099cc"),
-+                                         name = "Transcript class") + 
-+         xlab("Selected 3'UTR") + ylab("Relative contribution to gene count"))
-Warning message:
-Removed 44 rows containing non-finite values (stat_boxplot). 
-> dev.off()
-null device 
-          1 
-> 
-> png(gsub("\\.rds$", "_tpm.png", outrds), width = 7, height = 7, unit = "in", res = 300)
-> print(ggplot(gene_summary, aes(x = utr_selected, y = TPM, color = tr_type)) + 
-+         geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method) + 
-+         theme_bw() + scale_color_manual(values = c("#9900cc", "#009933", "#0099cc"),
-+                                         name = "Transcript class") + 
-+         xlab("Selected 3'UTR") + ylab("Relative contribution to gene TPM"))
-Warning message:
-Removed 47 rows containing non-finite values (stat_boxplot). 
-> dev.off()
-null device 
-          1 
-> 
-> ## Plot scores for modified and unmodified genes
-> genes <- scores$genes %>% 
-+   dplyr::mutate(geneclass = ifelse(gene %in% modgenes, "modified", "unmodified")) %>%
-+   dplyr::filter(uniqjuncreads > uniqjuncreadsthreshold)
-> png(gsub("\\.rds$", "_scores.png", outrds), width = 7, height = 7, unit = "in", res = 300)
-> print(ggplot(genes, aes(x = geneclass, y = score, color = geneclass)) + 
-+         geom_boxplot(outlier.size = 0.3) + 
-+         facet_wrap(~ method) + theme_bw() + 
-+         scale_color_manual(values = c(modified = "#9900cc", unmodified = "#009933"),
-+                            name = "Gene class") + 
-+         xlab(""))
-Warning message:
-Removed 410 rows containing non-finite values (stat_boxplot). 
-> dev.off()
-null device 
-          1 
-> 
-> saveRDS(NULL, file = outrds)
-> date()
-[1] "Mon May 28 14:01:46 2018"
-> sessionInfo()
-R Under development (unstable) (2017-12-14 r73916)
-Platform: x86_64-pc-linux-gnu (64-bit)
-Running under: Ubuntu 16.04.4 LTS
-
-Matrix products: default
-BLAS: /usr/local/R/R-devel/lib/libRblas.so
-LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
-
-locale:
- [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
- [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
- [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
-[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
-
-attached base packages:
-[1] parallel  stats4    stats     graphics  grDevices utils     datasets 
-[8] methods   base     
-
-other attached packages:
- [1] bindrcpp_0.2.2        ggplot2_2.2.1         tidyr_0.8.0          
- [4] dplyr_0.7.4           rtracklayer_1.39.12   GenomicRanges_1.31.23
- [7] GenomeInfoDb_1.15.5   IRanges_2.13.28       S4Vectors_0.17.42    
-[10] BiocGenerics_0.26.0  
-
-loaded via a namespace (and not attached):
- [1] Rcpp_0.12.16                plyr_1.8.4                 
- [3] compiler_3.5.0              pillar_1.2.1               
- [5] XVector_0.20.0              bindr_0.1.1                
- [7] bitops_1.0-6                tools_3.5.0                
- [9] zlibbioc_1.26.0             digest_0.6.15              
-[11] tibble_1.4.2                gtable_0.2.0               
-[13] lattice_0.20-35             pkgconfig_2.0.1            
-[15] rlang_0.2.0                 Matrix_1.2-14              
-[17] DelayedArray_0.5.30         GenomeInfoDbData_1.1.0     
-[19] Biostrings_2.47.12          tidyselect_0.2.4           
-[21] grid_3.5.0                  glue_1.2.0                 
-[23] Biobase_2.39.2              R6_2.2.2                   
-[25] XML_3.98-1.11               BiocParallel_1.13.3        
-[27] purrr_0.2.4                 magrittr_1.5               
-[29] Rsamtools_1.31.3            scales_0.5.0               
-[31] matrixStats_0.53.1          GenomicAlignments_1.15.13  
-[33] assertthat_0.2.0            SummarizedExperiment_1.9.16
-[35] colorspace_1.3-2            labeling_0.3               
-[37] stringi_1.1.7               lazyeval_0.2.1             
-[39] munsell_0.4.3               RCurl_1.95-4.10            
-> 
-> proc.time()
-   user  system elapsed 
-133.888   2.820 136.925 
+> ## Get the total length of each transcript
+> exonunions <- as.data.frame(gtf) %>% dplyr::filter(type == "exon") %>%
++   dplyr::group_by(transcript_id) %>%
++   dplyr::summarize(start = min(start), end = max(end), width = sum(width),
++                    seqnames = seqnames[1], gene_id = gene_id[1], strand = strand[1])

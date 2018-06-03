@@ -84,7 +84,7 @@ cowplot::plot_grid(
     theme_bw() + ggtitle("Transcript"),
   
   ggplot(df_gene, aes(x = CV, y = score)) + 
-    geom_point(alpha = 0.3, size = 1) + geom_smooth(data = df_gene %>% dplyr::filter(CV < 0.04)) + 
+    geom_point(alpha = 0.3, size = 1) + geom_smooth(data = df_gene %>% dplyr::filter(CV < 1)) + 
     theme_bw() + ggtitle("Gene"),
   
   ncol = 1

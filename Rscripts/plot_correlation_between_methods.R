@@ -39,6 +39,7 @@ suppressPackageStartupMessages({
   library(ggplot2)
   library(cowplot)
   library(GGally)
+  library(pheatmap)
 })
 
 source("Rscripts/helper_plot_functions.R")
@@ -55,12 +56,32 @@ scores_wide <- scores %>% dplyr::filter(method %in% quantmethods &
   tidyr::spread(method, score) %>% as.data.frame() %>% tibble::column_to_rownames("gene")
 
 ## Pairs plot
+points_identityline <- function(data, mapping, ...){
+  ggplot(data = data, mapping = mapping) +
+    geom_abline(intercept = 0, slope = 1) + 
+    geom_point(alpha = 0.3, size = 0.25)
+}
 png(gsub("\\.rds$", "_pairs.png", outrds), width = 8, height = 8, 
     unit = "in", res = 300)
 print(ggpairs(scores_wide,
-              lower = list(continuous = wrap("points", alpha = 0.3, size = 0.25)),
+              lower = list(continuous = points_identityline),
               upper = list(continuous = combinecor)) + 
         theme_bw())
+dev.off()
+
+## Heatmap of mean of differences between each pair of methods
+avediff <- matrix(0, ncol(scores_wide), ncol(scores_wide))
+rownames(avediff) <- colnames(avediff) <- colnames(scores_wide)
+for (rn in rownames(avediff)) {
+  for (cn in rownames(avediff)) {
+    avediff[rn, cn] <- mean(scores_wide[[rn]] - scores_wide[[cn]], na.rm = TRUE)
+  }
+}
+png(gsub("\\.rds$", "_diffheatmap.png", outrds), width = 6, height = 6, 
+    unit = "in", res = 300)
+pheatmap::pheatmap(avediff, cluster_cols = FALSE, cluster_rows = FALSE, 
+                   display_numbers = TRUE, number_format = "%.3f", 
+                   color = colorRampPalette(colors = c("blue", "white", "red"))(30))
 dev.off()
 
 ## Dendrogram

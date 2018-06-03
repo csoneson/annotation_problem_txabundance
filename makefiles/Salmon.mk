@@ -16,6 +16,10 @@ $(foreach F,$(fastqfiles),$(eval $(call salmonindexrule,reference/salmon/$(notdi
 $(eval $(call salmonindexrule,reference/salmon/chess2.0_assembly_fixed_sidx_v0.9.1,$(txome_chess),))
 $(eval $(call salmonindexrule,reference/salmon/chess2.0_assembly_fixed_keepdup_sidx_v0.9.1,$(txome_chess),--keepDuplicates))
 
+## Count number of removed transcripts
+stats/nbr_duplicate_transcripts_Salmon_Homo_sapiens.GRCh38.cdna.ncrna_sidx_v0.9.1.txt: $(salmoncdnancrnaindex)/hash.bin Rscripts/count_salmon_duplicate_tx.R
+	$(R) "--args salmonindexdir='$(salmoncdnancrnaindex)' tx2gene='$(tx2geneext)' outtxt='$@'" Rscripts/count_salmon_duplicate_tx.R Rout/count_salmon_duplicate_tx_Homo_sapiens.GRCh38.cdna.ncrna_sidx_v0.9.1.Rout
+
 ## Run Salmon
 define salmonrule
 $(4)/$(2)/quant.sf: $(3)/hash.bin $(1)_R1.fastq.gz $(1)_R2.fastq.gz

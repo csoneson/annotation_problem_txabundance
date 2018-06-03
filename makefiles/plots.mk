@@ -120,7 +120,15 @@ $(3) $(4) Rscripts/plot_performance_simdata.R
 endef
 $(eval $(call simplotrule,sim_misannotated_utr_1,,simulation/misannotated_utr/sim_counts_matrix.rda,simulation/misannotated_utr/sim_misannotated_utr_1_modified_genes.rds,$(gtf)))
 
-
+## ==================================================================================== ##
+##                       plot different annotation systems                              ##
+## ==================================================================================== ##
+define compareannotrule
+figures/comparison_annotation_catalogs/annotation_comparison_$(1)_$(2).png: 
+	mkdir -p $$(@D)
+	$(R) "--args usegene='$(2)' bigwig='$(3)' baseannot='$(4)' basename='$(5)' annot1='$(6)' name1='$(7)' annot2='$(8)' name2='$(9)' outpng='$$@'" Rscripts/compare_annotation_catalogs.R Rout/compare_annotation_catalogs_$(1)_$(2)_$(5)_$(7)_$(9).Rout
+endef
+$(foreach F,$(fastqfilesreal),$(foreach G,$(genes_to_plot_summary),$(eval $(call compareannotrule,$(notdir $(F)),$(G),STARbigwig/$(notdir $(F))_Aligned.sortedByCoord.out.bw,$(gvizgenemodels),EnsemblGRCh38.90,$(gvizgenemodels_chess),CHESS,stringtie/$(notdir $(F))/$(notdir $(F))_gviz_genemodels.rds,StringTie))))
 
 
 

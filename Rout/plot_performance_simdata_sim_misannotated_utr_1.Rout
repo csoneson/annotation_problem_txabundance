@@ -67,6 +67,7 @@ Type 'q()' to quit R.
 +   library(ggplot2)
 +   library(GenomicRanges)
 +   library(GenomicFeatures)
++   library(cowplot)
 + })
 > 
 > scores <- readRDS(scorerds)
@@ -87,3 +88,349 @@ Type 'q()' to quit R.
 +   dplyr::group_by(transcript_id) %>%
 +   dplyr::summarize(start = min(start), end = max(end), width = sum(width),
 +                    seqnames = seqnames[1], gene_id = gene_id[1], strand = strand[1])
+> 
+> ## Set up data frame with information about modified transcripts.
+> ## utr_fraction_of_length = fraction of artificial transcript that is made up of
+> ## the 3'UTR 
+> ## utr_selected = "short" or "long", depending on which of the two
+> ## 3'UTRs that was used for the artificial transcript
+> modtrans <- data.frame(
++   mod_transcript = grep("utrfrom", rownames(counts_matrix), value = TRUE), 
++   stringsAsFactors = FALSE) %>%
++   tidyr::separate(mod_transcript, into = c("internal_tx", "utr_tx"), 
++                   sep = "_utrfrom_", remove = FALSE) %>%
++   dplyr::mutate(internal_tx_utrlength = utrs$width[match(internal_tx, utrs$transcript_id)],
++                 utr_tx_utrlength = utrs$width[match(utr_tx, utrs$transcript_id)]) %>%
++   dplyr::mutate(gene = transcripts$gene[match(internal_tx, transcripts$transcript)]) %>%
++   dplyr::mutate(utr_selected = ifelse(internal_tx_utrlength > utr_tx_utrlength, "short", "long")) %>%
++   dplyr::mutate(utr_fraction_of_length = utr_tx_utrlength/(exonunions$width[match(internal_tx, exonunions$transcript_id)] - internal_tx_utrlength + utr_tx_utrlength))
+> 
+> png(gsub("\\.rds", "_utr_fraction_of_length.png", outrds), width = 6, height = 6,
++     unit = "in", res = 300)
+> print(ggplot(modtrans, aes(x = utr_selected, y = utr_fraction_of_length)) + 
++         geom_boxplot(outlier.size = 0.75) + theme_bw() + 
++         xlab("Selected 3'UTR for artificial transcript") + 
++         ylab("Fraction of artificial transcript consisting of 3'UTR") + 
++         theme(axis.text = element_text(size = 13),
++               axis.title = element_text(size = 15)))
+> dev.off()
+null device 
+          1 
+>       
+> ## Generate GRangesList with one entry per artificial transcript. This will be
+> ## used to find the most similar annotated transcript to each artificial
+> ## transcript.
+> txdb <- makeTxDbFromGRanges(gtf)
+Warning message:
+In .get_cds_IDX(type, phase) :
+  The "phase" metadata column contains non-NA values for features of type
+  stop_codon. This information was ignored.
+> ebt <- exonsBy(txdb, "tx", use.names = TRUE)
+> utrs0 <- subset(gtf, type == "three_prime_utr")
+> L <- as(lapply(seq_len(nrow(modtrans)), function(i) {
++   ## Full UTR-contributing transcript
++   utrtx <- ebt[[modtrans$utr_tx[i]]]
++   ## Full internal structure-contributing transcript
++   inttx <- ebt[[modtrans$internal_tx[i]]]
++   ## 3'UTR of UTR-contributing transcript
++   utrutrtx <- subset(utrs0, transcript_id == modtrans$utr_tx[i])
++   ## 3'UTR of internal structure-contributing transcript
++   utrinttx <- subset(utrs0, transcript_id == modtrans$internal_tx[i])
++   GenomicRanges::reduce(GenomicRanges::union(GenomicRanges::setdiff(inttx, utrinttx), utrutrtx))
++ }), "GRangesList")
+> names(L) <- modtrans$mod_transcript
+> 
+> ## Find overlaps between modified transcripts and annotated ones
+> ol <- findOverlaps(L, ebt)
+> 
+> ## Find most similar transcript for each artificial transcript
+> jaccards <- do.call(rbind, lapply(seq_len(length(ol)), function(i) {
++   pin <- GenomicRanges::intersect(L[[queryHits(ol)[i]]], ebt[[subjectHits(ol)[i]]])
++   pun <- GenomicRanges::union(L[[queryHits(ol)[i]]], ebt[[subjectHits(ol)[i]]])
++   overlap <- sum(width(pin))/sum(width(pun))
++   data.frame(artificial_tx = queryHits(ol)[i], reference_tx = subjectHits(ol)[i], jaccard = overlap)
++ }))
+> jaccards <- jaccards %>% 
++   dplyr::mutate(artificial_tx = names(L)[artificial_tx],
++                 reference_tx = names(ebt)[reference_tx]) %>%
++   dplyr::mutate(modified_gene = transcripts$gene[match(sapply(strsplit(artificial_tx, "_utrfrom"), 
++                                                               .subset, 1), transcripts$transcript)],
++                 reference_gene = transcripts$gene[match(reference_tx, transcripts$transcript)]) %>%
++   dplyr::filter(modified_gene == reference_gene) %>% 
++   dplyr::group_by(artificial_tx) %>% 
++   dplyr::summarize(reference_tx = reference_tx[which.max(jaccard)], 
++                    jaccard = jaccard[which.max(jaccard)])
+> 
+> summary(jaccards$jaccard)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ 0.1759  0.7812  0.8965  0.8523  0.9571  1.0000 
+> 
+> ## Remove transcripts that are identical to an annotated transcript from the
+> ## list of modified transcripts
+> modtrans <- subset(modtrans, mod_transcript %in% jaccards$artificial_tx[jaccards$jaccard < 1])
+> 
+> ## Subset transcript abundance table to only the transcripts in the modified genes
+> gene_summary <- transcripts %>% 
++   dplyr::filter(gene %in% modtrans$gene) %>%
++   dplyr::mutate(tr_type = ifelse(transcript %in% modtrans$internal_tx, 
++                                  "Contributing internal structure", 
++                                  ifelse(transcript %in% modtrans$utr_tx, 
++                                         "Contributing 3'UTR", "Other"))) %>%
++   dplyr::mutate(tr_type2 = ifelse(transcript %in% jaccards$reference_tx, 
++                                   "Most similar reference transcript", "Other")) %>% 
++   dplyr::left_join(modtrans %>% dplyr::select(gene, utr_selected, utr_fraction_of_length)) %>%
++   dplyr::select(transcript, gene, count, TPM, tr_type, utr_selected, method, 
++                 tr_type2, utr_fraction_of_length)
+Joining, by = "gene"
+> 
+> sink(file = gsub("\\.rds$", "_transcript_types.txt", outrds))
+> table(gene_summary$tr_type, gene_summary$tr_type2, gene_summary$method)
+> sink()
+> 
+> ## Plot relative contributions to gene count/TPM from the different transcript
+> ## categories
+> png(gsub("\\.rds$", "_count.png", outrds), width = 10, height = 7, unit = "in", res = 300)
+> print(ggplot(gene_summary %>%
++                dplyr::group_by(gene, utr_selected, tr_type, method, utr_fraction_of_length) %>% 
++                dplyr::summarize(count = sum(count), TPM = sum(TPM)) %>% dplyr::ungroup() %>%
++                dplyr::group_by(gene, method) %>% dplyr::mutate(count = count/sum(count),
++                                                                TPM = TPM/sum(TPM)) %>%
++                dplyr::ungroup(), 
++              aes(x = utr_selected, y = count, color = tr_type)) + 
++         geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method, nrow = 2) + 
++         theme_bw() + scale_color_manual(values = c("#9900cc", "#009933", "#0099cc"),
++                                         name = "Transcript class") + 
++         xlab("Selected 3'UTR") + ylab("Relative contribution to gene count") + 
++         theme(legend.position = "bottom"))
+Warning message:
+Removed 44 rows containing non-finite values (stat_boxplot). 
+> dev.off()
+null device 
+          1 
+> 
+> png(gsub("\\.rds$", "_count2.png", outrds), width = 10, height = 7, unit = "in", res = 300)
+> print(ggplot(gene_summary %>%
++                dplyr::group_by(gene, utr_selected, tr_type2, method, utr_fraction_of_length) %>% 
++                dplyr::summarize(count = sum(count), TPM = sum(TPM)) %>% dplyr::ungroup() %>%
++                dplyr::group_by(gene, method) %>% dplyr::mutate(count = count/sum(count),
++                                                                TPM = TPM/sum(TPM)) %>%
++                dplyr::ungroup(), 
++              aes(x = tr_type2, y = count, color = tr_type2)) + 
++         geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method, nrow = 2) + 
++         theme_bw() + scale_color_manual(values = c("#9900cc", "#009933"),
++                                         name = "") + 
++         xlab("") + ylab("Relative contribution to gene count") + 
++         theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
++               legend.position = "none"))
+Warning message:
+Removed 37 rows containing non-finite values (stat_boxplot). 
+> dev.off()
+null device 
+          1 
+> 
+> png(gsub("\\.rds$", "_count3.png", outrds), width = 12, height = 8, unit = "in", res = 300)
+> g1 <- gene_summary %>% dplyr::filter(tr_type2 == "Most similar reference transcript") %>%
++   dplyr::mutate(most_similar = tr_type)
+> g0 <- gene_summary %>% dplyr::left_join(g1 %>% dplyr::select(gene, method, most_similar)) %>%
++   dplyr::group_by(gene, utr_selected, tr_type, method, utr_fraction_of_length, most_similar) %>% 
++   dplyr::summarize(count = sum(count), TPM = sum(TPM)) %>% dplyr::ungroup() %>%
++   dplyr::group_by(gene, method) %>% dplyr::mutate(count = count/sum(count),
++                                                   TPM = TPM/sum(TPM)) %>%
++   dplyr::ungroup() %>% dplyr::filter(!is.na(most_similar)) %>%
++   dplyr::mutate(most_similar = replace(most_similar, most_similar == "Contributing 3'UTR", "3'UTR most sim"),
++                 most_similar = replace(most_similar, most_similar == "Contributing internal structure", "Internal most sim"),
++                 most_similar = replace(most_similar, most_similar == "Other", "Other most sim"))
+Joining, by = c("gene", "method")
+> plots <- lapply(split(g0, g0$method), function(g) {
++   ggplot(g, 
++          aes(x = utr_selected, y = count, color = tr_type)) + 
++     geom_boxplot(outlier.size = 0.3) + facet_grid(most_similar ~ method) + 
++     theme_bw() + scale_color_manual(values = c("#9900cc", "#009933", "#0099cc"),
++                                     name = "Transcript class") + 
++     xlab("Selected 3'UTR") + ylab("Relative contribution to gene count") + 
++     theme(legend.position = "bottom")
++ })
+> print(cowplot::plot_grid(
++   cowplot::plot_grid(plotlist = lapply(plots, function(p) p + theme(legend.position = "none")), nrow = 2),
++   cowplot::get_legend(plots[[1]]), ncol = 1, rel_heights = c(1, 0.05))
++ )
+Warning messages:
+1: Removed 3 rows containing non-finite values (stat_boxplot). 
+2: Removed 3 rows containing non-finite values (stat_boxplot). 
+3: Removed 9 rows containing non-finite values (stat_boxplot). 
+4: Removed 3 rows containing non-finite values (stat_boxplot). 
+> dev.off()
+null device 
+          1 
+> 
+> png(gsub("\\.rds$", "_tpm.png", outrds), width = 10, height = 7, unit = "in", res = 300)
+> print(ggplot(gene_summary %>%
++                dplyr::group_by(gene, utr_selected, tr_type, method, utr_fraction_of_length) %>% 
++                dplyr::summarize(count = sum(count), TPM = sum(TPM)) %>% dplyr::ungroup() %>%
++                dplyr::group_by(gene, method) %>% dplyr::mutate(count = count/sum(count),
++                                                                TPM = TPM/sum(TPM)) %>%
++                dplyr::ungroup(), 
++              aes(x = utr_selected, y = TPM, color = tr_type)) + 
++         geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method, nrow = 2) + 
++         theme_bw() + scale_color_manual(values = c("#9900cc", "#009933", "#0099cc"),
++                                         name = "Transcript class") + 
++         xlab("Selected 3'UTR") + ylab("Relative contribution to gene TPM") + 
++         theme(legend.position = "bottom"))
+Warning message:
+Removed 47 rows containing non-finite values (stat_boxplot). 
+> dev.off()
+null device 
+          1 
+> 
+> png(gsub("\\.rds$", "_tpm2.png", outrds), width = 10, height = 7, unit = "in", res = 300)
+> print(ggplot(gene_summary %>%
++                dplyr::group_by(gene, utr_selected, tr_type2, method, utr_fraction_of_length) %>% 
++                dplyr::summarize(count = sum(count), TPM = sum(TPM)) %>% dplyr::ungroup() %>%
++                dplyr::group_by(gene, method) %>% dplyr::mutate(count = count/sum(count),
++                                                                TPM = TPM/sum(TPM)) %>%
++                dplyr::ungroup(), 
++              aes(x = tr_type2, y = TPM, color = tr_type2)) + 
++         geom_boxplot(outlier.size = 0.3) + facet_wrap(~ method, nrow = 2) + 
++         theme_bw() + scale_color_manual(values = c("#9900cc", "#009933"),
++                                         name = "") + 
++         xlab("") + ylab("Relative contribution to gene TPM") + 
++         theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
++               legend.position = "none"))
+Warning message:
+Removed 39 rows containing non-finite values (stat_boxplot). 
+> dev.off()
+null device 
+          1 
+> 
+> png(gsub("\\.rds$", "_tpm3.png", outrds), width = 12, height = 8, unit = "in", res = 300)
+> g1 <- gene_summary %>% dplyr::filter(tr_type2 == "Most similar reference transcript") %>%
++   dplyr::mutate(most_similar = tr_type)
+> g0 <- gene_summary %>% dplyr::left_join(g1 %>% dplyr::select(gene, method, most_similar)) %>%
++   dplyr::group_by(gene, utr_selected, tr_type, method, utr_fraction_of_length, most_similar) %>% 
++   dplyr::summarize(count = sum(count), TPM = sum(TPM)) %>% dplyr::ungroup() %>%
++   dplyr::group_by(gene, method) %>% dplyr::mutate(count = count/sum(count),
++                                                   TPM = TPM/sum(TPM)) %>%
++   dplyr::ungroup() %>% dplyr::filter(!is.na(most_similar)) %>%
++   dplyr::mutate(most_similar = replace(most_similar, most_similar == "Contributing 3'UTR", "3'UTR most sim"),
++                 most_similar = replace(most_similar, most_similar == "Contributing internal structure", "Internal most sim"),
++                 most_similar = replace(most_similar, most_similar == "Other", "Other most sim"))
+Joining, by = c("gene", "method")
+> plots <- lapply(split(g0, g0$method), function(g) {
++   ggplot(g, 
++          aes(x = utr_selected, y = TPM, color = tr_type)) + 
++     geom_boxplot(outlier.size = 0.3) + facet_grid(most_similar ~ method) + 
++     theme_bw() + scale_color_manual(values = c("#9900cc", "#009933", "#0099cc"),
++                                     name = "Transcript class") + 
++     xlab("Selected 3'UTR") + ylab("Relative contribution to gene TPM") + 
++     theme(legend.position = "bottom")
++ })
+> print(cowplot::plot_grid(
++   cowplot::plot_grid(plotlist = lapply(plots, function(p) p + theme(legend.position = "none")), nrow = 2),
++   cowplot::get_legend(plots[[1]]), ncol = 1, rel_heights = c(1, 0.05))
++ )
+Warning messages:
+1: Removed 3 rows containing non-finite values (stat_boxplot). 
+2: Removed 3 rows containing non-finite values (stat_boxplot). 
+3: Removed 9 rows containing non-finite values (stat_boxplot). 
+4: Removed 3 rows containing non-finite values (stat_boxplot). 
+5: Removed 3 rows containing non-finite values (stat_boxplot). 
+> dev.off()
+null device 
+          1 
+> 
+> ## Plot scores for modified and unmodified genes
+> genes <- scores$genes %>% 
++   dplyr::mutate(geneclass = ifelse(gene %in% modgenes, "modified", "unmodified")) %>%
++   dplyr::filter(uniqjuncreads > uniqjuncreadsthreshold)
+> png(gsub("\\.rds$", "_scores.png", outrds), width = 10, height = 7, unit = "in", res = 300)
+> print(ggplot(genes, aes(x = geneclass, y = score, color = geneclass)) + 
++         geom_boxplot(outlier.size = 0.3) + 
++         facet_wrap(~ method, nrow = 2) + theme_bw() + 
++         scale_color_manual(values = c(modified = "#9900cc", unmodified = "#009933"),
++                            name = "Gene class") + 
++         xlab("") + theme(legend.position = "bottom"))
+Warning message:
+Removed 410 rows containing non-finite values (stat_boxplot). 
+> dev.off()
+null device 
+          1 
+> 
+> png(gsub("\\.rds$", "_scores2.png", outrds), width = 10, height = 7, unit = "in", res = 300)
+> print(ggplot(genes %>% dplyr::left_join(gene_summary %>% 
++                                           dplyr::select(gene, method, utr_fraction_of_length) %>% 
++                                           dplyr::distinct()),
++              aes(x = utr_fraction_of_length, y = score)) + 
++         geom_point(alpha = 0.3, size = 0.3) + geom_smooth() +  
++         facet_wrap(~ method, nrow = 2) + theme_bw() + 
++         xlab("Fraction of artificial transcript consisting of 3'UTR"))
+Joining, by = c("gene", "method")
+`geom_smooth()` using method = 'gam'
+Warning messages:
+1: Removed 48609 rows containing non-finite values (stat_smooth). 
+2: Removed 48609 rows containing missing values (geom_point). 
+> dev.off()
+null device 
+          1 
+> 
+> 
+> saveRDS(list(genes = genes, gene_summary = gene_summary), file = outrds)
+> date()
+[1] "Sun Jun  3 16:51:35 2018"
+> sessionInfo()
+R Under development (unstable) (2017-12-14 r73916)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 16.04.4 LTS
+
+Matrix products: default
+BLAS: /usr/local/R/R-devel/lib/libRblas.so
+LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
+ [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
+ [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
+[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+
+attached base packages:
+[1] parallel  stats4    stats     graphics  grDevices utils     datasets 
+[8] methods   base     
+
+other attached packages:
+ [1] bindrcpp_0.2.2          cowplot_0.9.2           GenomicFeatures_1.31.10
+ [4] AnnotationDbi_1.41.5    Biobase_2.39.2          ggplot2_2.2.1          
+ [7] tidyr_0.8.0             dplyr_0.7.4             rtracklayer_1.39.12    
+[10] GenomicRanges_1.31.23   GenomeInfoDb_1.15.5     IRanges_2.13.28        
+[13] S4Vectors_0.17.42       BiocGenerics_0.26.0    
+
+loaded via a namespace (and not attached):
+ [1] SummarizedExperiment_1.9.16 progress_1.1.2             
+ [3] tidyselect_0.2.4            reshape2_1.4.3             
+ [5] purrr_0.2.4                 lattice_0.20-35            
+ [7] colorspace_1.3-2            mgcv_1.8-23                
+ [9] blob_1.1.1                  XML_3.98-1.11              
+[11] rlang_0.2.0                 pillar_1.2.1               
+[13] glue_1.2.0                  DBI_0.8                    
+[15] BiocParallel_1.13.3         bit64_0.9-7                
+[17] matrixStats_0.53.1          GenomeInfoDbData_1.1.0     
+[19] bindr_0.1.1                 plyr_1.8.4                 
+[21] stringr_1.3.0               zlibbioc_1.26.0            
+[23] Biostrings_2.47.12          munsell_0.4.3              
+[25] gtable_0.2.0                memoise_1.1.0              
+[27] labeling_0.3                biomaRt_2.35.13            
+[29] Rcpp_0.12.16                scales_0.5.0               
+[31] DelayedArray_0.5.30         XVector_0.20.0             
+[33] bit_1.1-12                  Rsamtools_1.31.3           
+[35] digest_0.6.15               stringi_1.1.7              
+[37] grid_3.5.0                  tools_3.5.0                
+[39] bitops_1.0-6                magrittr_1.5               
+[41] RCurl_1.95-4.10             lazyeval_0.2.1             
+[43] tibble_1.4.2                RSQLite_2.1.0              
+[45] pkgconfig_2.0.1             Matrix_1.2-14              
+[47] prettyunits_1.0.2           assertthat_0.2.0           
+[49] httr_1.3.1                  R6_2.2.2                   
+[51] nlme_3.1-134                GenomicAlignments_1.15.13  
+[53] compiler_3.5.0             
+> 
+> proc.time()
+     user    system   elapsed 
+21996.908    63.132 22163.414 

@@ -29,7 +29,7 @@ Type 'q()' to quit R.
 > ##                 separated by commas (no spaces)                            ##
 > ## * scorerds: object with junction coverages, transcript abundances and gene ##
 > ##             scores                                                         ##
-> ## * outfile: output pdf file                                                 ##
+> ## * outpng: output png file                                                  ##
 > ##                                                                            ##
 > ## Outputs:                                                                   ##
 > ## * A png figure with coverage patterns, gene models and junction scores for ##
@@ -112,10 +112,10 @@ Type 'q()' to quit R.
 > 
 > grtr <- GeneRegionTrack(gm, showId = TRUE, col = NULL, fill = cols[gm$transcript],
 +                         name = "", col.title = "black", 
-+                         background.title = "transparent")
++                         background.title = "transparent", min.height = 15)
 > grtr2 <- GeneRegionTrack(gmo, showId = TRUE, col = "black", fill = "white",
 +                          name = "", col.title = "black", showId = FALSE,
-+                          background.title = "transparent")
++                          background.title = "transparent", min.height = 15)
 > 
 > gtr <- GenomeAxisTrack()
 > 
@@ -172,7 +172,8 @@ null device
 +                   cols = txs, data = jl, color = NA) + 
 +   facet_wrap(~ methodscore, nrow = 2) + 
 +   coord_equal(ratio = 1) + 
-+   expand_limits(x = range(c(jl$scaled.cov, jl$uniqreads)), y = range(c(jl$scaled.cov, jl$uniqreads))) + 
++   expand_limits(x = range(c(jl$scaled.cov, jl$uniqreads)), 
++                 y = range(c(jl$scaled.cov, jl$uniqreads))) + 
 +   scale_fill_manual(values = cols, name = "") + 
 +   xlab("Scaled predicted coverage") + 
 +   ylab("Number of uniquely mapped reads") + 
@@ -204,7 +205,7 @@ null device
 > 
 > unlink(paste0("gviz", rn, ".png"))
 > date()
-[1] "Sat Jun  2 11:22:51 2018"
+[1] "Sun Jun  3 15:08:18 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -279,4 +280,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
- 80.112   2.432  82.661 
+102.804   3.096 106.483 

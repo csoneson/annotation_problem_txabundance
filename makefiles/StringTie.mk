@@ -74,3 +74,12 @@ $(genome)
 	$(gffread) -w $$@ -g $(genome) $$<
 endef
 $(foreach F,$(fastqfiles),$(eval $(call gffreadrule,$(notdir $(F)))))
+
+## Generate gene models for Gviz
+define stringtiegvizrule
+stringtie/$(1)/$(1)_gviz_genemodels.rds: stringtie/$(1)/$(1)_filtered.gtf Rscripts/generate_genemodels.R Rscripts/helper_plot_tracks.R
+	mkdir -p $$(@D)
+	$(R) "--args gtf='stringtie/$(1)/$(1)_filtered.gtf' outrds='$$@'" Rscripts/generate_genemodels.R Rout/generate_genemodels_$(1)_stringtie_tx.Rout
+endef
+$(foreach F,$(fastqfiles),$(eval $(call stringtiegvizrule,$(notdir $(F)))))
+

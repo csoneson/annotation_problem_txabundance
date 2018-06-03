@@ -10,7 +10,7 @@
 ##                 separated by commas (no spaces)                            ##
 ## * scorerds: object with junction coverages, transcript abundances and gene ##
 ##             scores                                                         ##
-## * outfile: output pdf file                                                 ##
+## * outpng: output png file                                                  ##
 ##                                                                            ##
 ## Outputs:                                                                   ##
 ## * A png figure with coverage patterns, gene models and junction scores for ##
@@ -86,10 +86,10 @@ names(cols) <- txs
 
 grtr <- GeneRegionTrack(gm, showId = TRUE, col = NULL, fill = cols[gm$transcript],
                         name = "", col.title = "black", 
-                        background.title = "transparent")
+                        background.title = "transparent", min.height = 15)
 grtr2 <- GeneRegionTrack(gmo, showId = TRUE, col = "black", fill = "white",
                          name = "", col.title = "black", showId = FALSE,
-                         background.title = "transparent")
+                         background.title = "transparent", min.height = 15)
 
 gtr <- GenomeAxisTrack()
 
@@ -135,7 +135,8 @@ jcov <- ggplot() + geom_abline(intercept = 0, slope = 1) +
                   cols = txs, data = jl, color = NA) + 
   facet_wrap(~ methodscore, nrow = 2) + 
   coord_equal(ratio = 1) + 
-  expand_limits(x = range(c(jl$scaled.cov, jl$uniqreads)), y = range(c(jl$scaled.cov, jl$uniqreads))) + 
+  expand_limits(x = range(c(jl$scaled.cov, jl$uniqreads)), 
+                y = range(c(jl$scaled.cov, jl$uniqreads))) + 
   scale_fill_manual(values = cols, name = "") + 
   xlab("Scaled predicted coverage") + 
   ylab("Number of uniquely mapped reads") + 

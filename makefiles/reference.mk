@@ -73,6 +73,7 @@ txome_chess := reference_chess/chess2.0_assembly_fixed.fa
 tx2gene_chess := reference_chess/chess2.0_assembly_fixed_tx2gene.rds
 tx2gene_chess_withsymbol := reference_chess/chess2.0_assembly_fixed_tx2gene_withsymbol.rds
 info_chess := reference_chess/gene_id_to_symbol.rds
+gvizgenemodels_chess := reference_chess/chess2.0_assembly_fixed_gviz_genemodels.rds
 
 $(gtf_chess): reference_chess/chess2.0_assembly.gff reference_chess/chess2.0.genes Rscripts/fix_chess_gtf.R
 	$(R) "--args ingtf='$(word 1,$^)' ingenes='$(word 2,$^)' outgtf='$@' outinfo='$(info_chess)'" Rscripts/fix_chess_gtf.R Rout/fix_chess_gtf.Rout
@@ -89,6 +90,9 @@ $(tx2gene_chess): $(gtf_chess) Rscripts/generate_tx2gene_from_gtf.R
 $(tx2gene_chess_withsymbol): $(tx2gene_chess) $(info_chess) Rscripts/add_symbol_to_tx2gene.R
 	$(R) "--args tx2gene='$(tx2gene_chess)' info='$(info_chess)' outrds='$@'" Rscripts/add_symbol_to_tx2gene.R Rout/add_symbol_to_tx2gene_chess.Rout
 
+$(gvizgenemodels_chess): $(gtf_chess) Rscripts/generate_genemodels.R Rscripts/helper_plot_tracks.R
+	mkdir -p $(@D)
+	$(R) "--args gtf='$(gtf_chess)' outrds='$@'" Rscripts/generate_genemodels.R Rout/generate_genemodels_chess.Rout
 
 
 

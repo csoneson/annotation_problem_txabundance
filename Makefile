@@ -16,7 +16,7 @@ quantmethods20170918.A-WT_4 := Salmon SalmonSTAR kallisto RSEM StringTie hera Sa
 quantmethodssim_misannotated_utr_1 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup
 quantmethodsstringtie := Salmon SalmonSTAR kallisto RSEM StringTie hera
 
-nthreads := 24
+nthreads := 12
 
 ## Define the multimapping fraction threshold. Junctions with MM/(UM+MM)>mmfracthreshold will not be 
 ## included when calculating the "MM-aware" score
@@ -109,6 +109,13 @@ reference/kallisto/chess2.0_assembly_fixed_kidx_v0.44.0
 alpineprepchess: $(foreach F,$(fastqfilesreal),STAR_chess/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoord.out.bam.bai) \
 $(foreach F,$(fastqfilesreal),alpine/$(notdir $(F))_chess/alpine_fitbiasmodel.rds) \
 $(foreach F,$(fastqfilesreal),alpine/$(notdir $(F))_chess/alpine_predicted_coverage.rds)
+
+quantchess: $(foreach F,$(fastqfilesreal),salmon_chess/$(notdir $(F))/quant.sf) \
+$(foreach F,$(fastqfilesreal),kallisto_chess/$(notdir $(F))/abundance.tsv)
+
+scalecovchess: $(foreach F,/home/Shared/data/seq/roche_pacbio_targeted_cdna/Illumina_RNA_seq/20151016.A-Cortex_RNA,$(foreach M,Salmon kallisto,alpine/$(notdir $(F))_chess/scaled_junction_coverage_$(M).rds)) \
+$(foreach F,/home/Shared/data/seq/roche_pacbio_targeted_cdna/Illumina_RNA_seq/20151016.A-Cortex_RNA,output/$(notdir $(F))_chess_combined_coverages.rds) \
+$(foreach F,/home/Shared/data/seq/roche_pacbio_targeted_cdna/Illumina_RNA_seq/20151016.A-Cortex_RNA,output/$(notdir $(F))_chess_combined_coverages_with_scores.rds)
 
 ########################################################################################################
 ## Extended annotation (from StringTie)

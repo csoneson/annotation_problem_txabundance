@@ -1,0 +1,94 @@
+
+R Under development (unstable) (2017-12-14 r73916) -- "Unsuffered Consequences"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ################################################################################
+> ##                                                                            ##
+> ## Scale predicted junction coverages based on estimated transcript           ##
+> ## abundances                                                                 ##
+> ##                                                                            ##
+> ## Inputs:                                                                    ##
+> ## * predcovrds: predicted transcript coverage patterns and junction          ##
+> ##               coverages (output from alpine_get_predicted_coverage.R)      ##
+> ## * txquants: file with transcript abundances                                ##
+> ## * quantreadscript: script to read the transcript quantifications. Should   ##
+> ##                    contain a function named read_quant()                   ##
+> ## * strandspec: yes or no, is the data strand-specific                       ##
+> ## * tx2gene: data frame with transcript-to-gene conversion info              ##
+> ## * method: method name to add to the quantification table                   ##
+> ## * outrds: output file                                                      ##
+> ##                                                                            ##
+> ## Outputs:                                                                   ##
+> ## * Predicted junction coverages for all junctions, and a table with all     ##
+> ##   transcript abundances                                                    ##
+> ##                                                                            ##
+> ################################################################################
+> 
+> args <- (commandArgs(trailingOnly = TRUE))
+> for (i in 1:length(args)) {
++   eval(parse(text = args[[i]]))
++ }
+> 
+> print(predcovrds)
+[1] "alpine/20151016.A-Cortex_RNA_chess/alpine_predicted_coverage.rds"
+> print(txquants)
+[1] "kallisto_chess/20151016.A-Cortex_RNA/abundance.tsv"
+> print(quantreadscript)
+[1] "Rscripts/read_quant_kallisto.R"
+> print(strandspec)
+[1] "yes"
+> print(tx2gene)
+[1] "reference_chess/chess2.0_assembly_fixed_tx2gene_withsymbol.rds"
+> print(method)
+[1] "kallisto"
+> print(outrds)
+[1] "alpine/20151016.A-Cortex_RNA_chess/scaled_junction_coverage_kallisto.rds"
+> 
+> suppressPackageStartupMessages({
++   library(alpine)
++   library(parallel)
++   library(dplyr)
++ })
+> 
+> source(quantreadscript)
+> 
+> predcovs <- readRDS(predcovrds)
+> quants <- read_quant(file = txquants, avefraglength = predcovs[[1]]$avefraglength)
+> tx2gene <- readRDS(tx2gene)
+> 
+> idxtx <- grep("^STRG\\.|^CHS\\.", tx2gene$tx, invert = TRUE)
+> tx2gene$tx[idxtx] <- gsub("\\.[0-9]+$", "", tx2gene$tx[idxtx])
+> 
+> idxgene <- grep("^STRG\\.|^CHS\\.", tx2gene$gene, invert = TRUE)
+> tx2gene$gene[idxgene] <- gsub("\\.[0-9]+$", "", tx2gene$gene[idxgene])
+> 
+> transcripts <- names(predcovs)
+> names(transcripts) <- transcripts
+> 
+> ## Go through all transcripts and scale predicted junction coverage by the
+> ## estimated abundance
+> scaledcovs <- lapply(transcripts, function(tx) {
++   tryCatch({
++     ab <- quants$count[quants$transcript == tx]
++     if (length(ab) == 0 || is.na(ab)) ab <- 0  ## if the transcript is not present in the quantification file
++     m <- predcovs[[tx]]$junctions
++     m$pred.cov <- m$pred.cov / max(1e-10, sum(predcovs[[tx]]$pred.cov)) * 
++       ab * predcovs[[tx]]$avefraglength
++     as.data.frame(m) %>% dplyr::mutate(transcript = tx)
++   }, error = function(e) NULL)
++ })

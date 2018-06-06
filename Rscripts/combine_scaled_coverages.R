@@ -71,11 +71,19 @@ jcov <- rbind(jcov, jcovnostrand)
 
 ## Read and merge junction coverages predicted by each method
 jcovscaled <- do.call(rbind, list(readRDS(junctioncovSalmon)$allcovs,
-                                  readRDS(junctioncovSalmonSTAR)$allcovs,
-                                  readRDS(junctioncovhera)$allcovs,
-                                  readRDS(junctioncovkallisto)$allcovs,
-                                  readRDS(junctioncovRSEM)$allcovs,
-                                  readRDS(junctioncovStringTie)$allcovs))
+                                  readRDS(junctioncovkallisto)$allcovs))
+if (junctioncovSalmonSTAR != "") {
+  jcovscaled <- rbind(jcovscaled, readRDS(junctioncovSalmonSTAR)$allcovs)
+}
+if (junctioncovhera != "") {
+  jcovscaled <- rbind(jcovscaled, readRDS(junctioncovhera)$allcovs)
+}
+if (junctioncovRSEM != "") {
+  jcovscaled <- rbind(jcovscaled, readRDS(junctioncovRSEM)$allcovs)
+}
+if (junctioncovStringTie != "") {
+  jcovscaled <- rbind(jcovscaled, readRDS(junctioncovStringTie)$allcovs)
+}
 if (junctioncovNanopore != "") {
   jcovscaled <- rbind(jcovscaled, readRDS(junctioncovNanopore)$allcovs)
 }
@@ -115,12 +123,20 @@ jcovscaled <- jcovscaled %>% dplyr::left_join(j0) %>%
 
 ## Read and combine transcript quantifications
 allquants <- do.call(rbind, list(readRDS(junctioncovSalmon)$quants,
-                                 readRDS(junctioncovSalmonSTAR)$quants,
-                                 readRDS(junctioncovhera)$quants,
-                                 readRDS(junctioncovkallisto)$quants,
-                                 readRDS(junctioncovRSEM)$quants,
-                                 readRDS(junctioncovStringTie)$quants))
+                                 readRDS(junctioncovkallisto)$quants))
 
+if (junctioncovSalmonSTAR != "") {
+  allquants <- rbind(allquants, readRDS(junctioncovSalmonSTAR)$quants)
+}
+if (junctioncovhera != "") {
+  allquants <- rbind(allquants, readRDS(junctioncovhera)$quants)
+}
+if (junctioncovRSEM != "") {
+  allquants <- rbind(allquants, readRDS(junctioncovRSEM)$quants)
+}
+if (junctioncovStringTie != "") {
+  allquants <- rbind(allquants, readRDS(junctioncovStringTie)$quants)
+}
 if (junctioncovNanopore != "") {
   allquants <- rbind(allquants, readRDS(junctioncovNanopore)$quants)
 }
@@ -148,18 +164,20 @@ allquants_gene <- dplyr::left_join(allquants_gene, genechars,
                                    by = c("gene" = "gene_id"))
 
 ## Add exon and intron counts
-exoncounts <- read.delim(exoncountstxt, skip = 1, header = TRUE, as.is = TRUE) %>%
-  dplyr::select(-Chr, -Start, -End, -Strand, -Length) %>%
-  setNames(c("gene", "exoncount"))
-introncounts <- read.delim(introncountstxt, skip = 1, header = TRUE, as.is = TRUE) %>%
-  dplyr::select(-Chr, -Start, -End, -Strand, -Length) %>%
-  setNames(c("gene", "introncount"))
-allquants_gene <- dplyr::left_join(allquants_gene, 
-                                   dplyr::full_join(exoncounts, introncounts)) %>% 
-  dplyr::mutate(exoncount = replace(exoncount, is.na(exoncount), 0)) %>% 
-  dplyr::mutate(introncount = replace(introncount, is.na(introncount), 0)) %>%
-  dplyr::mutate(intron_exon_ratio = introncount/exoncount) %>%
-  dplyr::mutate(intron_exon_ratio = replace(intron_exon_ratio, exoncount==0 & introncount==0, 0))
+if (exoncountstxt != "" && introncountstxt != "") {
+  exoncounts <- read.delim(exoncountstxt, skip = 1, header = TRUE, as.is = TRUE) %>%
+    dplyr::select(-Chr, -Start, -End, -Strand, -Length) %>%
+    setNames(c("gene", "exoncount"))
+  introncounts <- read.delim(introncountstxt, skip = 1, header = TRUE, as.is = TRUE) %>%
+    dplyr::select(-Chr, -Start, -End, -Strand, -Length) %>%
+    setNames(c("gene", "introncount"))
+  allquants_gene <- dplyr::left_join(allquants_gene, 
+                                     dplyr::full_join(exoncounts, introncounts)) %>% 
+    dplyr::mutate(exoncount = replace(exoncount, is.na(exoncount), 0)) %>% 
+    dplyr::mutate(introncount = replace(introncount, is.na(introncount), 0)) %>%
+    dplyr::mutate(intron_exon_ratio = introncount/exoncount) %>%
+    dplyr::mutate(intron_exon_ratio = replace(intron_exon_ratio, exoncount==0 & introncount==0, 0))
+}
 
 ## Add total unique and multimapping junction reads per gene
 totjunctionreads <- jcovscaled %>% dplyr::filter(method == "Salmon") %>%

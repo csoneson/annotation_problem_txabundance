@@ -9,8 +9,9 @@ suppressPackageStartupMessages({
 })
 
 read_quant <- function(file, avefraglength) {
-  read.delim(file, header = TRUE, as.is = TRUE) %>%
-    dplyr::mutate(Name = gsub("\\.[0-9]+", "", Name)) %>%
-    dplyr::rename(transcript = Name, count = NumReads) %>%
+  tmp <- read.delim(file, header = TRUE, as.is = TRUE)
+  idx <- grep("^STRG\\.|^CHS\\.", tmp$Name, invert = TRUE)
+  tmp$Name[idx] <- gsub("\\.[0-9]+$", "", tmp$Name[idx])
+  tmp %>% dplyr::rename(transcript = Name, count = NumReads) %>%
     dplyr::select(transcript, count, TPM)
 }

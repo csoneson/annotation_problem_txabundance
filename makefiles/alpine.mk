@@ -116,8 +116,17 @@ $(eval $(call combcovrule,sim_misannotated_utr_1,,,alpine/sim_misannotated_utr_1
 $(eval $(call combcovrule,20151016.A-Cortex_RNA,_stringtie_tx,,,))
 $(eval $(call combcovrule,20170918.A-WT_4,_stringtie_tx,,,))
 $(eval $(call combcovrule,sim_misannotated_utr_1,_stringtie_tx,,,))
-$(eval $(call combcovrule,20151016.A-Cortex_RNA,_chess,,,))
-$(eval $(call combcovrule,20170918.A-WT_4,_chess,,,))
+
+## Combine coverages for all methods, CHESS
+define combcovchessrule
+output/$(1)$(2)_combined_coverages.rds: STAR$(2)/$(1)/$(1)_Aligned.sortedByCoord.out.bam \
+alpine/$(1)$(2)/scaled_junction_coverage_Salmon.rds alpine/$(1)$(2)/scaled_junction_coverage_kallisto.rds \
+output/gene_characteristics_chess.rds Rscripts/combine_scaled_coverages.R
+	mkdir -p $$(@D)
+	$(R) "--args junctioncovSTAR='STAR$(2)/$(1)/$(1)_SJ.out.tab' junctioncovSalmon='$$(word 2,$$^)' junctioncovSalmonSTAR='' junctioncovSalmonKeepDup='' junctioncovSalmonCDS='' junctioncovNanopore='' junctioncovhera='' junctioncovkallisto='$$(word 3,$$^)' junctioncovRSEM='' junctioncovStringTie='' genecharacteristics='$$(word 4,$$^)' exoncountstxt='' introncountstxt='' outrds='$$@'" Rscripts/combine_scaled_coverages.R Rout/combine_scaled_coverages_$(1)$(2).Rout
+endef
+$(eval $(call combcovchessrule,20151016.A-Cortex_RNA,_chess))
+$(eval $(call combcovchessrule,20170918.A-WT_4,_chess))
 
 ## Calculate gene scores and add to summary table
 define scorerule

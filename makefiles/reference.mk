@@ -94,6 +94,9 @@ $(gvizgenemodels_chess): $(gtf_chess) Rscripts/generate_genemodels.R Rscripts/he
 	mkdir -p $(@D)
 	$(R) "--args gtf='$(gtf_chess)' outrds='$@'" Rscripts/generate_genemodels.R Rout/generate_genemodels_chess.Rout
 
+output/gene_characteristics_chess.rds: $(gtf_chess) Rscripts/calculate_gene_characteristics_chess.R
+	mkdir -p $(@D)
+	$(R) "--args gtf='$(gtf_chess)' outrds='$@'" Rscripts/calculate_gene_characteristics_chess.R Rout/calculate_gene_characteristics_chess.Rout
 
 
 

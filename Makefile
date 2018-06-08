@@ -111,7 +111,8 @@ $(foreach F,$(fastqfilesreal),alpine/$(notdir $(F))_chess/alpine_fitbiasmodel.rd
 $(foreach F,$(fastqfilesreal),alpine/$(notdir $(F))_chess/alpine_predicted_coverage.rds)
 
 quantchess: $(foreach F,$(fastqfilesreal),salmon_chess/$(notdir $(F))/quant.sf) \
-$(foreach F,$(fastqfilesreal),kallisto_chess/$(notdir $(F))/abundance.tsv)
+$(foreach F,$(fastqfilesreal),kallisto_chess/$(notdir $(F))/abundance.tsv) \
+$(foreach F,$(fastqfilesreal),STARbigwig_chess/$(notdir $(F))_Aligned.sortedByCoord.out.bw)
 
 scalecovchess: $(foreach F,/home/Shared/data/seq/roche_pacbio_targeted_cdna/Illumina_RNA_seq/20151016.A-Cortex_RNA,$(foreach M,Salmon kallisto,alpine/$(notdir $(F))_chess/scaled_junction_coverage_$(M).rds)) \
 $(foreach F,/home/Shared/data/seq/roche_pacbio_targeted_cdna/Illumina_RNA_seq/20151016.A-Cortex_RNA,output/$(notdir $(F))_chess_combined_coverages.rds) \
@@ -170,16 +171,21 @@ minimap2salmon/$(nanopore_sample)/quant.sf
 plots: $(foreach F,$(fastqfiles),figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F)).rds) \
 figures/predicted_coverage_pattern_comparison/predicted_coverage_pattern_comparison_20151016.A-Cortex_RNA_20170918.A-WT_4.rds \
 $(foreach F,$(fastqfiles),figures/gene_scores/gene_scores_$(notdir $(F)).rds) \
-$(foreach G,$(genes_to_plot),$(foreach F,$(fastqfiles),output_genewise/$(notdir $(F))/check/$(G).rds)) \
 $(foreach F,$(fastqfiles),figures/correlation_with_inferential_variance/correlation_with_inferential_variance_$(notdir $(F)).rds) \
 $(foreach F,$(fastqfiles),figures/correlation_between_methods/correlation_between_methods_$(notdir $(F)).rds) \
 figures/correlation_between_nanopore_and_illumina_scores/correlation_between_nanopore_and_illumina_scores_20170918.A-WT_4.rds \
 $(foreach F,$(fastqfiles),figures/correlation_with_true_abundances/correlation_with_true_abundances_$(notdir $(F)).rds) \
 $(foreach F,$(fastqfiles),figures/association_exoncdscorrelation_score/association_exoncdscorrelation_score_$(notdir $(F)).rds) \
 $(foreach F,$(fastqfilessim),figures/performance_simulated_data/performance_simulated_data_$(notdir $(F)).rds)
+#$(foreach G,$(genes_to_plot),$(foreach F,$(fastqfiles),output_genewise/$(notdir $(F))/check/$(G).rds)) \
 
 plotsstringtie: $(foreach F,$(fastqfiles),figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F))_stringtie_tx.rds) \
 $(foreach F,$(fastqfiles),figures/gene_scores/gene_scores_$(notdir $(F))_stringtie_tx.rds)
+
+plotschess: $(foreach F,/home/Shared/data/seq/roche_pacbio_targeted_cdna/Illumina_RNA_seq/20151016.A-Cortex_RNA,figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F))_chess.rds) \
+$(foreach F,/home/Shared/data/seq/roche_pacbio_targeted_cdna/Illumina_RNA_seq/20151016.A-Cortex_RNA,figures/gene_scores/gene_scores_$(notdir $(F))_chess.rds)
+
+plotssummarychess: $(foreach G,$(genes_to_plot_summary_chess),$(foreach F,/home/Shared/data/seq/roche_pacbio_targeted_cdna/Illumina_RNA_seq/20151016.A-Cortex_RNA,figures/genewise_summary_chess/$(notdir $(F))_chess_$(G).png))
 
 plotssummary: $(foreach G,$(genes_to_plot_summary),$(foreach F,$(fastqfilesreal),figures/genewise_summary/$(notdir $(F))_$(G).png)) \
 $(foreach G,$(genes_to_plot_summary),$(foreach F,$(fastqfilesreal),figures/comparison_annotation_catalogs/annotation_comparison_$(notdir $(F))_$(G).png))

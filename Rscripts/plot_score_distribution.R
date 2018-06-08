@@ -133,13 +133,17 @@ for (mincount in uniqjuncreadsthresholds) {
         scale_color_manual(values = method_colors),
       
       ## Scores vs maximum 3'UTR length
-      ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount),
-             aes(x = max_3putr_length, y = score, color = method)) +
-        geom_point(alpha = 0.5, size = 0.5) + theme_bw() + 
-        facet_wrap(~ method, nrow = 1, scales = "free_x") +
-        geom_smooth(color = "black", method = "loess") + xlab("Maximal 3'UTR length") +
-        theme(legend.position = "none") + 
-        scale_color_manual(values = method_colors),
+      if ("max_3putr_length" %in% colnames(scores)) {
+        ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount),
+               aes(x = max_3putr_length, y = score, color = method)) +
+          geom_point(alpha = 0.5, size = 0.5) + theme_bw() + 
+          facet_wrap(~ method, nrow = 1, scales = "free_x") +
+          geom_smooth(color = "black", method = "loess") + xlab("Maximal 3'UTR length") +
+          theme(legend.position = "none") + 
+          scale_color_manual(values = method_colors)
+      } else {
+        NULL
+      },
       
       ## Scores vs fraction of transcripts with valid (i.e. not imposed uniform)
       ## coverage prediction
@@ -172,15 +176,19 @@ for (mincount in uniqjuncreadsthresholds) {
         scale_color_manual(values = method_colors),
       
       ## Scores vs intron/exon count ratio
-      ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount) %>% 
-               dplyr::mutate(intron_exon_ratio = replace(intron_exon_ratio, 
-                                                         intron_exon_ratio > 10, 10)), 
-             aes(x = intron_exon_ratio, y = score, color = method)) + 
-        geom_point(alpha = 0.5, size = 0.5) + theme_bw() + 
-        facet_wrap(~ method, nrow = 1, scales = "free_x") + 
-        geom_smooth(color = "black", method = "loess") + 
-        xlab("Intron/exon count ratio") + theme(legend.position = "none") + 
-        scale_color_manual(values = method_colors),
+      if ("intron_exon_ratio" %in% colnames(scores)) {
+        ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount) %>% 
+                 dplyr::mutate(intron_exon_ratio = replace(intron_exon_ratio, 
+                                                           intron_exon_ratio > 10, 10)), 
+               aes(x = intron_exon_ratio, y = score, color = method)) + 
+          geom_point(alpha = 0.5, size = 0.5) + theme_bw() + 
+          facet_wrap(~ method, nrow = 1, scales = "free_x") + 
+          geom_smooth(color = "black", method = "loess") + 
+          xlab("Intron/exon count ratio") + theme(legend.position = "none") + 
+          scale_color_manual(values = method_colors)
+      } else {
+        NULL
+      },
       
       ## Scores vs total gene count
       ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount),
@@ -214,14 +222,18 @@ for (mincount in uniqjuncreadsthresholds) {
         scale_color_manual(values = method_colors),
       
       ## Scores vs length difference between 3'UTRs starting in the same place
-      ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount),
-             aes(x = length_diff_3putrs_samestart, y = score, color = method)) + 
-        geom_point(alpha = 0.5, size = 0.5) + theme_bw() + 
-        facet_wrap(~ method, nrow = 1, scales = "free_x") + 
-        geom_smooth(color = "black", method = "loess") + 
-        xlab("Length difference of 3'UTRs with same start") + 
-        theme(legend.position = "none") + 
-        scale_color_manual(values = method_colors),
+      if ("length_diff_3putrs_samestart" %in% colnames(scores)) {
+        ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount),
+               aes(x = length_diff_3putrs_samestart, y = score, color = method)) + 
+          geom_point(alpha = 0.5, size = 0.5) + theme_bw() + 
+          facet_wrap(~ method, nrow = 1, scales = "free_x") + 
+          geom_smooth(color = "black", method = "loess") + 
+          xlab("Length difference of 3'UTRs with same start") + 
+          theme(legend.position = "none") + 
+          scale_color_manual(values = method_colors)
+      } else {
+        NULL
+      },
       
       ncol = 1      
     )

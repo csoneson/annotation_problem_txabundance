@@ -51,16 +51,16 @@ $(foreach F,$(fastqfiles),$(eval $(call featurecountsrule,$(F),$(notdir $(F)),,i
 
 ## Convert BAM files to bigWig
 define bwrule
-STARbigwig/$(1)_Aligned.sortedByCoord.out.bw: $(STARindexnogtf)/chrNameLength.txt \
-STAR/$(1)/$(1)_Aligned.sortedByCoord.out.bam
+STARbigwig$(2)/$(1)_Aligned.sortedByCoord.out.bw: $(STARindexnogtf)/chrNameLength.txt \
+STAR$(2)/$(1)/$(1)_Aligned.sortedByCoord.out.bam
 	mkdir -p $$(@D)	
 	$(bedtools) genomecov -split -ibam $$(word 2,$$^) \
-	-bg > STARbigwig/$(1)_Aligned.sortedByCoord.out.bedGraph
+	-bg > STARbigwig$(2)/$(1)_Aligned.sortedByCoord.out.bedGraph
 	
-	bedGraphToBigWig STARbigwig/$(1)_Aligned.sortedByCoord.out.bedGraph \
+	bedGraphToBigWig STARbigwig$(2)/$(1)_Aligned.sortedByCoord.out.bedGraph \
 	$$(word 1,$$^) $$@
 	
-	rm -f STARbigwig/$(1)_Aligned.sortedByCoord.out.bedGraph
+	rm -f STARbigwig$(2)/$(1)_Aligned.sortedByCoord.out.bedGraph
 endef
-$(foreach F,$(fastqfiles),$(eval $(call bwrule,$(notdir $(F)))))
-
+$(foreach F,$(fastqfiles),$(eval $(call bwrule,$(notdir $(F)),)))
+$(foreach F,$(fastqfiles),$(eval $(call bwrule,$(notdir $(F)),_chess)))

@@ -28,9 +28,12 @@ suppressPackageStartupMessages({
 tx2gene <- readRDS(tx2gene)
 info <- readRDS(info)
 
+info <- info %>% dplyr::select(gene, symbol) %>% dplyr::distinct()
+idx <- grep("^STRG\\.|^CHS\\.", info$gene, invert = TRUE)
+info$gene[idx] <- gsub("\\.[0-9]+$", "", info$gene[idx])
+
 tx2gene <- tx2gene %>% 
-  dplyr::left_join(info %>% dplyr::select(gene, symbol) %>%
-                     dplyr::mutate(gene = gsub("\\.[0-9]+$", "", gene)), by = "gene") %>%
+  dplyr::left_join(info, by = "gene") %>%
   dplyr::mutate(symbol = replace(symbol, is.na(symbol), gene[is.na(symbol)]))
 
 saveRDS(tx2gene, outrds)

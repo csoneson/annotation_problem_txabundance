@@ -36,28 +36,29 @@ $(foreach F,$(fastqfilesreal),$(eval $(call plotscorerule,$(notdir $(F)),_chess)
 ## ==================================================================================== ##
 ##                            genewise results/plots                                    ##
 ## ==================================================================================== ##
-define geneplotrule
-output_genewise/$(1)$(2)/check/$(3).rds: STARbigwig/$(1)$(2)_Aligned.sortedByCoord.out.bw output/$(1)$(2)_combined_coverages_with_scores.rds \
-$(gvizgenemodels) $(5) Rscripts/plot_genewise_results.R
-	mkdir -p output_genewise/$(1)$(2)/plots
-	mkdir -p output_genewise/$(1)$(2)/jcov
-	mkdir -p output_genewise/$(1)$(2)/tpm
-	mkdir -p output_genewise/$(1)$(2)/count
-	mkdir -p output_genewise/$(1)$(2)/check
-	$(R) "--args gene='$(3)' bigwig='$$(word 1,$$^)' bigwignanopore='$(5)' genemodels='$(gvizgenemodels)' scorerds='$$(word 2,$$^)' ncores=$(4) outdir='output_genewise/$(1)$(2)' libid='$(1)_' checkdir='output_genewise/$(1)$(2)/check'" Rscripts/plot_genewise_results.R Rout/plot_genewise_results_$(1)$(2)_$(3).Rout
-endef
-$(foreach G,$(genes_to_plot),$(foreach F,20151016.A-Cortex_RNA,$(eval $(call geneplotrule,$(F),,$(G),1,))))
-$(foreach G,$(genes_to_plot),$(foreach F,20170918.A-WT_4,$(eval $(call geneplotrule,$(F),,$(G),1,minimap2genomebigwig/20171207_1645_p2557_4017_2_ALLREADS.pass_minimap2_genome_s.bw))))
-$(foreach G,$(genes_to_plot),$(foreach F,sim_misannotated_utr_1,$(eval $(call geneplotrule,$(F),,$(G),1,))))
+#define geneplotrule
+#output_genewise/$(1)$(2)/check/$(3).rds: STARbigwig/$(1)$(2)_Aligned.sortedByCoord.out.bw output/$(1)$(2)_combined_coverages_with_scores.rds \
+#$(gvizgenemodels) $(5) Rscripts/plot_genewise_results.R
+#	mkdir -p output_genewise/$(1)$(2)/plots
+#	mkdir -p output_genewise/$(1)$(2)/jcov
+#	mkdir -p output_genewise/$(1)$(2)/tpm
+#	mkdir -p output_genewise/$(1)$(2)/count
+#	mkdir -p output_genewise/$(1)$(2)/check
+#	$(R) "--args gene='$(3)' bigwig='$$(word 1,$$^)' bigwignanopore='$(5)' genemodels='$(gvizgenemodels)' scorerds='$$(word 2,$$^)' ncores=$(4) outdir='output_genewise/$(1)$(2)' libid='$(1)_' checkdir='output_genewise/$(1)$(2)/check'" Rscripts/plot_genewise_results.R Rout/plot_genewise_results_$(1)$(2)_$(3).Rout
+#endef
+#$(foreach G,$(genes_to_plot),$(foreach F,20151016.A-Cortex_RNA,$(eval $(call geneplotrule,$(F),,$(G),1,))))
+#$(foreach G,$(genes_to_plot),$(foreach F,20170918.A-WT_4,$(eval $(call geneplotrule,$(F),,$(G),1,minimap2genomebigwig/20171207_1645_p2557_4017_2_ALLREADS.pass_minimap2_genome_s.bw))))
+#$(foreach G,$(genes_to_plot),$(foreach F,sim_misannotated_utr_1,$(eval $(call geneplotrule,$(F),,$(G),1,))))
 
 define geneplotrule2
-figures/genewise_summary/$(1)$(2)_$(3).png: STARbigwig/$(1)$(2)_Aligned.sortedByCoord.out.bw output/$(1)$(2)_combined_coverages_with_scores.rds \
-$(gvizgenemodels) $(5) Rscripts/plot_genewise_summary.R
+figures/genewise_summary$(2)/$(1)$(2)_$(3).png: STARbigwig$(2)/$(1)_Aligned.sortedByCoord.out.bw output/$(1)$(2)_combined_coverages_with_scores.rds \
+$(4) Rscripts/plot_genewise_summary.R
 	mkdir -p $$(@D)
-	$(R) "--args usegene='$(3)' bigwig='$$(word 1,$$^)' genemodels='$(gvizgenemodels)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonSTAR,SalmonCDS,SalmonKeepDup,StringTie' scorerds='$$(word 2,$$^)' outpng='$$@'" Rscripts/plot_genewise_summary.R Rout/plot_genewise_summary_$(1)$(2)_$(3).Rout
+	$(R) "--args usegene='$(3)' bigwig='$$(word 1,$$^)' genemodels='$(4)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonSTAR,SalmonCDS,SalmonKeepDup,StringTie' scorerds='$$(word 2,$$^)' outpng='$$@'" Rscripts/plot_genewise_summary.R Rout/plot_genewise_summary_$(1)$(2)_$(3).Rout
 endef
-$(foreach G,$(genes_to_plot_summary),$(foreach F,20151016.A-Cortex_RNA,$(eval $(call geneplotrule2,$(F),,$(G)))))
-$(foreach G,$(genes_to_plot_summary),$(foreach F,20170918.A-WT_4,$(eval $(call geneplotrule2,$(F),,$(G)))))
+$(foreach G,$(genes_to_plot_summary),$(foreach F,20151016.A-Cortex_RNA,$(eval $(call geneplotrule2,$(F),,$(G),$(gvizgenemodels)))))
+$(foreach G,$(genes_to_plot_summary),$(foreach F,20170918.A-WT_4,$(eval $(call geneplotrule2,$(F),,$(G),$(gvizgenemodels)))))
+$(foreach G,$(genes_to_plot_summary_chess),$(foreach F,20151016.A-Cortex_RNA,$(eval $(call geneplotrule2,$(F),_chess,$(G),$(gvizgenemodels_chess)))))
 
 ## ==================================================================================== ##
 ##                    correlation with inferential variance                             ##

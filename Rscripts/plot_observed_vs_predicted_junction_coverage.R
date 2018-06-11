@@ -168,6 +168,8 @@ cowplot::plot_grid(g1,
 dev.off()
 
 ## ========================================================================== ##
+## Scatter plots
+## ========================================================================== ##
 ## Calculate correlations
 corrs <- y %>% dplyr::group_by(method, covtype) %>% 
   dplyr::summarize(pearson = signif(cor(uniqreads, coverage, method = "pearson", 
@@ -175,8 +177,7 @@ corrs <- y %>% dplyr::group_by(method, covtype) %>%
                    spearman = signif(cor(uniqreads, coverage, method = "spearman", 
                                          use = "pairwise.complete.obs"), 3))
 
-png(gsub("rds$", "png", outrds), width = 7, height = 15, unit = "in", res = 300)
-ggplot(y, aes(x = uniqreads, y = coverage)) + 
+gg <- ggplot(y, aes(x = uniqreads, y = coverage)) + 
   geom_abline(intercept = 0, slope = 1, color = "black") + 
   geom_point(alpha = 0.3, size = 0.3, aes(color = (fracunique < fracuniqjuncreadsthreshold))) + 
   geom_label(data = corrs, x = -Inf, y = Inf, hjust = -0.05, vjust = 1.1, 
@@ -189,7 +190,17 @@ ggplot(y, aes(x = uniqreads, y = coverage)) +
                      values = c(`TRUE` = "red", `FALSE` = "blue")) + 
   guides(color = guide_legend(override.aes = list(size = 3, alpha = 1))) + 
   theme_bw()
+
+## Original scale
+png(gsub("rds$", "png", outrds), width = 7, height = 15, unit = "in", res = 300)
+print(gg)
 dev.off()
+
+## Square-root scale
+png(gsub("\\.rds$", "_sqrt.png", outrds), width = 7, height = 15, unit = "in", res = 300)
+print(gg + scale_x_sqrt() + scale_y_sqrt())
+dev.off()
+
 
 saveRDS(NULL, outrds)
 

@@ -34,6 +34,19 @@ $(foreach F,$(fastqfiles),$(eval $(call plotscorerule,$(notdir $(F)),_stringtie_
 $(foreach F,$(fastqfilesreal),$(eval $(call plotscorerule,$(notdir $(F)),_chess)))
 
 ## ==================================================================================== ##
+##                   compare scores from different annotations                          ##
+## ==================================================================================== ##
+define scorecompannotrule
+figures/comparison_scores_chess_ensembl/comparison_scores_chess_ensembl_$(1).rds: \
+output/$(1)_chess_combined_coverages_with_scores.rds \
+output/$(1)_combined_coverages_with_scores.rds \
+Rscripts/plot_ensembl_vs_chess_scores.R
+	mkdir -p $$(@D)
+	$(R) "--args scorerdsensembl='output/$(1)_combined_coverages_with_scores.rds' scorerdschess='output/$(1)_chess_combined_coverages_with_scores.rds' convtablechess='reference_chess/chess2.0_assembly_fixed_tx2gene_withsymbol.rds' uniqjuncreadsthreshold=25 uniqjuncfracthreshold=0.75 outrds='$$@'" Rscripts/plot_ensembl_vs_chess_scores.R Rout/plot_ensembl_vs_chess_scores_$(1).Rout
+endef
+$(foreach F,$(fastqfilesreal),$(eval $(call scorecompannotrule,$(notdir $(F)))))
+
+## ==================================================================================== ##
 ##                            genewise results/plots                                    ##
 ## ==================================================================================== ##
 #define geneplotrule

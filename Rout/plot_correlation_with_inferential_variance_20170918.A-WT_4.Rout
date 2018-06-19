@@ -79,7 +79,8 @@ reading in files with read_tsv
 +   dplyr::left_join(tx2gene %>% dplyr::select(tx, gene), by = "tx") %>%
 +   dplyr::select(-tx) %>% dplyr::group_by(gene) %>% dplyr::summarize_all(funs(sum)) %>%
 +   as.data.frame() %>% tibble::column_to_rownames(var = "gene")
-> rownames(bootcounts_gene) <- gsub("\\.[0-9]+$", "", rownames(bootcounts_gene))
+> idx <- grep("^STRG\\.|^CHS\\.", rownames(bootcounts_gene), invert = TRUE)
+> rownames(bootcounts_gene)[idx] <- gsub("\\.[0-9]+$", "", rownames(bootcounts_gene)[idx])
 > 
 > ## Calculate coefficient of variation for each transcript and gene
 > cv_tx <- apply(bootcounts, 1, sd)/apply(bootcounts, 1, mean)
@@ -90,13 +91,18 @@ reading in files with read_tsv
 > ## Merge with score information. For transcripts, we use the score for the
 > ## corresponding gene
 > df_tx <- data.frame(tx = names(cv_tx), CV = cv_tx, stringsAsFactors = FALSE) %>%
-+   dplyr::left_join(tx2gene %>% dplyr::select(tx, gene)) %>%
-+   dplyr::mutate(tx = gsub("\\.[0-9]+$", "", tx),
-+                 gene = gsub("\\.[0-9]+$", "", gene)) %>% 
++   dplyr::left_join(tx2gene %>% dplyr::select(tx, gene))
+Joining, by = "tx"
+> 
+> idx <- grep("^STRG\\.|^CHS\\.", df_tx$tx, invert = TRUE)
+> df_tx$tx[idx] <- gsub("\\.[0-9]+$", "", df_tx$tx[idx])
+> idx <- grep("^STRG\\.|^CHS\\.", df_tx$gene, invert = TRUE)
+> df_tx$gene[idx] <- gsub("\\.[0-9]+$", "", df_tx$gene[idx])
+> 
+> df_tx <- df_tx %>% 
 +   dplyr::inner_join(scores %>% dplyr::filter(method == "Salmon" & 
 +                                                uniqjuncreads >= uniqjuncreadsthreshold) %>%
 +                       dplyr::select(gene, score))
-Joining, by = "tx"
 Joining, by = "gene"
 > 
 > df_gene <- scores %>% dplyr::filter(method == "Salmon" & 
@@ -131,7 +137,7 @@ null device
 > 
 > saveRDS(NULL, file = outrds)
 > date()
-[1] "Sun Jun  3 22:08:01 2018"
+[1] "Tue Jun 19 11:21:33 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -165,4 +171,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
- 85.948   1.568  88.935 
+ 96.420   2.152  99.065 

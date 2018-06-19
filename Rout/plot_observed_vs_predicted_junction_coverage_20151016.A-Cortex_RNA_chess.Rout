@@ -196,6 +196,8 @@ null device
           1 
 > 
 > ## ========================================================================== ##
+> ## Scatter plots
+> ## ========================================================================== ##
 > ## Calculate correlations
 > corrs <- y %>% dplyr::group_by(method, covtype) %>% 
 +   dplyr::summarize(pearson = signif(cor(uniqreads, coverage, method = "pearson", 
@@ -203,8 +205,7 @@ null device
 +                    spearman = signif(cor(uniqreads, coverage, method = "spearman", 
 +                                          use = "pairwise.complete.obs"), 3))
 > 
-> png(gsub("rds$", "png", outrds), width = 7, height = 15, unit = "in", res = 300)
-> ggplot(y, aes(x = uniqreads, y = coverage)) + 
+> gg <- ggplot(y, aes(x = uniqreads, y = coverage)) + 
 +   geom_abline(intercept = 0, slope = 1, color = "black") + 
 +   geom_point(alpha = 0.3, size = 0.3, aes(color = (fracunique < fracuniqjuncreadsthreshold))) + 
 +   geom_label(data = corrs, x = -Inf, y = Inf, hjust = -0.05, vjust = 1.1, 
@@ -217,14 +218,26 @@ null device
 +                      values = c(`TRUE` = "red", `FALSE` = "blue")) + 
 +   guides(color = guide_legend(override.aes = list(size = 3, alpha = 1))) + 
 +   theme_bw()
+> 
+> ## Original scale
+> png(gsub("rds$", "png", outrds), width = 7, height = 15, unit = "in", res = 300)
+> print(gg)
 > dev.off()
 null device 
           1 
 > 
+> ## Square-root scale
+> png(gsub("\\.rds$", "_sqrt.png", outrds), width = 7, height = 15, unit = "in", res = 300)
+> print(gg + scale_x_sqrt() + scale_y_sqrt())
+> dev.off()
+null device 
+          1 
+> 
+> 
 > saveRDS(NULL, outrds)
 > 
 > date()
-[1] "Fri Jun  8 11:52:50 2018"
+[1] "Tue Jun 19 12:27:23 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -257,4 +270,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-103.944   3.036 107.126 
+183.844   1.084 185.333 

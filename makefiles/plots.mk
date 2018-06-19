@@ -144,7 +144,11 @@ figures/comparison_annotation_catalogs/annotation_comparison_$(1)_$(2).png:
 endef
 $(foreach F,$(fastqfilesreal),$(foreach G,$(genes_to_plot_summary),$(eval $(call compareannotrule,$(notdir $(F)),$(G),STARbigwig/$(notdir $(F))_Aligned.sortedByCoord.out.bw,$(gvizgenemodels),EnsemblGRCh38.90,$(gvizgenemodels_chess),CHESS,stringtie/$(notdir $(F))/$(notdir $(F))_gviz_genemodels.rds,StringTie))))
 
-
+figures/ensembl_vs_chess_annotation_characteristics/ensembl_vs_chess_annotation_characteristics.rds: \
+output/gene_characteristics.rds output/gene_characteristics_chess.rds \
+reference_chess/chess2.0_assembly_fixed_tx2gene_withsymbol.rds Rscripts/plot_ensembl_vs_chess_annotation_characteristics.R
+	mkdir -p $(@D)
+	$(R) "--args genecharensembl='output/gene_characteristics.rds' genecharchess='output/gene_characteristics_chess.rds' convtablechess='reference_chess/chess2.0_assembly_fixed_tx2gene_withsymbol.rds' outrds='$@'" Rscripts/plot_ensembl_vs_chess_annotation_characteristics.R Rout/plot_ensembl_vs_chess_annotation_characteristics.Rout
 
 
 

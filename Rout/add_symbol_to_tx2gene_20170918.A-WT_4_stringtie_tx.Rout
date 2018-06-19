@@ -17,6 +17,20 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+> ################################################################################
+> ##                                                                            ##
+> ## Add the gene symbol to a tx2gene data frame                                ##
+> ##                                                                            ##
+> ## Inputs:                                                                    ##
+> ## * tx2gene: tx2gene data frame                                              ##
+> ## * info: data frame with gene and symbol columns                            ##
+> ## * outrds: output file where the extended tx2gene data frame will be saved  ##
+> ##                                                                            ##
+> ## Outputs:                                                                   ##
+> ## * An extended tx2gene data frame                                           ##
+> ##                                                                            ##
+> ################################################################################
+> 
 > args <- (commandArgs(trailingOnly = TRUE))
 > for (i in 1:length(args)) {
 +   eval(parse(text = args[[i]]))
@@ -36,15 +50,18 @@ Type 'q()' to quit R.
 > tx2gene <- readRDS(tx2gene)
 > info <- readRDS(info)
 > 
+> info <- info %>% dplyr::select(gene, symbol) %>% dplyr::distinct()
+> idx <- grep("^STRG\\.|^CHS\\.", info$gene, invert = TRUE)
+> info$gene[idx] <- gsub("\\.[0-9]+$", "", info$gene[idx])
+> 
 > tx2gene <- tx2gene %>% 
-+   dplyr::left_join(info %>% dplyr::select(gene, symbol) %>%
-+                      dplyr::mutate(gene = gsub("\\.[0-9]+$", "", gene)), by = "gene") %>%
++   dplyr::left_join(info, by = "gene") %>%
 +   dplyr::mutate(symbol = replace(symbol, is.na(symbol), gene[is.na(symbol)]))
 > 
 > saveRDS(tx2gene, outrds)
 > 
 > date()
-[1] "Wed Apr 18 22:57:58 2018"
+[1] "Tue Jun 19 07:15:30 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -73,4 +90,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-  5.080   0.176   5.253 
+  2.968   0.240   4.229 

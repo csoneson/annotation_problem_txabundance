@@ -127,7 +127,7 @@ null device
 > 
 > saveRDS(NULL, file = outrds)
 > date()
-[1] "Sun Jun  3 15:42:52 2018"
+[1] "Tue Jun 19 11:23:27 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -161,4 +161,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
- 57.588   0.772  58.443 
+ 55.572   2.304  57.966 

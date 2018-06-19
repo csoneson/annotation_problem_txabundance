@@ -17,6 +17,20 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+> ################################################################################
+> ##                                                                            ##
+> ## Calculate gene characteristics                                             ##
+> ##                                                                            ##
+> ## Inputs:                                                                    ##
+> ## * gtf: gtf file                                                            ##
+> ## * txome: transcriptome fasta file                                          ##
+> ## * outrds: output file                                                      ##
+> ##                                                                            ##
+> ## Outputs:                                                                   ##
+> ## * A data frame with gene characteristics                                   ##
+> ##                                                                            ##
+> ################################################################################
+> 
 > args <- (commandArgs(trailingOnly = TRUE))
 > for (i in 1:length(args)) {
 +   eval(parse(text = args[[i]]))
@@ -103,9 +117,13 @@ Joining, by = "gene_id"
 +   dplyr::mutate(transcript_id = sapply(strsplit(id, " "), .subset, 1)) %>%
 +   dplyr::mutate(gene_id = sapply(strsplit(id, " "), 
 +                                  function(w) gsub("^gene:", "", w[grep("^gene:", w)]))) %>%
-+   dplyr::select(transcript_id, gene_id, width) %>%
-+   dplyr::mutate(transcript_id = gsub("\\.[0-9]+$", "", transcript_id),
-+                 gene_id = gsub("\\.[0-9]+$", "", gene_id))
++   dplyr::select(transcript_id, gene_id, width)
+> 
+> idx <- grep("^STRG\\.|^CHS\\.", tx_info$transcript_id, invert = TRUE)
+> tx_info$transcript_id[idx] <- gsub("\\.[0-9]+$", "", tx_info$transcript_id[idx])
+> idx <- grep("^STRG\\.|^CHS\\.", tx_info$gene_id, invert = TRUE)
+> tx_info$gene_id[idx] <- gsub("\\.[0-9]+$", "", tx_info$gene_id[idx])
+> 
 > gene_info <- tx_info %>% dplyr::group_by(gene_id) %>%
 +   dplyr::summarize(nbr_transcripts_fasta = length(transcript_id),
 +                    ave_transcript_length_fasta = mean(width),
@@ -173,8 +191,8 @@ loaded via a namespace (and not attached):
 [31] lazyeval_0.2.1              RCurl_1.95-4.10            
 [33] munsell_0.4.3              
 > date()
-[1] "Fri May 11 10:26:41 2018"
+[1] "Mon Jun 18 13:22:33 2018"
 > 
 > proc.time()
    user  system elapsed 
-282.580   4.824 288.362 
+329.176   4.656 338.766 

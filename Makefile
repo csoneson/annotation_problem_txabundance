@@ -16,7 +16,7 @@ quantmethods20170918.A-WT_4 := Salmon SalmonSTAR kallisto RSEM StringTie hera Sa
 quantmethodssim_misannotated_utr_1 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup
 quantmethodsstringtie := Salmon SalmonSTAR kallisto RSEM StringTie hera
 
-nthreads := 12
+nthreads := 24
 
 ## Define the multimapping fraction threshold. Junctions with MM/(UM+MM)>mmfracthreshold will not be 
 ## included when calculating the "MM-aware" score
@@ -32,10 +32,10 @@ uniqjuncreadsthreshold := 25
 .PHONY: all
 
 all: prepref quant alpineprep scalecov \
+plots stats nanopore simulation \
 preprefstringtie quantstringtie alpineprepstringtie scalecovstringtie plotsstringtie \
-plots stats nanopore simulation
-
-tmp: alpineprep quant scalecov plots
+preprefchess alpineprepchess quantchess scalecovchess plotschess plotssummarychess \
+plotssummary plotscomparison stats
 
 ## Include makefiles. These need to be included after the definition of the "all" rule, 
 ## otherwise the default rule will be the first one from these makefiles
@@ -190,7 +190,9 @@ plotssummarychess: $(foreach G,$(genes_to_plot_summary_chess),$(foreach F,/home/
 plotssummary: $(foreach G,$(genes_to_plot_summary),$(foreach F,$(fastqfilesreal),figures/genewise_summary/$(notdir $(F))_$(G).png)) \
 $(foreach G,$(genes_to_plot_summary),$(foreach F,$(fastqfilesreal),figures/comparison_annotation_catalogs/annotation_comparison_$(notdir $(F))_$(G).png))
 
-plotscomparison: $(foreach F,$(fastqfilesreal),figures/comparison_scores_chess_ensembl/comparison_scores_chess_ensembl_$(notdir $(F)).rds)
+plotscomparison: $(foreach F,$(fastqfilesreal),figures/comparison_scores_chess_ensembl/comparison_scores_chess_ensembl_$(notdir $(F)).rds) \
+figures/ensembl_vs_chess_annotation_characteristics/ensembl_vs_chess_annotation_characteristics.rds
+
 ########################################################################################################
 ## Stats
 ########################################################################################################

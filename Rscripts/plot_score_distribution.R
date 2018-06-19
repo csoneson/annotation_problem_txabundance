@@ -163,7 +163,7 @@ for (mincount in uniqjuncreadsthresholds) {
         facet_wrap(~ method, nrow = 1, scales = "free_x") +
         geom_smooth(color = "black", method = "loess") + 
         xlab("Number of uniquely mapped junction reads") +
-        theme(legend.position = "none") + 
+        theme(legend.position = "none") + scale_x_sqrt() + 
         scale_color_manual(values = method_colors),
       
       ## Scores vs maximum transcript length

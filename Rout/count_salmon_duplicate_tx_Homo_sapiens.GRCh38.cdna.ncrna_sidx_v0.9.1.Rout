@@ -54,11 +54,11 @@ Type 'q()' to quit R.
 +              length(unique(tx2gene$gene[tx2gene$tx %in% x$DuplicateTxp]))))
 > 
 > print(paste0("Total number of genes from the start: ", length(unique(tx2gene$gene))))
-> print(paste0("Total number of genes completely removed: ", length(unique(tx2gene$gene)) - length(unique(tx2gene$gene[!(tx2gene$gene %in% x$DuplicateTxp)]))))
+> print(paste0("Total number of genes completely removed: ", length(unique(tx2gene$gene)) - length(unique(tx2gene$gene[!(tx2gene$tx %in% x$DuplicateTxp)]))))
 > sink()
 > 
 > date()
-[1] "Sun Jun  3 16:07:10 2018"
+[1] "Tue Jun 19 11:18:18 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -83,4 +83,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-  1.800   0.088   1.928 
+  1.448   0.068   1.528 

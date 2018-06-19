@@ -113,7 +113,7 @@ Type 'q()' to quit R.
 +              genes = genecov), file = outrds)
 > 
 > date()
-[1] "Mon May 28 00:15:09 2018"
+[1] "Mon Jun 18 16:18:46 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -142,4 +142,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-242.956   1.320 244.832 
+213.108   1.136 214.656 

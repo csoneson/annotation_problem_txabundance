@@ -186,7 +186,6 @@ print(ggplot(gene_summary %>%
               legend.position = "none"))
 dev.off()
 
-png(gsub("\\.rds$", "_count3.png", outrds), width = 12, height = 8, unit = "in", res = 300)
 g1 <- gene_summary %>% dplyr::filter(tr_type2 == "Most similar reference transcript") %>%
   dplyr::mutate(most_similar = tr_type)
 g0 <- gene_summary %>% dplyr::left_join(g1 %>% dplyr::select(gene, method, most_similar)) %>%
@@ -198,6 +197,7 @@ g0 <- gene_summary %>% dplyr::left_join(g1 %>% dplyr::select(gene, method, most_
   dplyr::mutate(most_similar = replace(most_similar, most_similar == "Contributing 3'UTR", "3'UTR most sim"),
                 most_similar = replace(most_similar, most_similar == "Contributing internal structure", "Internal most sim"),
                 most_similar = replace(most_similar, most_similar == "Other", "Other most sim"))
+png(gsub("\\.rds$", "_count3.png", outrds), width = 12, height = 8, unit = "in", res = 300)
 plots <- lapply(split(g0, g0$method), function(g) {
   ggplot(g, 
          aes(x = utr_selected, y = count, color = tr_type)) + 
@@ -213,6 +213,32 @@ print(cowplot::plot_grid(
 )
 dev.off()
 
+fun_length <- function(x){
+  return(data.frame(y = 1.1, label = paste0("n=", length(x))))
+}
+
+png(gsub("\\.rds$", "_count4.png", outrds), width = 12, height = 8, unit = "in", res = 300)
+plots <- lapply(split(g0, g0$method), function(g) {
+  ggplot(g, 
+         aes(x = utr_selected, y = count, color = tr_type)) + 
+    geom_boxplot(outlier.size = 0.3) + facet_grid(most_similar ~ method) + 
+    theme_bw() + scale_color_manual(values = c("#9900cc", "#009933", "#0099cc"),
+                                    name = "Transcript class") + 
+    xlab("Selected 3'UTR") + ylab("Relative contribution to gene count") + 
+    theme(legend.position = "bottom") + 
+    stat_summary(position = position_dodge(0.75),
+                 fun.data = fun_length, geom = "text",
+                 vjust = 0, size = 3) + 
+    expand_limits(y = 1.25)
+})
+print(cowplot::plot_grid(
+  cowplot::plot_grid(plotlist = lapply(plots, function(p) p + theme(legend.position = "none")), nrow = 2),
+  cowplot::get_legend(plots[[1]]), ncol = 1, rel_heights = c(1, 0.05))
+)
+dev.off()
+
+
+## TPMs
 png(gsub("\\.rds$", "_tpm.png", outrds), width = 10, height = 7, unit = "in", res = 300)
 print(ggplot(gene_summary %>%
                dplyr::group_by(gene, utr_selected, tr_type, method, utr_fraction_of_length) %>% 
@@ -244,7 +270,6 @@ print(ggplot(gene_summary %>%
               legend.position = "none"))
 dev.off()
 
-png(gsub("\\.rds$", "_tpm3.png", outrds), width = 12, height = 8, unit = "in", res = 300)
 g1 <- gene_summary %>% dplyr::filter(tr_type2 == "Most similar reference transcript") %>%
   dplyr::mutate(most_similar = tr_type)
 g0 <- gene_summary %>% dplyr::left_join(g1 %>% dplyr::select(gene, method, most_similar)) %>%
@@ -256,6 +281,7 @@ g0 <- gene_summary %>% dplyr::left_join(g1 %>% dplyr::select(gene, method, most_
   dplyr::mutate(most_similar = replace(most_similar, most_similar == "Contributing 3'UTR", "3'UTR most sim"),
                 most_similar = replace(most_similar, most_similar == "Contributing internal structure", "Internal most sim"),
                 most_similar = replace(most_similar, most_similar == "Other", "Other most sim"))
+png(gsub("\\.rds$", "_tpm3.png", outrds), width = 12, height = 8, unit = "in", res = 300)
 plots <- lapply(split(g0, g0$method), function(g) {
   ggplot(g, 
          aes(x = utr_selected, y = TPM, color = tr_type)) + 
@@ -264,6 +290,30 @@ plots <- lapply(split(g0, g0$method), function(g) {
                                     name = "Transcript class") + 
     xlab("Selected 3'UTR") + ylab("Relative contribution to gene TPM") + 
     theme(legend.position = "bottom")
+})
+print(cowplot::plot_grid(
+  cowplot::plot_grid(plotlist = lapply(plots, function(p) p + theme(legend.position = "none")), nrow = 2),
+  cowplot::get_legend(plots[[1]]), ncol = 1, rel_heights = c(1, 0.05))
+)
+dev.off()
+
+fun_length <- function(x){
+  return(data.frame(y = 1.1, label = paste0("n=", length(x))))
+}
+
+png(gsub("\\.rds$", "_tpm4.png", outrds), width = 12, height = 8, unit = "in", res = 300)
+plots <- lapply(split(g0, g0$method), function(g) {
+  ggplot(g, 
+         aes(x = utr_selected, y = TPM, color = tr_type)) + 
+    geom_boxplot(outlier.size = 0.3) + facet_grid(most_similar ~ method) + 
+    theme_bw() + scale_color_manual(values = c("#9900cc", "#009933", "#0099cc"),
+                                    name = "Transcript class") + 
+    xlab("Selected 3'UTR") + ylab("Relative contribution to gene TPM") + 
+    theme(legend.position = "bottom") + 
+    stat_summary(position = position_dodge(0.75),
+                 fun.data = fun_length, geom = "text",
+                 vjust = 0, size = 3) + 
+    expand_limits(y = 1.25)
 })
 print(cowplot::plot_grid(
   cowplot::plot_grid(plotlist = lapply(plots, function(p) p + theme(legend.position = "none")), nrow = 2),

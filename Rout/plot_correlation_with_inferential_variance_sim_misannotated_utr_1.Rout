@@ -79,7 +79,8 @@ reading in files with read_tsv
 +   dplyr::left_join(tx2gene %>% dplyr::select(tx, gene), by = "tx") %>%
 +   dplyr::select(-tx) %>% dplyr::group_by(gene) %>% dplyr::summarize_all(funs(sum)) %>%
 +   as.data.frame() %>% tibble::column_to_rownames(var = "gene")
-> rownames(bootcounts_gene) <- gsub("\\.[0-9]+$", "", rownames(bootcounts_gene))
+> idx <- grep("^STRG\\.|^CHS\\.", rownames(bootcounts_gene), invert = TRUE)
+> rownames(bootcounts_gene)[idx] <- gsub("\\.[0-9]+$", "", rownames(bootcounts_gene)[idx])
 > 
 > ## Calculate coefficient of variation for each transcript and gene
 > cv_tx <- apply(bootcounts, 1, sd)/apply(bootcounts, 1, mean)
@@ -90,13 +91,18 @@ reading in files with read_tsv
 > ## Merge with score information. For transcripts, we use the score for the
 > ## corresponding gene
 > df_tx <- data.frame(tx = names(cv_tx), CV = cv_tx, stringsAsFactors = FALSE) %>%
-+   dplyr::left_join(tx2gene %>% dplyr::select(tx, gene)) %>%
-+   dplyr::mutate(tx = gsub("\\.[0-9]+$", "", tx),
-+                 gene = gsub("\\.[0-9]+$", "", gene)) %>% 
++   dplyr::left_join(tx2gene %>% dplyr::select(tx, gene))
+Joining, by = "tx"
+> 
+> idx <- grep("^STRG\\.|^CHS\\.", df_tx$tx, invert = TRUE)
+> df_tx$tx[idx] <- gsub("\\.[0-9]+$", "", df_tx$tx[idx])
+> idx <- grep("^STRG\\.|^CHS\\.", df_tx$gene, invert = TRUE)
+> df_tx$gene[idx] <- gsub("\\.[0-9]+$", "", df_tx$gene[idx])
+> 
+> df_tx <- df_tx %>% 
 +   dplyr::inner_join(scores %>% dplyr::filter(method == "Salmon" & 
 +                                                uniqjuncreads >= uniqjuncreadsthreshold) %>%
 +                       dplyr::select(gene, score))
-Joining, by = "tx"
 Joining, by = "gene"
 > 
 > df_gene <- scores %>% dplyr::filter(method == "Salmon" & 
@@ -113,7 +119,7 @@ Joining, by = "gene"
 +     theme_bw() + ggtitle("Transcript"),
 +   
 +   ggplot(df_gene, aes(x = CV, y = score)) + 
-+     geom_point(alpha = 0.3, size = 1) + geom_smooth(data = df_gene %>% dplyr::filter(CV < 0.04)) + 
++     geom_point(alpha = 0.3, size = 1) + geom_smooth(data = df_gene %>% dplyr::filter(CV < 1)) + 
 +     theme_bw() + ggtitle("Gene"),
 +   
 +   ncol = 1
@@ -123,7 +129,7 @@ Joining, by = "gene"
 Warning messages:
 1: Removed 307 rows containing non-finite values (stat_smooth). 
 2: Removed 307 rows containing missing values (geom_point). 
-3: Removed 38 rows containing non-finite values (stat_smooth). 
+3: Removed 51 rows containing non-finite values (stat_smooth). 
 4: Removed 53 rows containing missing values (geom_point). 
 > dev.off()
 null device 
@@ -131,7 +137,7 @@ null device
 > 
 > saveRDS(NULL, file = outrds)
 > date()
-[1] "Mon May 28 13:13:50 2018"
+[1] "Tue Jun 19 11:23:03 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -165,4 +171,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
- 79.440   1.356  80.978 
+ 83.764   5.940  89.946 

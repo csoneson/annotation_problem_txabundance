@@ -93,9 +93,13 @@ tx_info <- data.frame(width = width(txome), id = names(txome),
   dplyr::mutate(transcript_id = sapply(strsplit(id, " "), .subset, 1)) %>%
   dplyr::mutate(gene_id = sapply(strsplit(id, " "), 
                                  function(w) gsub("^gene:", "", w[grep("^gene:", w)]))) %>%
-  dplyr::select(transcript_id, gene_id, width) %>%
-  dplyr::mutate(transcript_id = gsub("\\.[0-9]+$", "", transcript_id),
-                gene_id = gsub("\\.[0-9]+$", "", gene_id))
+  dplyr::select(transcript_id, gene_id, width)
+
+idx <- grep("^STRG\\.|^CHS\\.", tx_info$transcript_id, invert = TRUE)
+tx_info$transcript_id[idx] <- gsub("\\.[0-9]+$", "", tx_info$transcript_id[idx])
+idx <- grep("^STRG\\.|^CHS\\.", tx_info$gene_id, invert = TRUE)
+tx_info$gene_id[idx] <- gsub("\\.[0-9]+$", "", tx_info$gene_id[idx])
+
 gene_info <- tx_info %>% dplyr::group_by(gene_id) %>%
   dplyr::summarize(nbr_transcripts_fasta = length(transcript_id),
                    ave_transcript_length_fasta = mean(width),

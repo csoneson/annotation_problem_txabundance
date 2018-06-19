@@ -17,24 +17,46 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+> ################################################################################
+> ##                                                                            ##
+> ## Scale predicted junction coverages based on estimated transcript           ##
+> ## abundances                                                                 ##
+> ##                                                                            ##
+> ## Inputs:                                                                    ##
+> ## * predcovrds: predicted transcript coverage patterns and junction          ##
+> ##               coverages (output from alpine_get_predicted_coverage.R)      ##
+> ## * txquants: file with transcript abundances                                ##
+> ## * quantreadscript: script to read the transcript quantifications. Should   ##
+> ##                    contain a function named read_quant()                   ##
+> ## * strandspec: yes or no, is the data strand-specific                       ##
+> ## * tx2gene: data frame with transcript-to-gene conversion info              ##
+> ## * method: method name to add to the quantification table                   ##
+> ## * outrds: output file                                                      ##
+> ##                                                                            ##
+> ## Outputs:                                                                   ##
+> ## * Predicted junction coverages for all junctions, and a table with all     ##
+> ##   transcript abundances                                                    ##
+> ##                                                                            ##
+> ################################################################################
+> 
 > args <- (commandArgs(trailingOnly = TRUE))
 > for (i in 1:length(args)) {
 +   eval(parse(text = args[[i]]))
 + }
 > 
-> print(predcovrds)  ## predicted transcript and junction coverage
+> print(predcovrds)
 [1] "alpine/20170918.A-WT_4_stringtie_tx/alpine_predicted_coverage.rds"
-> print(txquants)  ## transcript quantification file
+> print(txquants)
 [1] "hera_stringtie_tx/20170918.A-WT_4/abundance.tsv"
-> print(quantreadscript)  ## script containing a function "read_quant()"
+> print(quantreadscript)
 [1] "Rscripts/read_quant_hera.R"
-> print(strandspec)  ## "yes" or "no"
+> print(strandspec)
 [1] "yes"
-> print(tx2gene)  ## link transcripts to genes
+> print(tx2gene)
 [1] "reference/20170918.A-WT_4_stringtie_tx_tx2gene_withsymbol.rds"
-> print(method)  ## method ID to add to the quantification table
+> print(method)
 [1] "hera"
-> print(outrds)  ## output file
+> print(outrds)
 [1] "alpine/20170918.A-WT_4_stringtie_tx/scaled_junction_coverage_hera.rds"
 > 
 > suppressPackageStartupMessages({
@@ -49,10 +71,10 @@ Type 'q()' to quit R.
 > quants <- read_quant(file = txquants, avefraglength = predcovs[[1]]$avefraglength)
 > tx2gene <- readRDS(tx2gene)
 > 
-> idxtx <- grep("^STRG\\.", tx2gene$tx, invert = TRUE)
+> idxtx <- grep("^STRG\\.|^CHS\\.", tx2gene$tx, invert = TRUE)
 > tx2gene$tx[idxtx] <- gsub("\\.[0-9]+$", "", tx2gene$tx[idxtx])
 > 
-> idxgene <- grep("^STRG\\.", tx2gene$gene, invert = TRUE)
+> idxgene <- grep("^STRG\\.|^CHS\\.", tx2gene$gene, invert = TRUE)
 > tx2gene$gene[idxgene] <- gsub("\\.[0-9]+$", "", tx2gene$gene[idxgene])
 > 
 > transcripts <- names(predcovs)
@@ -159,8 +181,8 @@ loaded via a namespace (and not attached):
 [53] assertthat_0.2.0            SummarizedExperiment_1.9.16
 [55] stringi_1.1.7               RCurl_1.95-4.10            
 > date()
-[1] "Mon May 21 01:26:41 2018"
+[1] "Tue Jun 19 08:20:13 2018"
 > 
 > proc.time()
     user   system  elapsed 
-4405.224   76.632 4501.122 
+3802.764   67.424 3883.042 

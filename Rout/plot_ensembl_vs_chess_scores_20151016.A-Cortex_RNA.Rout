@@ -40,12 +40,7 @@ Type 'q()' to quit R.
 > ##           the output figures.                                              ##
 > ##                                                                            ##
 > ## Outputs:                                                                   ##
-> ## * A png figure comparing the scores of all methods to those of the target  ##
-> ##   method                                                                   ##
-> ## * A png figure summarizing the number of genes for which the target method ##
-> ##   gives higher/lower/equal score compared to each other method             ##
-> ## * For each method, a text file with the genes for which the target method  ##
-> ##   gave a lower score                                                       ##
+> ## * png figures comparing the scores obtained with the two annotations       ##
 > ##                                                                            ##
 > ################################################################################
 > 
@@ -109,14 +104,10 @@ null device
 +                         dplyr::filter(method %in% c("Salmon", "kallisto")) %>%
 +                         dplyr::mutate(annotation = "Ensembl"))
 > 
-> png(gsub("\\.rds$", "_distribution_expressed.png", outrds), width = 8, height = 6, 
-+     unit = "in", res = 400)
-> ggplot(combinedfilt, aes(x = score, color = annotation)) + 
+> ggde <- ggplot(combinedfilt, aes(x = score, color = annotation)) + 
 +   geom_line(stat = "density", size = 1.5) + facet_wrap(~ method) + theme_bw() + 
-+   scale_color_manual(values = c(CHESS = "#B17BA6", Ensembl = "#90C987"))
-> dev.off()
-null device 
-          1 
++   scale_color_manual(values = c(CHESS = "#B17BA6", Ensembl = "#90C987")) + 
++   xlab("Score") + ylab("Density") + theme(legend.position = "bottom")
 > 
 > ## Keep only genes with enough (unique) junction reads with both annotations,
 > ## and compare the scores of the genes that can be matched
@@ -136,31 +127,35 @@ null device
 +                       dplyr::rename(ensembl = score), by = c("gene", "method")) %>%
 +   dplyr::mutate(method = factor(method, levels = unique(method)))
 >   
-> png(gsub("\\.rds$", "_correlation_expressed.png", outrds), width = 8, height = 6,
-+     unit = "in", res = 400)
-> ggplot(a, aes(x = chess, y = ensembl)) + geom_point(alpha = 0.3) +
+> ggcor <- ggplot(a, aes(x = chess, y = ensembl)) + geom_point(alpha = 0.3) +
 +   facet_wrap(~ method) + geom_abline(slope = 1, intercept = 0) + 
-+   theme_bw()
-> dev.off()
-null device 
-          1 
++   theme_bw() + xlab("CHESS score") + ylab("Ensembl score")
 > 
-> png(gsub("\\.rds$", "_betterworse_expressed.png", outrds), width = 8, height = 6,
-+     unit = "in", res = 400)
-> ggplot(as.data.frame(table(a$method, chessworse = a$chess > a$ensembl, useNA = "ifany")) %>%
+> ggbw <- ggplot(as.data.frame(table(a$method, chessworse = a$chess > a$ensembl, useNA = "ifany")) %>%
 +          dplyr::mutate(chessworse = as.character(chessworse)) %>% 
 +          dplyr::mutate(chessworse = replace(chessworse, chessworse == "TRUE", "CHESS score > Ensembl score"),
 +                        chessworse = replace(chessworse, chessworse == "FALSE", "CHESS score < Ensembl score")), 
 +        aes(x = Var1, y = Freq, fill = chessworse)) + 
 +   geom_bar(stat = "identity", position = "dodge") + 
 +   scale_fill_manual(values = c("#B17BA6", "#90C987"), name = "", na.value = "grey50") + 
-+   xlab("") + ylab("Number of genes")
++   xlab("") + ylab("Number of genes") + theme(legend.direction = "horizontal",
++                                              legend.justification = "center",
++                                              legend.box.just = "bottom",
++                                              legend.position = "bottom") + 
++   guides(fill = guide_legend(nrow = 2))
+> 
+> png(gsub("\\.rds$", "_combined_expressed.png", outrds), width = 10, height = 10,
++     unit = "in", res = 400)
+> plot_grid(ggcor,
++           plot_grid(ggde, ggbw, nrow = 1, rel_widths = c(1, 1), labels = c("B", "C")),
++           ncol = 1, rel_heights = c(1, 1), labels = c("A", ""))
 > dev.off()
 null device 
           1 
 > 
+> saveRDS(NULL, file = outrds)
 > date()
-[1] "Mon Jun 18 11:44:09 2018"
+[1] "Mon Jun 18 17:04:57 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -192,4 +187,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
- 38.944   0.760  39.736 
+ 39.316   0.940  40.304 

@@ -71,10 +71,10 @@ Type 'q()' to quit R.
 > quants <- read_quant(file = txquants, avefraglength = predcovs[[1]]$avefraglength)
 > tx2gene <- readRDS(tx2gene)
 > 
-> idxtx <- grep("^STRG\\.", tx2gene$tx, invert = TRUE)
+> idxtx <- grep("^STRG\\.|^CHS\\.", tx2gene$tx, invert = TRUE)
 > tx2gene$tx[idxtx] <- gsub("\\.[0-9]+$", "", tx2gene$tx[idxtx])
 > 
-> idxgene <- grep("^STRG\\.", tx2gene$gene, invert = TRUE)
+> idxgene <- grep("^STRG\\.|^CHS\\.", tx2gene$gene, invert = TRUE)
 > tx2gene$gene[idxgene] <- gsub("\\.[0-9]+$", "", tx2gene$gene[idxgene])
 > 
 > transcripts <- names(predcovs)
@@ -181,8 +181,8 @@ loaded via a namespace (and not attached):
 [53] assertthat_0.2.0            SummarizedExperiment_1.9.16
 [55] stringi_1.1.7               RCurl_1.95-4.10            
 > date()
-[1] "Mon May 28 00:06:44 2018"
+[1] "Mon Jun 18 15:54:55 2018"
 > 
 > proc.time()
     user   system  elapsed 
-7980.008  165.016 8173.324 
+9231.544  192.464 9480.938 

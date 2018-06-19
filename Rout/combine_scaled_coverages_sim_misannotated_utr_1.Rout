@@ -104,11 +104,19 @@ Type 'q()' to quit R.
 > 
 > ## Read and merge junction coverages predicted by each method
 > jcovscaled <- do.call(rbind, list(readRDS(junctioncovSalmon)$allcovs,
-+                                   readRDS(junctioncovSalmonSTAR)$allcovs,
-+                                   readRDS(junctioncovhera)$allcovs,
-+                                   readRDS(junctioncovkallisto)$allcovs,
-+                                   readRDS(junctioncovRSEM)$allcovs,
-+                                   readRDS(junctioncovStringTie)$allcovs))
++                                   readRDS(junctioncovkallisto)$allcovs))
+> if (junctioncovSalmonSTAR != "") {
++   jcovscaled <- rbind(jcovscaled, readRDS(junctioncovSalmonSTAR)$allcovs)
++ }
+> if (junctioncovhera != "") {
++   jcovscaled <- rbind(jcovscaled, readRDS(junctioncovhera)$allcovs)
++ }
+> if (junctioncovRSEM != "") {
++   jcovscaled <- rbind(jcovscaled, readRDS(junctioncovRSEM)$allcovs)
++ }
+> if (junctioncovStringTie != "") {
++   jcovscaled <- rbind(jcovscaled, readRDS(junctioncovStringTie)$allcovs)
++ }
 > if (junctioncovNanopore != "") {
 +   jcovscaled <- rbind(jcovscaled, readRDS(junctioncovNanopore)$allcovs)
 + }
@@ -152,12 +160,20 @@ Joining, by = c("seqnames", "start", "end", "gene")
 > 
 > ## Read and combine transcript quantifications
 > allquants <- do.call(rbind, list(readRDS(junctioncovSalmon)$quants,
-+                                  readRDS(junctioncovSalmonSTAR)$quants,
-+                                  readRDS(junctioncovhera)$quants,
-+                                  readRDS(junctioncovkallisto)$quants,
-+                                  readRDS(junctioncovRSEM)$quants,
-+                                  readRDS(junctioncovStringTie)$quants))
++                                  readRDS(junctioncovkallisto)$quants))
 > 
+> if (junctioncovSalmonSTAR != "") {
++   allquants <- rbind(allquants, readRDS(junctioncovSalmonSTAR)$quants)
++ }
+> if (junctioncovhera != "") {
++   allquants <- rbind(allquants, readRDS(junctioncovhera)$quants)
++ }
+> if (junctioncovRSEM != "") {
++   allquants <- rbind(allquants, readRDS(junctioncovRSEM)$quants)
++ }
+> if (junctioncovStringTie != "") {
++   allquants <- rbind(allquants, readRDS(junctioncovStringTie)$quants)
++ }
 > if (junctioncovNanopore != "") {
 +   allquants <- rbind(allquants, readRDS(junctioncovNanopore)$quants)
 + }
@@ -185,18 +201,20 @@ Joining, by = c("seqnames", "start", "end", "gene")
 +                                    by = c("gene" = "gene_id"))
 > 
 > ## Add exon and intron counts
-> exoncounts <- read.delim(exoncountstxt, skip = 1, header = TRUE, as.is = TRUE) %>%
-+   dplyr::select(-Chr, -Start, -End, -Strand, -Length) %>%
-+   setNames(c("gene", "exoncount"))
-> introncounts <- read.delim(introncountstxt, skip = 1, header = TRUE, as.is = TRUE) %>%
-+   dplyr::select(-Chr, -Start, -End, -Strand, -Length) %>%
-+   setNames(c("gene", "introncount"))
-> allquants_gene <- dplyr::left_join(allquants_gene, 
-+                                    dplyr::full_join(exoncounts, introncounts)) %>% 
-+   dplyr::mutate(exoncount = replace(exoncount, is.na(exoncount), 0)) %>% 
-+   dplyr::mutate(introncount = replace(introncount, is.na(introncount), 0)) %>%
-+   dplyr::mutate(intron_exon_ratio = introncount/exoncount) %>%
-+   dplyr::mutate(intron_exon_ratio = replace(intron_exon_ratio, exoncount==0 & introncount==0, 0))
+> if (exoncountstxt != "" && introncountstxt != "") {
++   exoncounts <- read.delim(exoncountstxt, skip = 1, header = TRUE, as.is = TRUE) %>%
++     dplyr::select(-Chr, -Start, -End, -Strand, -Length) %>%
++     setNames(c("gene", "exoncount"))
++   introncounts <- read.delim(introncountstxt, skip = 1, header = TRUE, as.is = TRUE) %>%
++     dplyr::select(-Chr, -Start, -End, -Strand, -Length) %>%
++     setNames(c("gene", "introncount"))
++   allquants_gene <- dplyr::left_join(allquants_gene, 
++                                      dplyr::full_join(exoncounts, introncounts)) %>% 
++     dplyr::mutate(exoncount = replace(exoncount, is.na(exoncount), 0)) %>% 
++     dplyr::mutate(introncount = replace(introncount, is.na(introncount), 0)) %>%
++     dplyr::mutate(intron_exon_ratio = introncount/exoncount) %>%
++     dplyr::mutate(intron_exon_ratio = replace(intron_exon_ratio, exoncount==0 & introncount==0, 0))
++ }
 Joining, by = "gene"
 Joining, by = "gene"
 > 
@@ -249,8 +267,8 @@ loaded via a namespace (and not attached):
  [5] pillar_1.2.1     glue_1.2.0       tibble_1.4.2     Rcpp_0.12.16    
  [9] pkgconfig_2.0.1  rlang_0.2.0      bindr_0.1.1     
 > date()
-[1] "Mon May 28 00:14:25 2018"
+[1] "Mon Jun 18 17:35:03 2018"
 > 
 > proc.time()
    user  system elapsed 
-396.088   7.132 405.102 
+339.508   2.472 342.348 

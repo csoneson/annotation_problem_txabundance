@@ -72,7 +72,7 @@ Selecting by score
 > ## Shared high-scoring genes
 > scores_shared <- 
 +   scores %>% dplyr::filter(method %in% c("hera", "kallisto", "RSEM", "Salmon",
-+                                          "SalmonBWA", "StringTie") & 
++                                          "SalmonSTAR", "StringTie") & 
 +                              score >= 0.6 & uniqjuncreads > uniqjuncreadsthreshold & 
 +                              uniqjuncfraction > 0.75 & intron_exon_ratio < 0.1) %>% 
 +   dplyr::group_by(gene) %>% dplyr::mutate(n = length(method)) %>% 
@@ -83,14 +83,14 @@ Selecting by score
 +                 uniqjuncfraction, nbr_junctions_in_gene, score)
 > 
 > print(length(unique(scores_shared$gene)))
-[1] 146
+[1] 161
 > 
 > write.table(scores_shared, file = gsub("\\.txt", "_shared.txt", outtxt), 
 +             row.names = FALSE, col.names = TRUE,
 +             sep = "\t", quote = FALSE)
 > 
 > date()
-[1] "Sat May 26 19:00:16 2018"
+[1] "Tue Jun 19 11:18:41 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -119,4 +119,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
- 19.684   0.364  20.070 
+ 22.132   1.740  23.900 

@@ -56,7 +56,7 @@ Type 'q()' to quit R.
 [1] "output/20170918.A-WT_4_stringtie_tx_combined_coverages_with_scores.rds"
 > print(quantmethods)
 [1] "hera"          "kallisto"      "RSEM"          "Salmon"       
-[5] "SalmonBWA"     "SalmonCDS"     "SalmonKeepDup" "StringTie"    
+[5] "SalmonSTAR"    "SalmonCDS"     "SalmonKeepDup" "StringTie"    
 > print(uniqjuncreadsthresholds)
 [1]  0 25
 > print(outrds)
@@ -159,13 +159,17 @@ null device
 +         scale_color_manual(values = method_colors),
 +       
 +       ## Scores vs maximum 3'UTR length
-+       ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount),
-+              aes(x = max_3putr_length, y = score, color = method)) +
-+         geom_point(alpha = 0.5, size = 0.5) + theme_bw() + 
-+         facet_wrap(~ method, nrow = 1, scales = "free_x") +
-+         geom_smooth(color = "black", method = "loess") + xlab("Maximal 3'UTR length") +
-+         theme(legend.position = "none") + 
-+         scale_color_manual(values = method_colors),
++       if ("max_3putr_length" %in% colnames(scores)) {
++         ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount),
++                aes(x = max_3putr_length, y = score, color = method)) +
++           geom_point(alpha = 0.5, size = 0.5) + theme_bw() + 
++           facet_wrap(~ method, nrow = 1, scales = "free_x") +
++           geom_smooth(color = "black", method = "loess") + xlab("Maximal 3'UTR length") +
++           theme(legend.position = "none") + 
++           scale_color_manual(values = method_colors)
++       } else {
++         NULL
++       },
 +       
 +       ## Scores vs fraction of transcripts with valid (i.e. not imposed uniform)
 +       ## coverage prediction
@@ -185,7 +189,7 @@ null device
 +         facet_wrap(~ method, nrow = 1, scales = "free_x") +
 +         geom_smooth(color = "black", method = "loess") + 
 +         xlab("Number of uniquely mapped junction reads") +
-+         theme(legend.position = "none") + 
++         theme(legend.position = "none") + scale_x_sqrt() + 
 +         scale_color_manual(values = method_colors),
 +       
 +       ## Scores vs maximum transcript length
@@ -198,15 +202,19 @@ null device
 +         scale_color_manual(values = method_colors),
 +       
 +       ## Scores vs intron/exon count ratio
-+       ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount) %>% 
-+                dplyr::mutate(intron_exon_ratio = replace(intron_exon_ratio, 
-+                                                          intron_exon_ratio > 10, 10)), 
-+              aes(x = intron_exon_ratio, y = score, color = method)) + 
-+         geom_point(alpha = 0.5, size = 0.5) + theme_bw() + 
-+         facet_wrap(~ method, nrow = 1, scales = "free_x") + 
-+         geom_smooth(color = "black", method = "loess") + 
-+         xlab("Intron/exon count ratio") + theme(legend.position = "none") + 
-+         scale_color_manual(values = method_colors),
++       if ("intron_exon_ratio" %in% colnames(scores)) {
++         ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount) %>% 
++                  dplyr::mutate(intron_exon_ratio = replace(intron_exon_ratio, 
++                                                            intron_exon_ratio > 10, 10)), 
++                aes(x = intron_exon_ratio, y = score, color = method)) + 
++           geom_point(alpha = 0.5, size = 0.5) + theme_bw() + 
++           facet_wrap(~ method, nrow = 1, scales = "free_x") + 
++           geom_smooth(color = "black", method = "loess") + 
++           xlab("Intron/exon count ratio") + theme(legend.position = "none") + 
++           scale_color_manual(values = method_colors)
++       } else {
++         NULL
++       },
 +       
 +       ## Scores vs total gene count
 +       ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount),
@@ -240,14 +248,18 @@ null device
 +         scale_color_manual(values = method_colors),
 +       
 +       ## Scores vs length difference between 3'UTRs starting in the same place
-+       ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount),
-+              aes(x = length_diff_3putrs_samestart, y = score, color = method)) + 
-+         geom_point(alpha = 0.5, size = 0.5) + theme_bw() + 
-+         facet_wrap(~ method, nrow = 1, scales = "free_x") + 
-+         geom_smooth(color = "black", method = "loess") + 
-+         xlab("Length difference of 3'UTRs with same start") + 
-+         theme(legend.position = "none") + 
-+         scale_color_manual(values = method_colors),
++       if ("length_diff_3putrs_samestart" %in% colnames(scores)) {
++         ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount),
++                aes(x = length_diff_3putrs_samestart, y = score, color = method)) + 
++           geom_point(alpha = 0.5, size = 0.5) + theme_bw() + 
++           facet_wrap(~ method, nrow = 1, scales = "free_x") + 
++           geom_smooth(color = "black", method = "loess") + 
++           xlab("Length difference of 3'UTRs with same start") + 
++           theme(legend.position = "none") + 
++           scale_color_manual(values = method_colors)
++       } else {
++         NULL
++       },
 +       
 +       ncol = 1      
 +     )
@@ -255,7 +267,7 @@ null device
 +   
 +   dev.off()
 + }
-There were 32 warnings (use warnings() to see them)
+There were 50 or more warnings (use warnings() to see the first 50)
 > 
 > saveRDS(NULL, file = outrds)
 > sessionInfo()
@@ -287,8 +299,8 @@ loaded via a namespace (and not attached):
 [17] munsell_0.4.3    compiler_3.5.0   colorspace_1.3-2 pkgconfig_2.0.1 
 [21] tidyselect_0.2.4 bindr_0.1.1      tibble_1.4.2    
 > date()
-[1] "Sat May 26 19:36:19 2018"
+[1] "Tue Jun 19 10:41:18 2018"
 > 
 > proc.time()
     user   system  elapsed 
- 758.460  595.028 1355.138 
+ 939.872  179.592 1120.378 

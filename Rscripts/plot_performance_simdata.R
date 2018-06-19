@@ -214,7 +214,7 @@ print(cowplot::plot_grid(
 dev.off()
 
 fun_length <- function(x){
-  return(data.frame(y = 1.1, label = paste0("n=", length(x))))
+  return(data.frame(y = 1.1, label = length(x)))
 }
 
 png(gsub("\\.rds$", "_count4.png", outrds), width = 12, height = 8, unit = "in", res = 300)
@@ -228,8 +228,8 @@ plots <- lapply(split(g0, g0$method), function(g) {
     theme(legend.position = "bottom") + 
     stat_summary(position = position_dodge(0.75),
                  fun.data = fun_length, geom = "text",
-                 vjust = 0, size = 3) + 
-    expand_limits(y = 1.25)
+                 vjust = 0, size = 2) + 
+    expand_limits(y = 1.2)
 })
 print(cowplot::plot_grid(
   cowplot::plot_grid(plotlist = lapply(plots, function(p) p + theme(legend.position = "none")), nrow = 2),
@@ -298,7 +298,7 @@ print(cowplot::plot_grid(
 dev.off()
 
 fun_length <- function(x){
-  return(data.frame(y = 1.1, label = paste0("n=", length(x))))
+  return(data.frame(y = 1.1, label = length(x)))
 }
 
 png(gsub("\\.rds$", "_tpm4.png", outrds), width = 12, height = 8, unit = "in", res = 300)
@@ -312,8 +312,8 @@ plots <- lapply(split(g0, g0$method), function(g) {
     theme(legend.position = "bottom") + 
     stat_summary(position = position_dodge(0.75),
                  fun.data = fun_length, geom = "text",
-                 vjust = 0, size = 3) + 
-    expand_limits(y = 1.25)
+                 vjust = 0, size = 2) + 
+    expand_limits(y = 1.2)
 })
 print(cowplot::plot_grid(
   cowplot::plot_grid(plotlist = lapply(plots, function(p) p + theme(legend.position = "none")), nrow = 2),

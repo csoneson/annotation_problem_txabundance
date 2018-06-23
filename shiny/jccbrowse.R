@@ -9,40 +9,40 @@ suppressPackageStartupMessages({
   library(ggrepel)
 })
 
-quant_methods <- c("hera", "kallisto", "RSEM", "Salmon", "SalmonCDS",
-                   "SalmonSTAR", "SalmonKeepDup", "StringTie")
-
-basedir <- "/home/charlotte/annotation_problem_txabundance"
-
-bigwig_files <- list(HAP1 = paste0(basedir, "/STARbigwig/20170918.A-WT_4_Aligned.sortedByCoord.out.bw"),
-                     Cortex = paste0(basedir, "/STARbigwig/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bw"))
-
-gene_models <- readRDS(paste0(basedir,
-                              "/reference/Gviz/Homo_sapiens.GRCh38.90_gviz_genemodels.rds"))$genemodels_exon
-
-score_files <- list(HAP1 = readRDS(paste0(basedir,
-                                          "/output/20170918.A-WT_4_combined_coverages_with_scores.rds")),
-                    Cortex = readRDS(paste0(basedir,
-                                            "/output/20151016.A-Cortex_RNA_combined_coverages_with_scores.rds")))
-
-junction_tables <- lapply(score_files, function(f) {
-  f$junctions %>% dplyr::filter(method %in% quant_methods)
-})
-
-transcript_tables <- lapply(score_files, function(f) {
-  f$transcripts %>% dplyr::filter(method %in% quant_methods)
-})
-
-gene_tables <- lapply(score_files, function(f) {
-  f$genes %>% dplyr::filter(method %in% quant_methods) %>%
-    dplyr::select(gene, method, covOKfraction, intron_exon_ratio,
-                  uniqjuncreads, mmjuncreads, uniqjuncfraction, score) %>%
-    tidyr::spread(method, score)
-})
-
-all_genes <- unique(gene_models$gene)
-
-options(ucscChromosomeNames=FALSE, envir=.GlobalEnv)
+# quant_methods <- c("hera", "kallisto", "RSEM", "Salmon", "SalmonCDS",
+#                    "SalmonSTAR", "SalmonKeepDup", "StringTie")
+# 
+# basedir <- "/home/charlotte/annotation_problem_txabundance"
+# 
+# bigwig_files <- list(HAP1 = paste0(basedir, "/STARbigwig/20170918.A-WT_4_Aligned.sortedByCoord.out.bw"),
+#                      Cortex = paste0(basedir, "/STARbigwig/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bw"))
+# 
+# gene_models <- readRDS(paste0(basedir,
+#                               "/reference/Gviz/Homo_sapiens.GRCh38.90_gviz_genemodels.rds"))$genemodels_exon
+# 
+# score_files <- list(HAP1 = readRDS(paste0(basedir,
+#                                           "/output/20170918.A-WT_4_combined_coverages_with_scores.rds")),
+#                     Cortex = readRDS(paste0(basedir,
+#                                             "/output/20151016.A-Cortex_RNA_combined_coverages_with_scores.rds")))
+# 
+# junction_tables <- lapply(score_files, function(f) {
+#   f$junctions %>% dplyr::filter(method %in% quant_methods)
+# })
+# 
+# transcript_tables <- lapply(score_files, function(f) {
+#   f$transcripts %>% dplyr::filter(method %in% quant_methods)
+# })
+# 
+# gene_tables <- lapply(score_files, function(f) {
+#   f$genes %>% dplyr::filter(method %in% quant_methods) %>%
+#     dplyr::select(gene, method, intron_exon_ratio,
+#                   uniqjuncreads, mmjuncreads, uniqjuncfraction, score) %>%
+#     tidyr::spread(method, score)
+# })
+# 
+# all_genes <- unique(gene_models$gene)
+# 
+# options(ucscChromosomeNames=FALSE, envir=.GlobalEnv)
 
 jccbrowse <- function(bigwig_files, score_files, all_genes, gene_models, 
                       junction_tables, transcript_tables, gene_tables) {
@@ -61,7 +61,8 @@ jccbrowse <- function(bigwig_files, score_files, all_genes, gene_models,
     ),
     
     shinydashboard::dashboardBody(
-        shinydashboard::tabBox(
+      shinydashboard::tabBox(
+        fluidRow(
           width = 12,
           tabPanel(
             "Gene summary plot",
@@ -70,16 +71,17 @@ jccbrowse <- function(bigwig_files, score_files, all_genes, gene_models,
               column(width = 6, plotOutput("tpms_plot", width = "100%", height = "400px")),
               column(width = 6, plotOutput("junctions_plot", width = "100%", height = "400px"))
             )
-          )#,
-          #tabPanel(
-          #  "HAP1 gene table",
-          #  DT::dataTableOutput("hap1_gene_table")
-          #)#,
-          # tabPanel(
-          #   "Cortex gene table",
-          #   DT::dataTableOutput("cortex_gene_table")
-          # )
+          ),
+          tabPanel(
+            "HAP1 gene table",
+            DT::dataTableOutput("hap1_gene_table")
+          ),
+          tabPanel(
+            "Cortex gene table",
+            DT::dataTableOutput("cortex_gene_table")
+          )
         )
+      )
     )
   )
   
@@ -224,15 +226,13 @@ jccbrowse <- function(bigwig_files, score_files, all_genes, gene_models,
     # =========================== Gene tables =============================== ##
     output$cortex_gene_table <- DT::renderDataTable(
       DT::datatable(gene_tables[["Cortex"]] %>% 
-                      dplyr::mutate(covOKfraction = signif(covOKfraction, 2),
-                                    intron_exon_ratio = signif(intron_exon_ratio, 2),
+                      dplyr::mutate(intron_exon_ratio = signif(intron_exon_ratio, 2),
                                     uniqjuncfraction = signif(uniqjuncfraction, 2)),
                     options = list(scrollX = TRUE))
     )
     output$hap1_gene_table <- DT::renderDataTable(
       DT::datatable(gene_tables[["HAP1"]] %>% 
-                      dplyr::mutate(covOKfraction = signif(covOKfraction, 2),
-                                    intron_exon_ratio = signif(intron_exon_ratio, 2),
+                      dplyr::mutate(intron_exon_ratio = signif(intron_exon_ratio, 2),
                                     uniqjuncfraction = signif(uniqjuncfraction, 2)),
                     options = list(scrollX = TRUE))
     )

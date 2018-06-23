@@ -1,0 +1,105 @@
+
+R Under development (unstable) (2017-12-14 r73916) -- "Unsuffered Consequences"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ################################################################################
+> ##                                                                            ##
+> ## Characterize annotation                                                    ##
+> ##                                                                            ##
+> ## Inputs:                                                                    ##
+> ## * gtf: gtf file                                                            ##
+> ## * txome: transcriptome fasta file                                          ##
+> ## * outtxt: output file                                                      ##
+> ##                                                                            ##
+> ## Outputs:                                                                   ##
+> ## * A text file with annotation characteristics                              ##
+> ##                                                                            ##
+> ################################################################################
+> 
+> args <- (commandArgs(trailingOnly = TRUE))
+> for (i in 1:length(args)) {
++   eval(parse(text = args[[i]]))
++ }
+> 
+> print(gtf)
+[1] "reference_chess/chess2.0_assembly_fixed.gtf"
+> print(txome)
+[1] "reference_chess/chess2.0_assembly_fixed.fa"
+> print(outtxt)
+[1] "stats/annotation_characteristics_chess2.0_assembly_fixed.txt"
+> 
+> suppressPackageStartupMessages({
++   library(rtracklayer)
++   library(Biostrings)
++   library(dplyr)
++   library(GenomicFeatures)
++   library(GenomicRanges)
++ })
+> 
+> gtf <- rtracklayer::import(gtf, format = "gtf")
+> txome <- readDNAStringSet(txome)
+> tx2gene <- as.data.frame(gtf) %>% dplyr::filter(type == "transcript") %>%
++   dplyr::select(transcript_id, gene_id) %>%
++   dplyr::distinct()
+> 
+> ## Number of genes in gtf file
+> nbrGenesGtf <- length(unique(gtf$gene_id))
+> 
+> ## Number of transcripts in gtf file
+> nbrTxGtf <- length(unique(gtf$transcript_id))
+> 
+> ## Number of transcripts/gene in gtf file
+> gtftx <- subset(gtf, type == "transcript")
+> nbrTxPerGeneGtf <- table(gtftx$gene_id)
+> minNbrTxPerGeneGtf <- min(nbrTxPerGeneGtf)
+> meanNbrTxPerGeneGtf <- mean(nbrTxPerGeneGtf)
+> maxNbrTxPerGeneGtf <- max(nbrTxPerGeneGtf)
+> medianNbrTxPerGeneGtf <- median(nbrTxPerGeneGtf)
+> nbrNbrTxPerGeneGtf1 <- length(which(nbrTxPerGeneGtf == 1))
+> 
+> ## Number of exons/transcript in gtf file
+> gtfex <- subset(gtf, type == "exon")
+> nbrExonPerTxGtf <- table(gtfex$transcript_id)
+> minNbrExonPerTxGtf <- min(nbrExonPerTxGtf)
+> meanNbrExonPerTxGtf <- mean(nbrExonPerTxGtf)
+> maxNbrExonPerTxGtf <- max(nbrExonPerTxGtf)
+> medianNbrExonPerTxGtf <- median(nbrExonPerTxGtf)
+> nbrNbrExonPerTxGtf1 <- length(which(nbrExonPerTxGtf == 1))
+> 
+> ## Transcript length
+> txLengthsGtf <- as.data.frame(gtfex) %>% dplyr::group_by(transcript_id) %>%
++   dplyr::summarize(length = sum(width)) %>% dplyr::pull(length)
+> minTxLengthGtf <- min(txLengthsGtf)
+> meanTxLengthGtf <- mean(txLengthsGtf)
+> maxTxLengthGtf <- max(txLengthsGtf)
+> medianTxLengthGtf <- median(txLengthsGtf)
+> 
+> ## Number of junctions per gene
+> txdb <- makeTxDbFromGRanges(gtf)
+Warning messages:
+1: In .get_cds_IDX(type, phase) :
+  The "phase" metadata column contains non-NA values for features of type
+  gene, transcript, exon, rRNA, tRNA. This information was ignored.
+2: In .reject_transcripts(bad_tx, because) :
+  The following transcripts were rejected because they have CDSs that
+  cannot be mapped to an exon: CHS.20428.1
+3: In .find_exon_cds(exons, cds) :
+  The following transcripts have exons that contain more than one CDS
+  (only the first CDS was kept for each exon): CHS.51208.12
+> ebt <- exonsBy(txdb, by = "tx", use.names = TRUE)
+> jbt <- endoapply(ebt, function(w) GenomicRanges::setdiff(range(w), w))

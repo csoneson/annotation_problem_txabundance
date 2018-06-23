@@ -12,7 +12,7 @@ suppressPackageStartupMessages({
 quant_methods <- c("hera", "kallisto", "RSEM", "Salmon", "SalmonCDS",
                    "SalmonSTAR", "SalmonKeepDup", "StringTie")
 
-basedir <- "/Volumes/charlotte/annotation_problem_txabundance"
+basedir <- "/home/charlotte/annotation_problem_txabundance"
 
 bigwig_files <- list(HAP1 = paste0(basedir, "/STARbigwig/20170918.A-WT_4_Aligned.sortedByCoord.out.bw"),
                      Cortex = paste0(basedir, "/STARbigwig/20151016.A-Cortex_RNA_Aligned.sortedByCoord.out.bw"))
@@ -61,25 +61,25 @@ jccbrowse <- function(bigwig_files, score_files, all_genes, gene_models,
     ),
     
     shinydashboard::dashboardBody(
-      shinydashboard::tabBox(
-        width = 12,
-        tabPanel(
-          "Gene summary plot",
-          fluidRow(plotOutput("gviz_plot", width = "100%", height = "400px")),
-          fluidRow(
-            column(width = 6, plotOutput("tpms_plot", width = "100%", height = "400px")),
-            column(width = 6, plotOutput("junctions_plot", width = "100%", height = "400px"))
-          )
-        ),
-        tabPanel(
-          "HAP1 gene table",
-          DT::dataTableOutput("hap1_gene_table")
-        ),
-        tabPanel(
-          "Cortex gene table",
-          DT::dataTableOutput("cortex_gene_table")
+        shinydashboard::tabBox(
+          width = 12,
+          tabPanel(
+            "Gene summary plot",
+            fluidRow(plotOutput("gviz_plot", width = "100%", height = "400px")),
+            fluidRow(
+              column(width = 6, plotOutput("tpms_plot", width = "100%", height = "400px")),
+              column(width = 6, plotOutput("junctions_plot", width = "100%", height = "400px"))
+            )
+          )#,
+          #tabPanel(
+          #  "HAP1 gene table",
+          #  DT::dataTableOutput("hap1_gene_table")
+          #)#,
+          # tabPanel(
+          #   "Cortex gene table",
+          #   DT::dataTableOutput("cortex_gene_table")
+          # )
         )
-      )
     )
   )
   
@@ -201,7 +201,7 @@ jccbrowse <- function(bigwig_files, score_files, all_genes, gene_models,
       for (tt in values$txs) {
         jl[[tt]] <- grepl(tt, jl$transcript)
       }
-      jl[, txs] <- sweep(jl[, values$txs], 1, rowSums(jl[, values$txs]), "/")
+      jl[, values$txs] <- sweep(jl[, values$txs], 1, rowSums(jl[, values$txs]), "/")
       validate(need(
         nrow(jl) > 0,
         sprintf("No junctions")
@@ -242,3 +242,7 @@ jccbrowse <- function(bigwig_files, score_files, all_genes, gene_models,
   shinyApp(ui = p_layout, server = server_function)
 }
 
+# jccbrowse(bigwig_files = bigwig_files, score_files = score_files, 
+#           all_genes = all_genes, gene_models = gene_models, 
+#           junction_tables = junction_tables, 
+#           transcript_tables = transcript_tables, gene_tables = gene_tables)

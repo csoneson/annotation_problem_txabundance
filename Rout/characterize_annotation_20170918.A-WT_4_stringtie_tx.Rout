@@ -1,0 +1,95 @@
+
+R Under development (unstable) (2017-12-14 r73916) -- "Unsuffered Consequences"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ################################################################################
+> ##                                                                            ##
+> ## Characterize annotation                                                    ##
+> ##                                                                            ##
+> ## Inputs:                                                                    ##
+> ## * gtf: gtf file                                                            ##
+> ## * txome: transcriptome fasta file                                          ##
+> ## * outtxt: output file                                                      ##
+> ##                                                                            ##
+> ## Outputs:                                                                   ##
+> ## * A text file with annotation characteristics                              ##
+> ##                                                                            ##
+> ################################################################################
+> 
+> args <- (commandArgs(trailingOnly = TRUE))
+> for (i in 1:length(args)) {
++   eval(parse(text = args[[i]]))
++ }
+> 
+> print(gtf)
+[1] "stringtie/20170918.A-WT_4/20170918.A-WT_4_filtered.gtf"
+> print(txome)
+[1] "stringtie/20170918.A-WT_4/20170918.A-WT_4_stringtie_tx.fa"
+> print(outtxt)
+[1] "stats/annotation_characteristics_20170918.A-WT_4_stringtie_tx.txt"
+> 
+> suppressPackageStartupMessages({
++   library(rtracklayer)
++   library(Biostrings)
++   library(dplyr)
++   library(GenomicFeatures)
++   library(GenomicRanges)
++ })
+> 
+> gtf <- rtracklayer::import(gtf, format = "gtf")
+> txome <- readDNAStringSet(txome)
+> tx2gene <- as.data.frame(gtf) %>% dplyr::filter(type == "transcript") %>%
++   dplyr::select(transcript_id, gene_id) %>%
++   dplyr::distinct()
+> 
+> ## Number of genes in gtf file
+> nbrGenesGtf <- length(unique(gtf$gene_id))
+> 
+> ## Number of transcripts in gtf file
+> nbrTxGtf <- length(unique(gtf$transcript_id))
+> 
+> ## Number of transcripts/gene in gtf file
+> gtftx <- subset(gtf, type == "transcript")
+> nbrTxPerGeneGtf <- table(gtftx$gene_id)
+> minNbrTxPerGeneGtf <- min(nbrTxPerGeneGtf)
+> meanNbrTxPerGeneGtf <- mean(nbrTxPerGeneGtf)
+> maxNbrTxPerGeneGtf <- max(nbrTxPerGeneGtf)
+> medianNbrTxPerGeneGtf <- median(nbrTxPerGeneGtf)
+> nbrNbrTxPerGeneGtf1 <- length(which(nbrTxPerGeneGtf == 1))
+> 
+> ## Number of exons/transcript in gtf file
+> gtfex <- subset(gtf, type == "exon")
+> nbrExonPerTxGtf <- table(gtfex$transcript_id)
+> minNbrExonPerTxGtf <- min(nbrExonPerTxGtf)
+> meanNbrExonPerTxGtf <- mean(nbrExonPerTxGtf)
+> maxNbrExonPerTxGtf <- max(nbrExonPerTxGtf)
+> medianNbrExonPerTxGtf <- median(nbrExonPerTxGtf)
+> nbrNbrExonPerTxGtf1 <- length(which(nbrExonPerTxGtf == 1))
+> 
+> ## Transcript length
+> txLengthsGtf <- as.data.frame(gtfex) %>% dplyr::group_by(transcript_id) %>%
++   dplyr::summarize(length = sum(width)) %>% dplyr::pull(length)
+> minTxLengthGtf <- min(txLengthsGtf)
+> meanTxLengthGtf <- mean(txLengthsGtf)
+> maxTxLengthGtf <- max(txLengthsGtf)
+> medianTxLengthGtf <- median(txLengthsGtf)
+> 
+> ## Number of junctions per gene
+> txdb <- makeTxDbFromGRanges(gtf)
+> ebt <- exonsBy(txdb, by = "tx", use.names = TRUE)
+> jbt <- endoapply(ebt, function(w) GenomicRanges::setdiff(range(w), w))

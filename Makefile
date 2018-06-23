@@ -200,7 +200,10 @@ stats: $(foreach F,$(fastqfiles),stats/alpine_coverage_prediction_summary_$(notd
 $(foreach F,$(fastqfiles),stats/alpine_coverage_prediction_summary_$(notdir $(F))_stringtie_tx.txt) \
 $(foreach F,$(fastqfiles),stats/genes_with_high_score_$(notdir $(F)).txt) \
 $(foreach F,$(fastqfiles),stats/genes_with_high_score_$(notdir $(F))_stringtie_tx.txt) \
-stats/nbr_duplicate_transcripts_Salmon_Homo_sapiens.GRCh38.cdna.ncrna_sidx_v0.9.1.txt
+stats/nbr_duplicate_transcripts_Salmon_Homo_sapiens.GRCh38.cdna.ncrna_sidx_v0.9.1.txt \
+stats/annotation_characteristics_ensembl.38.90.txt \
+stats/annotation_characteristics_chess2.0_assembly_fixed.txt \
+$(foreach F,$(fastqfilesreal),stats/annotation_characteristics_$(notdir $(F))_stringtie_tx.txt)
 
 ########################################################################################################
 ## Other

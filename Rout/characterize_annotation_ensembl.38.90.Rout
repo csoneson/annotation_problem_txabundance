@@ -40,6 +40,8 @@ Type 'q()' to quit R.
 [1] "/home/Shared/data/annotation/Human/Ensembl_GRCh38.90/gtf/Homo_sapiens.GRCh38.90.gtf"
 > print(txome)
 [1] "reference/Homo_sapiens.GRCh38.cdna.ncrna.fa"
+> print(idconvrds)
+[1] ""
 > print(outtxt)
 [1] "stats/annotation_characteristics_ensembl.38.90.txt"
 > 
@@ -58,13 +60,22 @@ Type 'q()' to quit R.
 +   dplyr::distinct()
 > 
 > ## Number of genes in gtf file
-> nbrGenesGtf <- length(unique(gtf$gene_id))
+> nbrGenesGtf <- length(unique(setdiff(gtf$gene_id, NA)))
+> 
+> ## Number of genes with Ensembl ID
+> if (idconvrds != "") {
++   idconvtable <- readRDS(idconvrds)
++   gtf$symbol <- idconvtable$symbol[match(gtf$gene_id, idconvtable$gene)]
++   nbrGenesEnsemblID <- sum(grepl("^ENSG", unique(gtf$symbol)))
++ } else {
++   nbrGenesEnsemblID <- sum(grepl("^ENSG", unique(gtf$gene_id)))
++ }
 > 
 > ## Number of transcripts in gtf file
-> nbrTxGtf <- length(unique(gtf$transcript_id))
+> gtftx <- subset(gtf, type == "transcript")
+> nbrTxGtf <- length(unique(setdiff(gtftx$transcript_id, NA)))
 > 
 > ## Number of transcripts/gene in gtf file
-> gtftx <- subset(gtf, type == "transcript")
 > nbrTxPerGeneGtf <- table(gtftx$gene_id)
 > minNbrTxPerGeneGtf <- min(nbrTxPerGeneGtf)
 > meanNbrTxPerGeneGtf <- mean(nbrTxPerGeneGtf)
@@ -96,4 +107,116 @@ In .get_cds_IDX(type, phase) :
   The "phase" metadata column contains non-NA values for features of type
   stop_codon. This information was ignored.
 > ebt <- exonsBy(txdb, by = "tx", use.names = TRUE)
-> jbt <- endoapply(ebt, function(w) GenomicRanges::setdiff(range(w), w))
+> jbt <- GenomicRanges::setdiff(range(ebt), ebt)
+> junctions <- as.data.frame(jbt) %>%
++   dplyr::left_join(tx2gene, by = c("group_name" = "transcript_id"))
+> junctionsByTxGtf <- junctions %>% dplyr::select(group_name, seqnames, start, end, strand) %>% 
++   dplyr::distinct() %>% dplyr::rename(transcript_id = group_name)
+> junctionsByGeneGtf <- junctions %>% dplyr::select(gene_id, seqnames, start, end, strand) %>%
++   dplyr::distinct()
+> nbrJunctionsPerTxGtf <- table(junctionsByTxGtf$transcript_id)
+> txNoJunc <- setdiff(names(jbt), names(nbrJunctionsPerTxGtf))
+> nbrJunctionsPerTxGtf <- c(nbrJunctionsPerTxGtf, structure(rep(0, length(txNoJunc)), names = txNoJunc))
+> nbrJunctionsPerGeneGtf <- table(junctionsByGeneGtf$gene_id)
+> geneNoJunc <- setdiff(unique(gtf$gene_id), names(nbrJunctionsPerGeneGtf))
+> nbrJunctionsPerGeneGtf <- c(nbrJunctionsPerGeneGtf, structure(rep(0, length(geneNoJunc)), names = geneNoJunc))
+> minNbrJunctionsPerGeneGtf <- min(nbrJunctionsPerGeneGtf)
+> meanNbrJunctionsPerGeneGtf <- mean(nbrJunctionsPerGeneGtf)
+> maxNbrJunctionsPerGeneGtf <- max(nbrJunctionsPerGeneGtf)
+> medianNbrJunctionsPerGeneGtf <- median(nbrJunctionsPerGeneGtf)
+> nbrNbrJunctionsPerTx0 <- length(txNoJunc)
+> nbrNbrJunctionsPerGeneGtf1 <- sum(nbrJunctionsPerGeneGtf == 1)
+> nbrNbrJunctionsPerGeneGtf0 <- length(geneNoJunc)
+> 
+> ## Number of transcripts not present in the gtf
+> txsfa <- sapply(strsplit(names(txome), " "), .subset, 1)
+> idx <- grep("^STRG\\.|^CHS\\.", txsfa, invert = TRUE)
+> txsfa[idx] <- gsub("\\.[0-9]+$", "", txsfa[idx])
+> nbrTxNotInGtf <- length(setdiff(txsfa, gtf$transcript_id))
+> 
+> saveRDS(list(nbrJunctionsPerTxGtf = nbrJunctionsPerTxGtf, 
++              nbrJunctionsPerGeneGtf = nbrJunctionsPerGeneGtf),
++         file = gsub("txt$", "rds", outtxt))
+> 
+> write.table(t(data.frame(nbrGenesGtf = nbrGenesGtf,
++                          nbrGenesEnsemblID = nbrGenesEnsemblID,
++                          nbrTxGtf = nbrTxGtf,
++                          minNbrTxPerGeneGtf = minNbrTxPerGeneGtf,
++                          meanNbrTxPerGeneGtf = meanNbrTxPerGeneGtf,
++                          maxNbrTxPerGeneGtf = maxNbrTxPerGeneGtf,
++                          medianNbrTxPerGeneGtf = medianNbrTxPerGeneGtf,
++                          nbrNbrTxPerGeneGtf1 = nbrNbrTxPerGeneGtf1,
++                          minNbrExonPerTxGtf = minNbrExonPerTxGtf,
++                          meanNbrExonPerTxGtf = meanNbrExonPerTxGtf,
++                          maxNbrExonPerTxGtf = maxNbrExonPerTxGtf,
++                          medianNbrExonPerTxGtf = medianNbrExonPerTxGtf,
++                          nbrNbrExonPerTxGtf1 = nbrNbrExonPerTxGtf1,
++                          minTxLengthGtf = minTxLengthGtf,
++                          meanTxLengthGtf = meanTxLengthGtf,
++                          maxTxLengthGtf = maxTxLengthGtf,
++                          medianTxLengthGtf = medianTxLengthGtf,
++                          minNbrJunctionsPerGeneGtf = minNbrJunctionsPerGeneGtf,
++                          meanNbrJunctionsPerGeneGtf = meanNbrJunctionsPerGeneGtf,
++                          maxNbrJunctionsPerGeneGtf = maxNbrJunctionsPerGeneGtf,
++                          medianNbrJunctionsPerGeneGtf = medianNbrJunctionsPerGeneGtf,
++                          nbrNbrJunctionsPerTx0 = nbrNbrJunctionsPerTx0,
++                          nbrNbrJunctionsPerGeneGtf1 = nbrNbrJunctionsPerGeneGtf1,
++                          nbrNbrJunctionsPerGeneGtf0 = nbrNbrJunctionsPerGeneGtf0,
++                          nbrTxNotInGtf = nbrTxNotInGtf,
++                          stringsAsFactors = FALSE)),
++             file = outtxt, row.names = TRUE, col.names = FALSE,
++             quote = FALSE, sep = "\t")
+> 
+> date()
+[1] "Sun Jun 24 11:38:33 2018"
+> sessionInfo()
+R Under development (unstable) (2017-12-14 r73916)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 16.04.4 LTS
+
+Matrix products: default
+BLAS: /usr/local/R/R-devel/lib/libRblas.so
+LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
+ [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
+ [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
+[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+
+attached base packages:
+[1] parallel  stats4    stats     graphics  grDevices utils     datasets 
+[8] methods   base     
+
+other attached packages:
+ [1] bindrcpp_0.2.2          GenomicFeatures_1.31.10 AnnotationDbi_1.41.5   
+ [4] Biobase_2.39.2          dplyr_0.7.4             Biostrings_2.47.12     
+ [7] XVector_0.20.0          rtracklayer_1.39.12     GenomicRanges_1.31.23  
+[10] GenomeInfoDb_1.15.5     IRanges_2.13.28         S4Vectors_0.17.42      
+[13] BiocGenerics_0.26.0    
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_0.12.16                compiler_3.5.0             
+ [3] pillar_1.2.1                bindr_0.1.1                
+ [5] prettyunits_1.0.2           progress_1.1.2             
+ [7] bitops_1.0-6                tools_3.5.0                
+ [9] zlibbioc_1.26.0             biomaRt_2.35.13            
+[11] digest_0.6.15               bit_1.1-12                 
+[13] memoise_1.1.0               RSQLite_2.1.0              
+[15] tibble_1.4.2                lattice_0.20-35            
+[17] pkgconfig_2.0.1             rlang_0.2.0                
+[19] Matrix_1.2-14               DelayedArray_0.5.30        
+[21] DBI_0.8                     GenomeInfoDbData_1.1.0     
+[23] httr_1.3.1                  stringr_1.3.0              
+[25] bit64_0.9-7                 grid_3.5.0                 
+[27] glue_1.2.0                  R6_2.2.2                   
+[29] XML_3.98-1.11               BiocParallel_1.13.3        
+[31] blob_1.1.1                  magrittr_1.5               
+[33] Rsamtools_1.31.3            matrixStats_0.53.1         
+[35] GenomicAlignments_1.15.13   assertthat_0.2.0           
+[37] SummarizedExperiment_1.9.16 stringi_1.1.7              
+[39] RCurl_1.95-4.10            
+> 
+> proc.time()
+   user  system elapsed 
+204.044   4.224 208.470 

@@ -21,8 +21,8 @@ $(foreach F,$(fastqfiles),$(eval $(call highscorerule,$(notdir $(F)),_stringtie_
 define annotcharrule
 stats/annotation_characteristics$(1).txt: $(2) $(3) Rscripts/characterize_annotation.R
 	mkdir -p $$(@D)
-	$(R) "--args gtf='$(2)' txome='$(3)' outtxt='$$@'" Rscripts/characterize_annotation.R Rout/characterize_annotation$(1).Rout
+	$(R) "--args gtf='$(2)' txome='$(3)' idconvrds='$(4)' outtxt='$$@'" Rscripts/characterize_annotation.R Rout/characterize_annotation$(1).Rout
 endef
-$(eval $(call annotcharrule,_ensembl.38.90,$(gtf),$(txome)))
-$(eval $(call annotcharrule,_chess2.0_assembly_fixed,$(gtf_chess),$(txome_chess)))
-$(foreach F,$(fastqfilesreal),$(eval $(call annotcharrule,_$(notdir $(F))_stringtie_tx,stringtie/$(notdir $(F))/$(notdir $(F))_filtered.gtf,stringtie/$(notdir $(F))/$(notdir $(F))_stringtie_tx.fa)))
+$(eval $(call annotcharrule,_ensembl.38.90,$(gtf),$(txome),))
+$(eval $(call annotcharrule,_chess2.0_assembly_fixed,$(gtf_chess),$(txome_chess),$(tx2gene_chess_withsymbol)))
+$(foreach F,$(fastqfilesreal),$(eval $(call annotcharrule,_$(notdir $(F))_stringtie_tx,stringtie/$(notdir $(F))/$(notdir $(F))_filtered.gtf,stringtie/$(notdir $(F))/$(notdir $(F))_stringtie_tx.fa,)))

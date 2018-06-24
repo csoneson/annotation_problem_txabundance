@@ -19,6 +19,7 @@ for (i in 1:length(args)) {
 
 print(gtf)
 print(txome)
+print(idconvrds)
 print(outtxt)
 
 suppressPackageStartupMessages({
@@ -36,13 +37,22 @@ tx2gene <- as.data.frame(gtf) %>% dplyr::filter(type == "transcript") %>%
   dplyr::distinct()
 
 ## Number of genes in gtf file
-nbrGenesGtf <- length(unique(gtf$gene_id))
+nbrGenesGtf <- length(unique(setdiff(gtf$gene_id, NA)))
+
+## Number of genes with Ensembl ID
+if (idconvrds != "") {
+  idconvtable <- readRDS(idconvrds)
+  gtf$symbol <- idconvtable$symbol[match(gtf$gene_id, idconvtable$gene)]
+  nbrGenesEnsemblID <- sum(grepl("^ENSG", unique(gtf$symbol)))
+} else {
+  nbrGenesEnsemblID <- sum(grepl("^ENSG", unique(gtf$gene_id)))
+}
 
 ## Number of transcripts in gtf file
-nbrTxGtf <- length(unique(gtf$transcript_id))
+gtftx <- subset(gtf, type == "transcript")
+nbrTxGtf <- length(unique(setdiff(gtftx$transcript_id, NA)))
 
 ## Number of transcripts/gene in gtf file
-gtftx <- subset(gtf, type == "transcript")
 nbrTxPerGeneGtf <- table(gtftx$gene_id)
 minNbrTxPerGeneGtf <- min(nbrTxPerGeneGtf)
 meanNbrTxPerGeneGtf <- mean(nbrTxPerGeneGtf)
@@ -70,18 +80,26 @@ medianTxLengthGtf <- median(txLengthsGtf)
 ## Number of junctions per gene
 txdb <- makeTxDbFromGRanges(gtf)
 ebt <- exonsBy(txdb, by = "tx", use.names = TRUE)
-jbt <- endoapply(ebt, function(w) GenomicRanges::setdiff(range(w), w))
+jbt <- GenomicRanges::setdiff(range(ebt), ebt)
 junctions <- as.data.frame(jbt) %>%
   dplyr::left_join(tx2gene, by = c("group_name" = "transcript_id"))
+junctionsByTxGtf <- junctions %>% dplyr::select(group_name, seqnames, start, end, strand) %>% 
+  dplyr::distinct() %>% dplyr::rename(transcript_id = group_name)
 junctionsByGeneGtf <- junctions %>% dplyr::select(gene_id, seqnames, start, end, strand) %>%
   dplyr::distinct()
+nbrJunctionsPerTxGtf <- table(junctionsByTxGtf$transcript_id)
+txNoJunc <- setdiff(names(jbt), names(nbrJunctionsPerTxGtf))
+nbrJunctionsPerTxGtf <- c(nbrJunctionsPerTxGtf, structure(rep(0, length(txNoJunc)), names = txNoJunc))
 nbrJunctionsPerGeneGtf <- table(junctionsByGeneGtf$gene_id)
+geneNoJunc <- setdiff(unique(gtf$gene_id), names(nbrJunctionsPerGeneGtf))
+nbrJunctionsPerGeneGtf <- c(nbrJunctionsPerGeneGtf, structure(rep(0, length(geneNoJunc)), names = geneNoJunc))
 minNbrJunctionsPerGeneGtf <- min(nbrJunctionsPerGeneGtf)
 meanNbrJunctionsPerGeneGtf <- mean(nbrJunctionsPerGeneGtf)
 maxNbrJunctionsPerGeneGtf <- max(nbrJunctionsPerGeneGtf)
 medianNbrJunctionsPerGeneGtf <- median(nbrJunctionsPerGeneGtf)
+nbrNbrJunctionsPerTx0 <- length(txNoJunc)
 nbrNbrJunctionsPerGeneGtf1 <- sum(nbrJunctionsPerGeneGtf == 1)
-nbrNbrJunctionsPerGeneGtf0 <- length(setdiff(unique(gtf$gene_id), names(nbrJunctionsPerGeneGtf)))
+nbrNbrJunctionsPerGeneGtf0 <- length(geneNoJunc)
 
 ## Number of transcripts not present in the gtf
 txsfa <- sapply(strsplit(names(txome), " "), .subset, 1)
@@ -89,7 +107,12 @@ idx <- grep("^STRG\\.|^CHS\\.", txsfa, invert = TRUE)
 txsfa[idx] <- gsub("\\.[0-9]+$", "", txsfa[idx])
 nbrTxNotInGtf <- length(setdiff(txsfa, gtf$transcript_id))
 
+saveRDS(list(nbrJunctionsPerTxGtf = nbrJunctionsPerTxGtf, 
+             nbrJunctionsPerGeneGtf = nbrJunctionsPerGeneGtf),
+        file = gsub("txt$", "rds", outtxt))
+
 write.table(t(data.frame(nbrGenesGtf = nbrGenesGtf,
+                         nbrGenesEnsemblID = nbrGenesEnsemblID,
                          nbrTxGtf = nbrTxGtf,
                          minNbrTxPerGeneGtf = minNbrTxPerGeneGtf,
                          meanNbrTxPerGeneGtf = meanNbrTxPerGeneGtf,
@@ -109,6 +132,7 @@ write.table(t(data.frame(nbrGenesGtf = nbrGenesGtf,
                          meanNbrJunctionsPerGeneGtf = meanNbrJunctionsPerGeneGtf,
                          maxNbrJunctionsPerGeneGtf = maxNbrJunctionsPerGeneGtf,
                          medianNbrJunctionsPerGeneGtf = medianNbrJunctionsPerGeneGtf,
+                         nbrNbrJunctionsPerTx0 = nbrNbrJunctionsPerTx0,
                          nbrNbrJunctionsPerGeneGtf1 = nbrNbrJunctionsPerGeneGtf1,
                          nbrNbrJunctionsPerGeneGtf0 = nbrNbrJunctionsPerGeneGtf0,
                          nbrTxNotInGtf = nbrTxNotInGtf,

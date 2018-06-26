@@ -17,6 +17,28 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+> ################################################################################
+> ##                                                                            ##
+> ## Fit bias model with alpine                                                 ##
+> ##                                                                            ##
+> ## Inputs:                                                                    ##
+> ## * gtf: gtf file                                                            ##
+> ## * bam: bam file, used to extract "medium to highly expressed genes" to fit ##
+> ##        the bias model                                                      ##
+> ## * readlength: read length                                                  ##
+> ## * minsize, maxsize: minimal and maximal fragment length                    ##
+> ## * organism: organism                                                       ##
+> ## * genomeVersion: genome version                                            ##
+> ## * version: Ensembl version                                                 ##
+> ## * outdir: output directory                                                 ##
+> ## * subsample: whether to use only a subset of the "eligible" genes to fit   ##
+> ##              the model                                                     ##
+> ##                                                                            ##
+> ## Outputs:                                                                   ##
+> ## * A bias model and a list of exons by transcript                           ##
+> ##                                                                            ##
+> ################################################################################
+> 
 > args <- (commandArgs(trailingOnly = TRUE))
 > for (i in 1:length(args)) {
 +   eval(parse(text = args[[i]]))
@@ -98,7 +120,7 @@ TxDb object:
 # exon_nrow: 147817
 # cds_nrow: 0
 # Db created by: GenomicFeatures package from Bioconductor
-# Creation time: 2018-05-20 08:59:36 +0200 (Sun, 20 May 2018)
+# Creation time: 2018-06-25 17:40:29 +0200 (Mon, 25 Jun 2018)
 # GenomicFeatures version at creation time: 1.31.10
 # RSQLite version at creation time: 2.1.0
 # DBSCHEMAVERSION: 1.2
@@ -116,47 +138,34 @@ TxDb object:
 + }
 > txdf
 DataFrame with 41868 rows and 5 columns
-                tx_id         gene_id tx_seq_start tx_seq_end         tx_name
-          <character>     <character>    <integer>  <integer>     <character>
-1     ENST00000473358 ENSG00000243485        29554      31097 ENST00000473358
-2     ENST00000469289 ENSG00000243485        30267      31109 ENST00000469289
-3     ENST00000606857 ENSG00000268020        52473      53312 ENST00000606857
-4     ENST00000641515 ENSG00000186092        65419      71585 ENST00000641515
-5     ENST00000335137 ENSG00000186092        69055      70108 ENST00000335137
-...               ...             ...          ...        ...             ...
-41864 ENST00000620795 ENSG00000278066        26533      27138 ENST00000620795
-41865    STRG.13119.1      STRG.13119        11755      12583    STRG.13119.1
-41866 ENST00000615362 ENSG00000278573        59711      60316 ENST00000615362
-41867 ENST00000617983 ENSG00000276017        72411      74814 ENST00000617983
-41868    STRG.13126.1      STRG.13126         2212       2419    STRG.13126.1
+             tx_id     gene_id tx_seq_start tx_seq_end      tx_name
+       <character> <character>    <integer>  <integer>  <character>
+1         STRG.1.1      STRG.1        29554      31097     STRG.1.1
+2         STRG.1.2      STRG.1        30267      31109     STRG.1.2
+3         STRG.3.1      STRG.3        52473      53312     STRG.3.1
+4         STRG.4.1      STRG.4        65419      71585     STRG.4.1
+5         STRG.4.2      STRG.4        69055      70108     STRG.4.2
+...            ...         ...          ...        ...          ...
+41864 STRG.13125.1  STRG.13125        26533      27138 STRG.13125.1
+41865 STRG.13119.1  STRG.13119        11755      12583 STRG.13119.1
+41866 STRG.13121.1  STRG.13121        59711      60316 STRG.13121.1
+41867 STRG.13123.1  STRG.13123        72411      74814 STRG.13123.1
+41868 STRG.13126.1  STRG.13126         2212       2419 STRG.13126.1
 > txps
 GRanges object with 41868 ranges and 2 metadata columns:
-                    seqnames      ranges strand |         tx_name
-                       <Rle>   <IRanges>  <Rle> |     <character>
-  ENST00000473358          1 29554-31097      + | ENST00000473358
-  ENST00000469289          1 30267-31109      + | ENST00000469289
-  ENST00000606857          1 52473-53312      + | ENST00000606857
-  ENST00000641515          1 65419-71585      + | ENST00000641515
-  ENST00000335137          1 69055-70108      + | ENST00000335137
-              ...        ...         ...    ... .             ...
-  ENST00000620795 KI270731.1 26533-27138      - | ENST00000620795
-     STRG.13119.1 KI270733.1 11755-12583      + |    STRG.13119.1
-  ENST00000615362 KI270734.1 59711-60316      + | ENST00000615362
-  ENST00000617983 KI270734.1 72411-74814      + | ENST00000617983
-     STRG.13126.1 KI270748.1   2212-2419      - |    STRG.13126.1
-                          gene_id
-                      <character>
-  ENST00000473358 ENSG00000243485
-  ENST00000469289 ENSG00000243485
-  ENST00000606857 ENSG00000268020
-  ENST00000641515 ENSG00000186092
-  ENST00000335137 ENSG00000186092
-              ...             ...
-  ENST00000620795 ENSG00000278066
-     STRG.13119.1      STRG.13119
-  ENST00000615362 ENSG00000278573
-  ENST00000617983 ENSG00000276017
-     STRG.13126.1      STRG.13126
+                 seqnames      ranges strand |      tx_name     gene_id
+                    <Rle>   <IRanges>  <Rle> |  <character> <character>
+      STRG.1.1          1 29554-31097      + |     STRG.1.1      STRG.1
+      STRG.1.2          1 30267-31109      + |     STRG.1.2      STRG.1
+      STRG.3.1          1 52473-53312      + |     STRG.3.1      STRG.3
+      STRG.4.1          1 65419-71585      + |     STRG.4.1      STRG.4
+      STRG.4.2          1 69055-70108      + |     STRG.4.2      STRG.4
+           ...        ...         ...    ... .          ...         ...
+  STRG.13125.1 KI270731.1 26533-27138      - | STRG.13125.1  STRG.13125
+  STRG.13119.1 KI270733.1 11755-12583      + | STRG.13119.1  STRG.13119
+  STRG.13121.1 KI270734.1 59711-60316      + | STRG.13121.1  STRG.13121
+  STRG.13123.1 KI270734.1 72411-74814      + | STRG.13123.1  STRG.13123
+  STRG.13126.1 KI270748.1   2212-2419      - | STRG.13126.1  STRG.13126
   -------
   seqinfo: 37 sequences (1 circular) from an unspecified genome; no seqlengths
 > 
@@ -164,9 +173,9 @@ GRanges object with 41868 ranges and 2 metadata columns:
 > tab <- table(txdf$gene_id)
 > one.iso.genes <- names(tab)[tab == 1]
 > length(one.iso.genes)
-[1] 7158
+[1] 5569
 > length(tab)
-[1] 14896
+[1] 13128
 > 
 > ## Get list of exons by transcript
 > if (class(txdb) == "EnsDb") {
@@ -175,7 +184,7 @@ GRanges object with 41868 ranges and 2 metadata columns:
 +   (ebt0 <- exonsBy(txdb, by = "tx", use.names = TRUE))
 + }
 GRangesList object of length 41868:
-$ENST00000473358 
+$STRG.1.1 
 GRanges object with 3 ranges and 3 metadata columns:
       seqnames      ranges strand |   exon_id   exon_name exon_rank
          <Rle>   <IRanges>  <Rle> | <integer> <character> <integer>
@@ -183,13 +192,13 @@ GRanges object with 3 ranges and 3 metadata columns:
   [2]        1 30564-30667      + |         3        <NA>         2
   [3]        1 30976-31097      + |         4        <NA>         3
 
-$ENST00000469289 
+$STRG.1.2 
 GRanges object with 2 ranges and 3 metadata columns:
       seqnames      ranges strand | exon_id exon_name exon_rank
   [1]        1 30267-30667      + |       2      <NA>         1
   [2]        1 30976-31109      + |       5      <NA>         2
 
-$ENST00000606857 
+$STRG.3.1 
 GRanges object with 1 range and 3 metadata columns:
       seqnames      ranges strand | exon_id exon_name exon_rank
   [1]        1 52473-53312      + |       6      <NA>         1
@@ -212,11 +221,11 @@ seqinfo: 37 sequences (1 circular) from an unspecified genome; no seqlengths
 > gene.lengths <- sum(width(ebt.fit))
 > summary(gene.lengths)
    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-     55     459     729    1353    1548   54538 
+   78.0   448.0   661.5  1213.2  1281.0 39396.0 
 > 
 > ebt.fit <- ebt.fit[gene.lengths > min.bp & gene.lengths < max.bp]
 > length(ebt.fit)
-[1] 4081
+[1] 2969
 > 
 > ## Sample 1000 genes to use for the fitting of the bias model
 > if (subsample) {
@@ -234,10 +243,10 @@ seqinfo: 37 sequences (1 circular) from an unspecified genome; no seqlengths
 > mcols(txps.fit)$cts <- cts$records
 > txps.fit <- txps.fit[names(ebt.fit)]
 > sum(txps.fit$cts > 500 & txps.fit$cts < 10000)
-[1] 770
+[1] 720
 > ebt.fit <- ebt.fit[txps.fit$cts > 500 & txps.fit$cts < 10000]
 > length(ebt.fit)
-[1] 770
+[1] 720
 > 
 > ## Get fragment width and read length
 > m <- sort(which(sapply(ebt.fit, length) > 1))
@@ -252,8 +261,8 @@ seqinfo: 37 sequences (1 circular) from an unspecified genome; no seqlengths
 +   })
 + }
 > quantile(w, c(.025, .975))
- 2.5% 97.5% 
-  252   349 
+   2.5%   97.5% 
+247.000 346.475 
 > getReadLength(bam.files)
   1 
 125 
@@ -274,9 +283,9 @@ seqinfo: 37 sequences (1 circular) from an unspecified genome; no seqlengths
 +   })
 + })
     user   system  elapsed 
-1226.548   34.920 1264.127 
+1094.220   31.404 1127.118 
 > object.size(fragtypes)/1e6
-14182.7 bytes
+12529 bytes
 > 
 > ## Define models to fit
 > models <- list(
@@ -301,7 +310,7 @@ seqinfo: 37 sequences (1 circular) from an unspecified genome; no seqlengths
 +   })
 + })
     user   system  elapsed 
-1558.944  721.648 2284.596 
+1307.752  484.804 1795.875 
 > 
 > ## Diagnostic plots
 > pdf(paste0(outdir, "/alpine_fitbiasmodel_plots.pdf"))
@@ -316,7 +325,7 @@ null device
 +         file = paste0(outdir, "/alpine_fitbiasmodel.rds"))
 > 
 > date()
-[1] "Sun May 20 09:59:04 2018"
+[1] "Mon Jun 25 18:29:25 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -379,4 +388,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
     user   system  elapsed 
-2843.484  763.804 3621.743 
+2453.764  520.752 2980.345 

@@ -61,7 +61,7 @@ Type 'q()' to quit R.
 > saveRDS(tx2gene, outrds)
 > 
 > date()
-[1] "Tue Jun 19 07:15:30 2018"
+[1] "Sun Jun 24 19:25:17 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -90,4 +90,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-  3.208   0.248   4.465 
+  2.640   0.144   2.909 

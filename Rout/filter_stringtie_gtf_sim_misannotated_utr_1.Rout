@@ -17,6 +17,19 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+> ################################################################################
+> ##                                                                            ##
+> ## Filter a StringTie output gtf to exclude transcripts with unknown strand   ##
+> ##                                                                            ##
+> ## Inputs:                                                                    ##
+> ## * ingtf: input gtf (from StringTie)                                        ##
+> ## * outgtf: output gtf                                                       ##
+> ##                                                                            ##
+> ## Outputs:                                                                   ##
+> ## * A gtf file where transcripts with unknown strand have been excluded.     ##
+> ##                                                                            ##
+> ################################################################################
+> 
 > args <- (commandArgs(trailingOnly = TRUE))
 > for (i in 1:length(args)) {
 +   eval(parse(text = args[[i]]))
@@ -44,17 +57,11 @@ Type 'q()' to quit R.
 > ## Filter out transcripts with unknown strand
 > gtf <- gtf[strand(gtf) != "*"]
 > 
-> ## Replace gene_id and transcript_id with ref_gene_id and reference_id when possible
-> nona <- !is.na(gtf$reference_id)
-> gtf$transcript_id[nona] <- gtf$reference_id[nona]
-> nona <- !is.na(gtf$ref_gene_id)
-> gtf$gene_id[nona] <- gtf$ref_gene_id[nona]
-> 
 > ## Write filtered gtf
 > export(gtf, outgtf, format = "gtf")
 > 
 > date()
-[1] "Sat May 19 21:52:29 2018"
+[1] "Sun Jun 24 19:25:00 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -96,4 +103,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
- 61.372   1.336  62.772 
+ 48.116   1.160  49.662 

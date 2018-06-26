@@ -17,6 +17,19 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+> ################################################################################
+> ##                                                                            ##
+> ## Filter a StringTie output gtf to exclude transcripts with unknown strand   ##
+> ##                                                                            ##
+> ## Inputs:                                                                    ##
+> ## * ingtf: input gtf (from StringTie)                                        ##
+> ## * outgtf: output gtf                                                       ##
+> ##                                                                            ##
+> ## Outputs:                                                                   ##
+> ## * A gtf file where transcripts with unknown strand have been excluded.     ##
+> ##                                                                            ##
+> ################################################################################
+> 
 > args <- (commandArgs(trailingOnly = TRUE))
 > for (i in 1:length(args)) {
 +   eval(parse(text = args[[i]]))
@@ -44,17 +57,11 @@ Type 'q()' to quit R.
 > ## Filter out transcripts with unknown strand
 > gtf <- gtf[strand(gtf) != "*"]
 > 
-> ## Replace gene_id and transcript_id with ref_gene_id and reference_id when possible
-> nona <- !is.na(gtf$reference_id)
-> gtf$transcript_id[nona] <- gtf$reference_id[nona]
-> nona <- !is.na(gtf$ref_gene_id)
-> gtf$gene_id[nona] <- gtf$ref_gene_id[nona]
-> 
 > ## Write filtered gtf
 > export(gtf, outgtf, format = "gtf")
 > 
 > date()
-[1] "Tue Apr 17 22:38:08 2018"
+[1] "Sun Jun 24 19:21:04 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -75,25 +82,25 @@ attached base packages:
 [8] methods   base     
 
 other attached packages:
-[1] readr_1.1.1           rtracklayer_1.39.9    GenomicRanges_1.31.22
-[4] GenomeInfoDb_1.15.5   IRanges_2.13.28       S4Vectors_0.17.37    
-[7] BiocGenerics_0.25.3  
+[1] readr_1.1.1           rtracklayer_1.39.12   GenomicRanges_1.31.23
+[4] GenomeInfoDb_1.15.5   IRanges_2.13.28       S4Vectors_0.17.42    
+[7] BiocGenerics_0.26.0  
 
 loaded via a namespace (and not attached):
- [1] Rcpp_0.12.16                XVector_0.19.9             
- [3] hms_0.4.2                   zlibbioc_1.25.0            
- [5] GenomicAlignments_1.15.12   BiocParallel_1.13.1        
+ [1] Rcpp_0.12.16                XVector_0.20.0             
+ [3] hms_0.4.2                   zlibbioc_1.26.0            
+ [5] GenomicAlignments_1.15.13   BiocParallel_1.13.3        
  [7] lattice_0.20-35             R6_2.2.2                   
  [9] rlang_0.2.0                 tools_3.5.0                
-[11] SummarizedExperiment_1.9.15 grid_3.5.0                 
+[11] SummarizedExperiment_1.9.16 grid_3.5.0                 
 [13] Biobase_2.39.2              matrixStats_0.53.1         
-[15] tibble_1.4.2                Matrix_1.2-12              
+[15] tibble_1.4.2                Matrix_1.2-14              
 [17] GenomeInfoDbData_1.1.0      bitops_1.0-6               
-[19] RCurl_1.95-4.10             DelayedArray_0.5.22        
+[19] RCurl_1.95-4.10             DelayedArray_0.5.30        
 [21] pillar_1.2.1                compiler_3.5.0             
-[23] Biostrings_2.47.11          Rsamtools_1.31.3           
-[25] XML_3.98-1.10               pkgconfig_2.0.1            
+[23] Biostrings_2.47.12          Rsamtools_1.31.3           
+[25] XML_3.98-1.11               pkgconfig_2.0.1            
 > 
 > proc.time()
    user  system elapsed 
-174.920   3.612 180.276 
+158.124   5.412 166.891 

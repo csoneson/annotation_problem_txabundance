@@ -102,13 +102,17 @@ ggcor <- ggplot(a, aes(x = chess, y = ensembl)) + geom_point(alpha = 0.3) +
   facet_wrap(~ method) + geom_abline(slope = 1, intercept = 0) + 
   theme_bw() + xlab("CHESS score") + ylab("Ensembl score")
 
-ggbw <- ggplot(as.data.frame(table(a$method, chessworse = a$chess > a$ensembl, useNA = "ifany")) %>%
-         dplyr::mutate(chessworse = as.character(chessworse)) %>% 
-         dplyr::mutate(chessworse = replace(chessworse, chessworse == "TRUE", "CHESS score > Ensembl score"),
-                       chessworse = replace(chessworse, chessworse == "FALSE", "CHESS score < Ensembl score")), 
-       aes(x = Var1, y = Freq, fill = chessworse)) + 
+ggbw <- ggplot(a %>% dplyr::group_by(method) %>% 
+                 dplyr::summarize(chessworse = sum(chess > ensembl), 
+                                  equal = sum(chess == ensembl), 
+                                  ensemblworse = sum(ensembl > chess)) %>% 
+                 tidyr::gather(comparison, value, -method) %>%
+                 dplyr::mutate(comparison = replace(comparison, comparison == "chessworse", "CHESS score > Ensembl score"),
+                               comparison = replace(comparison, comparison == "equal", "CHESS score = Ensembl score"),
+                               comparison = replace(comparison, comparison == "ensemblworse", "CHESS score < Ensembl score")), 
+               aes(x = method, y = value, fill = comparison)) + 
   geom_bar(stat = "identity", position = "dodge") + 
-  scale_fill_manual(values = c("#B17BA6", "#90C987"), name = "", na.value = "grey50") + 
+  scale_fill_manual(values = c("#B17BA6", "#90C987", "#7BAFDE"), name = "", na.value = "grey50") + 
   xlab("") + ylab("Number of genes") + theme(legend.direction = "horizontal",
                                              legend.justification = "center",
                                              legend.box.just = "bottom",

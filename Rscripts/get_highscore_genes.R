@@ -28,10 +28,23 @@ print(outtxt)
 
 suppressPackageStartupMessages({
   library(dplyr)
+  library(genefilter)
 })
 
 scores <- readRDS(scorerds)$genes
 
+## Genes with highly variable scores
+scores_sub <- scores %>% dplyr::filter(intron_exon_ratio < 0.1 & uniqjuncfraction > 0.9 & 
+                                         uniqjuncreads > uniqjuncreadsthreshold) %>%
+  dplyr::select(gene, method, score) %>% tidyr::spread(method, score) %>%
+  as.data.frame() %>% tibble::column_to_rownames("gene")
+scores_sub$rowVars <- genefilter::rowVars(scores_sub)
+write.table(scores_sub %>% tibble::rownames_to_column("gene") %>%
+              dplyr::arrange(desc(rowVars)) %>% head(25),
+            file = gsub("\\.txt$", "_highvariance.txt", outtxt),
+            row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
+
+## High-scoring genes
 scores_sub <- 
   scores %>% dplyr::filter(intron_exon_ratio < 0.1 & uniqjuncfraction > 0.9 & 
                              uniqjuncreads > uniqjuncreadsthreshold) %>%

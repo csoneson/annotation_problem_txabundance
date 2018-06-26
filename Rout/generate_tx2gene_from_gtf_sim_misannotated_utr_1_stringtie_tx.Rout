@@ -17,6 +17,19 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+> ################################################################################
+> ##                                                                            ##
+> ## Generate transcript-to-gene conversion table from gtf file                 ##
+> ##                                                                            ##
+> ## Inputs:                                                                    ##
+> ## * gtf: gtf file                                                            ##
+> ## * outrds: output file                                                      ##
+> ##                                                                            ##
+> ## Outputs:                                                                   ##
+> ## * A transcript-to-gene conversion table                                    ##
+> ##                                                                            ##
+> ################################################################################
+> 
 > args <- (commandArgs(trailingOnly = TRUE))
 > for (i in 1:length(args)) {
 +   eval(parse(text = args[[i]]))
@@ -83,8 +96,8 @@ loaded via a namespace (and not attached):
 [27] Rsamtools_1.31.3            XML_3.98-1.11              
 [29] pkgconfig_2.0.1            
 > date()
-[1] "Sat May 19 21:52:44 2018"
+[1] "Sun Jun 24 19:25:14 2018"
 > 
 > proc.time()
    user  system elapsed 
- 14.024   0.692  14.725 
+ 13.292   0.484  13.785 

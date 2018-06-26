@@ -17,6 +17,28 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+> ################################################################################
+> ##                                                                            ##
+> ## Fit bias model with alpine                                                 ##
+> ##                                                                            ##
+> ## Inputs:                                                                    ##
+> ## * gtf: gtf file                                                            ##
+> ## * bam: bam file, used to extract "medium to highly expressed genes" to fit ##
+> ##        the bias model                                                      ##
+> ## * readlength: read length                                                  ##
+> ## * minsize, maxsize: minimal and maximal fragment length                    ##
+> ## * organism: organism                                                       ##
+> ## * genomeVersion: genome version                                            ##
+> ## * version: Ensembl version                                                 ##
+> ## * outdir: output directory                                                 ##
+> ## * subsample: whether to use only a subset of the "eligible" genes to fit   ##
+> ##              the model                                                     ##
+> ##                                                                            ##
+> ## Outputs:                                                                   ##
+> ## * A bias model and a list of exons by transcript                           ##
+> ##                                                                            ##
+> ################################################################################
+> 
 > args <- (commandArgs(trailingOnly = TRUE))
 > for (i in 1:length(args)) {
 +   eval(parse(text = args[[i]]))
@@ -40,6 +62,8 @@ Type 'q()' to quit R.
 [1] 90
 > print(outdir)
 [1] "alpine/20151016.A-Cortex_RNA_stringtie_tx"
+> print(subsample)
+[1] TRUE
 > 
 > suppressPackageStartupMessages({
 +   library(ensembldb)
@@ -96,7 +120,7 @@ TxDb object:
 # exon_nrow: 433892
 # cds_nrow: 0
 # Db created by: GenomicFeatures package from Bioconductor
-# Creation time: 2018-04-18 22:59:34 +0200 (Wed, 18 Apr 2018)
+# Creation time: 2018-06-25 17:18:20 +0200 (Mon, 25 Jun 2018)
 # GenomicFeatures version at creation time: 1.31.10
 # RSQLite version at creation time: 2.1.0
 # DBSCHEMAVERSION: 1.2
@@ -114,47 +138,34 @@ TxDb object:
 + }
 > txdf
 DataFrame with 189566 rows and 5 columns
-                 tx_id         gene_id tx_seq_start tx_seq_end         tx_name
-           <character>     <character>    <integer>  <integer>     <character>
-1           STRG.105.1        STRG.105        22025     192799      STRG.105.1
-2      ENST00000469289 ENSG00000243485        30267      31109 ENST00000469289
-3      ENST00000607096 ENSG00000284332        30366      30503 ENST00000607096
-4           STRG.106.1        STRG.106        90829     356998      STRG.106.1
-5      ENST00000442987 ENSG00000233750       131025     134836 ENST00000442987
-...                ...             ...          ...        ...             ...
-189562    STRG.93816.1      STRG.93816        18784      19006    STRG.93816.1
-189563    STRG.93818.1      STRG.93818        23337      23738    STRG.93818.1
-189564    STRG.93819.1      STRG.93819        24311      25125    STRG.93819.1
-189565    STRG.93820.1      STRG.93820        26549      26911    STRG.93820.1
-189566    STRG.93820.2      STRG.93820        27043      28785    STRG.93820.2
+              tx_id     gene_id tx_seq_start tx_seq_end      tx_name
+        <character> <character>    <integer>  <integer>  <character>
+1        STRG.105.1    STRG.105        22025     192799   STRG.105.1
+2        STRG.104.1    STRG.104        30267      31109   STRG.104.1
+3        STRG.104.2    STRG.104        30366      30503   STRG.104.2
+4        STRG.106.1    STRG.106        90829     356998   STRG.106.1
+5        STRG.107.1    STRG.107       131025     134836   STRG.107.1
+...             ...         ...          ...        ...          ...
+189562 STRG.93816.1  STRG.93816        18784      19006 STRG.93816.1
+189563 STRG.93818.1  STRG.93818        23337      23738 STRG.93818.1
+189564 STRG.93819.1  STRG.93819        24311      25125 STRG.93819.1
+189565 STRG.93820.1  STRG.93820        26549      26911 STRG.93820.1
+189566 STRG.93820.2  STRG.93820        27043      28785 STRG.93820.2
 > txps
 GRanges object with 189566 ranges and 2 metadata columns:
-                    seqnames        ranges strand |         tx_name
-                       <Rle>     <IRanges>  <Rle> |     <character>
-       STRG.105.1          1  22025-192799      + |      STRG.105.1
-  ENST00000469289          1   30267-31109      + | ENST00000469289
-  ENST00000607096          1   30366-30503      + | ENST00000607096
-       STRG.106.1          1  90829-356998      + |      STRG.106.1
-  ENST00000442987          1 131025-134836      + | ENST00000442987
-              ...        ...           ...    ... .             ...
-     STRG.93816.1 KI270755.1   18784-19006      + |    STRG.93816.1
-     STRG.93818.1 KI270755.1   23337-23738      + |    STRG.93818.1
-     STRG.93819.1 KI270755.1   24311-25125      + |    STRG.93819.1
-     STRG.93820.1 KI270755.1   26549-26911      + |    STRG.93820.1
-     STRG.93820.2 KI270755.1   27043-28785      + |    STRG.93820.2
-                          gene_id
-                      <character>
-       STRG.105.1        STRG.105
-  ENST00000469289 ENSG00000243485
-  ENST00000607096 ENSG00000284332
-       STRG.106.1        STRG.106
-  ENST00000442987 ENSG00000233750
-              ...             ...
-     STRG.93816.1      STRG.93816
-     STRG.93818.1      STRG.93818
-     STRG.93819.1      STRG.93819
-     STRG.93820.1      STRG.93820
-     STRG.93820.2      STRG.93820
+                 seqnames        ranges strand |      tx_name     gene_id
+                    <Rle>     <IRanges>  <Rle> |  <character> <character>
+    STRG.105.1          1  22025-192799      + |   STRG.105.1    STRG.105
+    STRG.104.1          1   30267-31109      + |   STRG.104.1    STRG.104
+    STRG.104.2          1   30366-30503      + |   STRG.104.2    STRG.104
+    STRG.106.1          1  90829-356998      + |   STRG.106.1    STRG.106
+    STRG.107.1          1 131025-134836      + |   STRG.107.1    STRG.107
+           ...        ...           ...    ... .          ...         ...
+  STRG.93816.1 KI270755.1   18784-19006      + | STRG.93816.1  STRG.93816
+  STRG.93818.1 KI270755.1   23337-23738      + | STRG.93818.1  STRG.93818
+  STRG.93819.1 KI270755.1   24311-25125      + | STRG.93819.1  STRG.93819
+  STRG.93820.1 KI270755.1   26549-26911      + | STRG.93820.1  STRG.93820
+  STRG.93820.2 KI270755.1   27043-28785      + | STRG.93820.2  STRG.93820
   -------
   seqinfo: 64 sequences (1 circular) from an unspecified genome; no seqlengths
 > 
@@ -162,9 +173,9 @@ GRanges object with 189566 ranges and 2 metadata columns:
 > tab <- table(txdf$gene_id)
 > one.iso.genes <- names(tab)[tab == 1]
 > length(one.iso.genes)
-[1] 86767
+[1] 78201
 > length(tab)
-[1] 105590
+[1] 93833
 > 
 > ## Get list of exons by transcript
 > if (class(txdb) == "EnsDb") {
@@ -180,13 +191,13 @@ GRanges object with 2 ranges and 3 metadata columns:
   [1]        1   22025-22149      + |         1        <NA>         1
   [2]        1 192675-192799      + |         7        <NA>         2
 
-$ENST00000469289 
+$STRG.104.1 
 GRanges object with 2 ranges and 3 metadata columns:
       seqnames      ranges strand | exon_id exon_name exon_rank
   [1]        1 30267-30667      + |       2      <NA>         1
   [2]        1 30976-31109      + |       4      <NA>         2
 
-$ENST00000607096 
+$STRG.104.2 
 GRanges object with 1 range and 3 metadata columns:
       seqnames      ranges strand | exon_id exon_name exon_rank
   [1]        1 30366-30503      + |       3      <NA>         1
@@ -208,16 +219,18 @@ seqinfo: 64 sequences (1 circular) from an unspecified genome; no seqlengths
 > max.bp <- 7000
 > gene.lengths <- sum(width(ebt.fit))
 > summary(gene.lengths)
-    Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
-    28.0    279.0    444.0    837.9    853.8 205012.0 
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+   35.0   274.0   415.0   705.2   752.0 91667.0 
 > 
 > ebt.fit <- ebt.fit[gene.lengths > min.bp & gene.lengths < max.bp]
 > length(ebt.fit)
-[1] 31200
+[1] 25564
 > 
 > ## Sample 1000 genes to use for the fitting of the bias model
-> set.seed(1)
-> ebt.fit <- ebt.fit[sample(length(ebt.fit), 1000)]
+> if (subsample) {
++   set.seed(1)
++   ebt.fit <- ebt.fit[sample(length(ebt.fit), 1000)]
++ }
 > 
 > ## Read bam file
 > bam.files <- bam
@@ -229,20 +242,33 @@ seqinfo: 64 sequences (1 circular) from an unspecified genome; no seqlengths
 > mcols(txps.fit)$cts <- cts$records
 > txps.fit <- txps.fit[names(ebt.fit)]
 > sum(txps.fit$cts > 500 & txps.fit$cts < 10000)
-[1] 186
+[1] 105
 > ebt.fit <- ebt.fit[txps.fit$cts > 500 & txps.fit$cts < 10000]
 > length(ebt.fit)
-[1] 186
+[1] 105
 > 
 > ## Get fragment width and read length
-> w <- getFragmentWidths(bam.files, ebt.fit[[min(which(sapply(ebt.fit, length) > 1))]])
-Warning message:
-In .make_GAlignmentPairs_from_GAlignments(gal, strandMode = strandMode,  :
-    6 alignments with ambiguous pairing were dumped.
+> m <- sort(which(sapply(ebt.fit, length) > 1))
+> m0 <- 0
+> w <- NULL
+> while(is.null(w)) {
++   w <- tryCatch({
++     m0 <- m0 + 1
++     getFragmentWidths(bam.files, ebt.fit[[m[m0]]])
++   }, error = function(e) {
++     NULL
++   })
++ }
+Warning messages:
+1: In .make_GAlignmentPairs_from_GAlignments(gal, strandMode = strandMode,  :
+    33 alignments with ambiguous pairing were dumped.
+    Use 'getDumpedAlignments()' to retrieve them from the dump environment.
+2: In .make_GAlignmentPairs_from_GAlignments(gal, strandMode = strandMode,  :
+    24 alignments with ambiguous pairing were dumped.
     Use 'getDumpedAlignments()' to retrieve them from the dump environment.
 > quantile(w, c(.025, .975))
  2.5% 97.5% 
-113.8 155.6 
+ 89.0 343.2 
 > getReadLength(bam.files)
   1 
 126 
@@ -263,9 +289,9 @@ In .make_GAlignmentPairs_from_GAlignments(gal, strandMode = strandMode,  :
 +   })
 + })
    user  system elapsed 
-409.904  72.368 500.750 
+224.008   6.256 233.214 
 > object.size(fragtypes)/1e6
-6336.5 bytes
+3416.9 bytes
 > 
 > ## Define models to fit
 > models <- list(
@@ -290,7 +316,7 @@ In .make_GAlignmentPairs_from_GAlignments(gal, strandMode = strandMode,  :
 +   })
 + })
    user  system elapsed 
-525.196  64.892 591.044 
+282.584   3.592 287.027 
 > 
 > ## Diagnostic plots
 > pdf(paste0(outdir, "/alpine_fitbiasmodel_plots.pdf"))
@@ -305,7 +331,7 @@ null device
 +         file = paste0(outdir, "/alpine_fitbiasmodel.rds"))
 > 
 > date()
-[1] "Wed Apr 18 23:19:52 2018"
+[1] "Mon Jun 25 17:27:34 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -337,7 +363,7 @@ other attached packages:
  [9] matrixStats_0.53.1                    
 [10] Rsamtools_1.31.3                      
 [11] Biostrings_2.47.12                    
-[12] XVector_0.19.9                        
+[12] XVector_0.20.0                        
 [13] alpine_1.5.3                          
 [14] ensembldb_2.3.15                      
 [15] AnnotationFilter_1.3.2                
@@ -347,8 +373,8 @@ other attached packages:
 [19] GenomicRanges_1.31.23                 
 [20] GenomeInfoDb_1.15.5                   
 [21] IRanges_2.13.28                       
-[22] S4Vectors_0.17.41                     
-[23] BiocGenerics_0.25.3                   
+[22] S4Vectors_0.17.42                     
+[23] BiocGenerics_0.26.0                   
 
 loaded via a namespace (and not attached):
  [1] progress_1.1.2         splines_3.5.0          lattice_0.20-35       
@@ -356,7 +382,7 @@ loaded via a namespace (and not attached):
  [7] rlang_0.2.0            pillar_1.2.1           glue_1.2.0            
 [10] DBI_0.8                bit64_0.9-7            bindrcpp_0.2.2        
 [13] speedglm_0.3-2         GenomeInfoDbData_1.1.0 bindr_0.1.1           
-[16] stringr_1.3.0          zlibbioc_1.25.0        ProtGenerics_1.11.0   
+[16] stringr_1.3.0          zlibbioc_1.26.0        ProtGenerics_1.11.0   
 [19] memoise_1.1.0          biomaRt_2.35.13        curl_3.2              
 [22] Rcpp_0.12.16           graph_1.57.1           bit_1.1-12            
 [25] digest_0.6.15          stringi_1.1.7          grid_3.5.0            
@@ -367,5 +393,5 @@ loaded via a namespace (and not attached):
 [40] httr_1.3.1             R6_2.2.2               compiler_3.5.0        
 > 
 > proc.time()
-    user   system  elapsed 
-1064.608  143.396 1316.703 
+   user  system elapsed 
+627.828  13.440 655.973 

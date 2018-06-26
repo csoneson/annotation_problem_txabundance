@@ -32,10 +32,13 @@ uniqjuncreadsthreshold := 25
 .PHONY: all
 
 all: prepref quant alpineprep scalecov \
-plots stats nanopore simulation \
-preprefstringtie quantstringtie alpineprepstringtie scalecovstringtie plotsstringtie \
+plots nanopore simulation \
 preprefchess alpineprepchess quantchess scalecovchess plotschess plotssummarychess \
-plotssummary plotscomparison stats
+plotssummary 
+
+others: stats plotscomparison
+
+stringtie: preprefstringtie quantstringtie alpineprepstringtie scalecovstringtie plotsstringtie
 
 ## Include makefiles. These need to be included after the definition of the "all" rule, 
 ## otherwise the default rule will be the first one from these makefiles
@@ -191,6 +194,7 @@ plotssummary: $(foreach G,$(genes_to_plot_summary),$(foreach F,$(fastqfilesreal)
 $(foreach G,$(genes_to_plot_summary),$(foreach F,$(fastqfilesreal),figures/comparison_annotation_catalogs/annotation_comparison_$(notdir $(F))_$(G).png))
 
 plotscomparison: $(foreach F,$(fastqfilesreal),figures/comparison_scores_chess_ensembl/comparison_scores_chess_ensembl_$(notdir $(F)).rds) \
+$(foreach F,$(fastqfilesreal),figures/comparison_scores_stringtie_tx_ensembl/comparison_scores_stringtie_tx_ensembl_$(notdir $(F)).rds) \
 figures/ensembl_vs_chess_annotation_characteristics/ensembl_vs_chess_annotation_characteristics.rds
 
 ########################################################################################################

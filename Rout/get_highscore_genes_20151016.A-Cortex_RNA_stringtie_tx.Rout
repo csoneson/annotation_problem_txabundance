@@ -50,10 +50,23 @@ Type 'q()' to quit R.
 > 
 > suppressPackageStartupMessages({
 +   library(dplyr)
++   library(genefilter)
 + })
 > 
 > scores <- readRDS(scorerds)$genes
 > 
+> ## Genes with highly variable scores
+> scores_sub <- scores %>% dplyr::filter(intron_exon_ratio < 0.1 & uniqjuncfraction > 0.9 & 
++                                          uniqjuncreads > uniqjuncreadsthreshold) %>%
++   dplyr::select(gene, method, score) %>% tidyr::spread(method, score) %>%
++   as.data.frame() %>% tibble::column_to_rownames("gene")
+> scores_sub$rowVars <- genefilter::rowVars(scores_sub)
+> write.table(scores_sub %>% tibble::rownames_to_column("gene") %>%
++               dplyr::arrange(desc(rowVars)) %>% head(25),
++             file = gsub("\\.txt$", "_highvariance.txt", outtxt),
++             row.names = FALSE, col.names = TRUE, sep = "\t", quote = FALSE)
+> 
+> ## High-scoring genes
 > scores_sub <- 
 +   scores %>% dplyr::filter(intron_exon_ratio < 0.1 & uniqjuncfraction > 0.9 & 
 +                              uniqjuncreads > uniqjuncreadsthreshold) %>%
@@ -90,7 +103,7 @@ Selecting by score
 +             sep = "\t", quote = FALSE)
 > 
 > date()
-[1] "Tue Jun 19 11:18:32 2018"
+[1] "Sun Jun 24 14:42:53 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -110,13 +123,23 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
-[1] bindrcpp_0.2.2 dplyr_0.7.4   
+[1] bindrcpp_0.2.2    genefilter_1.62.0 dplyr_0.7.4      
 
 loaded via a namespace (and not attached):
- [1] compiler_3.5.0   magrittr_1.5     assertthat_0.2.0 R6_2.2.2        
- [5] pillar_1.2.1     glue_1.2.0       tibble_1.4.2     Rcpp_0.12.16    
- [9] pkgconfig_2.0.1  rlang_0.2.0      bindr_0.1.1     
+ [1] Rcpp_0.12.16         pillar_1.2.1         compiler_3.5.0      
+ [4] bindr_0.1.1          bitops_1.0-6         digest_0.6.15       
+ [7] bit_1.1-12           annotate_1.58.0      RSQLite_2.1.0       
+[10] memoise_1.1.0        tibble_1.4.2         lattice_0.20-35     
+[13] pkgconfig_2.0.1      rlang_0.2.0          Matrix_1.2-14       
+[16] DBI_0.8              parallel_3.5.0       S4Vectors_0.17.42   
+[19] IRanges_2.13.28      tidyselect_0.2.4     stats4_3.5.0        
+[22] bit64_0.9-7          grid_3.5.0           glue_1.2.0          
+[25] Biobase_2.39.2       R6_2.2.2             AnnotationDbi_1.41.5
+[28] XML_3.98-1.11        survival_2.42-3      purrr_0.2.4         
+[31] tidyr_0.8.0          blob_1.1.1           magrittr_1.5        
+[34] BiocGenerics_0.26.0  splines_3.5.0        assertthat_0.2.0    
+[37] xtable_1.8-2         RCurl_1.95-4.10     
 > 
 > proc.time()
    user  system elapsed 
- 14.980   0.340  15.328 
+ 17.936   0.732  18.689 

@@ -7,9 +7,7 @@
 ## * outgtf: output gtf                                                       ##
 ##                                                                            ##
 ## Outputs:                                                                   ##
-## * A gtf file where transcripts with unknown strand have been excluded, and ##
-##   gene_id and transcript_ids have been replaced with ref_gene_id and       ##
-##   reference_id whenever applicable.                                        ##
+## * A gtf file where transcripts with unknown strand have been excluded.     ##
 ##                                                                            ##
 ################################################################################
 
@@ -37,12 +35,6 @@ unlink(paste0("tmp", rn, ".gtf"))
 
 ## Filter out transcripts with unknown strand
 gtf <- gtf[strand(gtf) != "*"]
-
-## Replace gene_id and transcript_id with ref_gene_id and reference_id when possible
-nona <- !is.na(gtf$reference_id)
-gtf$transcript_id[nona] <- gtf$reference_id[nona]
-nona <- !is.na(gtf$ref_gene_id)
-gtf$gene_id[nona] <- gtf$ref_gene_id[nona]
 
 ## Write filtered gtf
 export(gtf, outgtf, format = "gtf")

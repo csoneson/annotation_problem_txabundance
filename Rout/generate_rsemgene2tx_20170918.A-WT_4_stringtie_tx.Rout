@@ -17,6 +17,19 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+> ################################################################################
+> ##                                                                            ##
+> ## Generate gene2tx file for RSEM                                             ##
+> ##                                                                            ##
+> ## Inputs:                                                                    ##
+> ## * tx2gene: data frame with transcript-to-gene conversion information       ##
+> ## * rsemgene2tx: output file name                                            ##
+> ##                                                                            ##
+> ## Outputs:                                                                   ##
+> ## * File with gene-to-transcript conversion information for RSEM             ##
+> ##                                                                            ##
+> ################################################################################
+> 
 > args <- (commandArgs(trailingOnly = TRUE))
 > for (i in 1:length(args)) {
 +   eval(parse(text = args[[i]]))
@@ -53,8 +66,8 @@ attached base packages:
 loaded via a namespace (and not attached):
 [1] compiler_3.5.0
 > date()
-[1] "Wed Apr 18 16:49:25 2018"
+[1] "Sun Jun 24 21:15:20 2018"
 > 
 > proc.time()
    user  system elapsed 
-  0.608   0.076   0.688 
+  0.576   0.048   0.613 

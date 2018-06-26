@@ -17,12 +17,23 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+> ################################################################################
+> ##                                                                            ##
+> ## Add the rows corresponding to "gene" features to a gtf file from StringTie ##
+> ##                                                                            ##
+> ## Inputs:                                                                    ##
+> ## * ingtf: gtf file from StringTie                                           ##
+> ## * outgtf: output gtf file with gene features added                         ##
+> ##                                                                            ##
+> ## Outputs:                                                                   ##
+> ## * A gtf file with gene features added                                      ##
+> ##                                                                            ##
+> ################################################################################
+> 
 > args <- (commandArgs(trailingOnly = TRUE))
 > for (i in 1:length(args)) {
 +   eval(parse(text = args[[i]]))
 + }
-> 
-> ## Add the "gene" rows to a StringTie gtf
 > 
 > print(ingtf)
 [1] "stringtie/sim_misannotated_utr_1/sim_misannotated_utr_1_filtered.gtf"
@@ -112,8 +123,8 @@ loaded via a namespace (and not attached):
 [27] Rsamtools_1.31.3            XML_3.98-1.11              
 [29] pkgconfig_2.0.1            
 > date()
-[1] "Sat May 19 22:04:12 2018"
+[1] "Sun Jun 24 22:14:25 2018"
 > 
 > proc.time()
    user  system elapsed 
- 62.228   1.272  63.566 
+ 44.520   0.972  45.585 

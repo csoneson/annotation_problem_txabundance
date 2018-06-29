@@ -72,13 +72,23 @@ Type 'q()' to quit R.
 > 
 > gtfcombined <- rbind(gtf, gtfgene)
 > 
+> ## Sort
+> genelevels <- gtfgene %>% dplyr::arrange(as.numeric(seqnames), start) %>%
++   dplyr::pull(gene_id)
+> txlevels <- c(NA_character_, setdiff(unique(gtfcombined$transcript_id), NA))
+> typelevels <- c("gene", "transcript", "exon")
+> gtfcombined <- gtfcombined %>% 
++   dplyr::mutate(gene_id = factor(gene_id, levels = genelevels),
++                 transcript_id = factor(transcript_id, levels = txlevels, exclude = NULL),
++                 type = factor(type, levels = typelevels)) %>%
++   dplyr::arrange(gene_id, transcript_id, type)
+> 
 > gtfout <- GRanges(seqnames = gtfcombined$seqnames,
 +                   ranges = IRanges(start = gtfcombined$start,
 +                                    end = gtfcombined$end),
 +                   strand = gtfcombined$strand)
 > mcols(gtfout) <- gtfcombined %>% dplyr::select(-seqnames, -start, -end, -width,
 +                                                -strand)
-> gtfout <- sort(gtfout)
 > 
 > rtracklayer::export(gtfout, outgtf, format = "gtf")
 > 
@@ -123,8 +133,8 @@ loaded via a namespace (and not attached):
 [27] Rsamtools_1.31.3            XML_3.98-1.11              
 [29] pkgconfig_2.0.1            
 > date()
-[1] "Sun Jun 24 22:07:22 2018"
+[1] "Fri Jun 29 16:27:30 2018"
 > 
 > proc.time()
    user  system elapsed 
-163.764   2.136 167.091 
+176.024   2.828 179.121 

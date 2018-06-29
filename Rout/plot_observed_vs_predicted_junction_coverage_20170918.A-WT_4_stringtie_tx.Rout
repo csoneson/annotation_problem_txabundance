@@ -84,7 +84,7 @@ Type 'q()' to quit R.
 > 
 > ## Remove a few extreme outliers
 > print(sum(y$coverage >= (2 * max(y$uniqreads))))
-[1] 9
+[1] 18
 > y <- y %>% dplyr::filter(coverage < (2 * max(uniqreads)))
 > 
 > ## ========================================================================== ##
@@ -237,7 +237,7 @@ null device
 > saveRDS(NULL, outrds)
 > 
 > date()
-[1] "Fri Jun 29 08:15:40 2018"
+[1] "Fri Jun 29 16:08:06 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -270,4 +270,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-222.796   6.156 229.143 
+297.168   1.364 298.736 

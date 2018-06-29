@@ -103,7 +103,7 @@ Selecting by score
 +             sep = "\t", quote = FALSE)
 > 
 > date()
-[1] "Fri Jun 29 14:08:45 2018"
+[1] "Fri Jun 29 15:01:59 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -142,4 +142,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-  8.776   0.500   9.507 
+ 10.772   0.696  11.493 

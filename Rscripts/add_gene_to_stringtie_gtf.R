@@ -51,13 +51,23 @@ gtfgene <- gtf %>% dplyr::group_by(gene_id) %>%
 
 gtfcombined <- rbind(gtf, gtfgene)
 
+## Sort
+genelevels <- gtfgene %>% dplyr::arrange(as.numeric(seqnames), start) %>%
+  dplyr::pull(gene_id)
+txlevels <- c(NA_character_, setdiff(unique(gtfcombined$transcript_id), NA))
+typelevels <- c("gene", "transcript", "exon")
+gtfcombined <- gtfcombined %>% 
+  dplyr::mutate(gene_id = factor(gene_id, levels = genelevels),
+                transcript_id = factor(transcript_id, levels = txlevels, exclude = NULL),
+                type = factor(type, levels = typelevels)) %>%
+  dplyr::arrange(gene_id, transcript_id, type)
+
 gtfout <- GRanges(seqnames = gtfcombined$seqnames,
                   ranges = IRanges(start = gtfcombined$start,
                                    end = gtfcombined$end),
                   strand = gtfcombined$strand)
 mcols(gtfout) <- gtfcombined %>% dplyr::select(-seqnames, -start, -end, -width,
                                                -strand)
-gtfout <- sort(gtfout)
 
 rtracklayer::export(gtfout, outgtf, format = "gtf")
 

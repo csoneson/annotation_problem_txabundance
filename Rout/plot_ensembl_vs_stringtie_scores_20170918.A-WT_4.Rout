@@ -28,6 +28,7 @@ Type 'q()' to quit R.
 > ## * scorerdsstringtie: list containing abundance estimates and               ##
 > ##                      characteristics for junctions, transcripts and genes, ##
 > ##                      as well as gene scores, for the StringTie annotation. ##
+> ## * convtablechess: conversion table for StringTie genes.                    ##
 > ## * uniqjuncreadsthreshold: the total number of uniquely mapping junction    ##
 > ##                           reads (in a gene), only genes with more than     ##
 > ##                           this number for both annotations will be used    ##
@@ -52,6 +53,8 @@ Type 'q()' to quit R.
 [1] "output/20170918.A-WT_4_combined_coverages_with_scores.rds"
 > print(scorerdsstringtie)
 [1] "output/20170918.A-WT_4_stringtie_tx_combined_coverages_with_scores.rds"
+> print(convtablestringtie)
+[1] "reference/20170918.A-WT_4_stringtie_tx_tx2gene_withsymbol.rds"
 > print(uniqjuncreadsthreshold)
 [1] 25
 > print(uniqjuncfracthreshold)
@@ -68,6 +71,7 @@ Type 'q()' to quit R.
 > 
 > stringtie <- readRDS(scorerdsstringtie)
 > ensembl <- readRDS(scorerdsensembl)
+> stringtieconversion <- readRDS(convtablestringtie)
 > 
 > ## Plot distribution of all scores
 > combined <- rbind(stringtie$genes %>% dplyr::select(gene, method, score) %>% 
@@ -82,7 +86,7 @@ Type 'q()' to quit R.
 +   geom_line(stat = "density", size = 1.5) + facet_wrap(~ method) + theme_bw() + 
 +   scale_color_manual(values = c(StringTie = "#B17BA6", Ensembl = "#90C987"))
 Warning message:
-Removed 620359 rows containing non-finite values (stat_density). 
+Removed 681759 rows containing non-finite values (stat_density). 
 > dev.off()
 null device 
           1 
@@ -111,6 +115,9 @@ null device
 +   dplyr::filter(uniqjuncreads >= uniqjuncreadsthreshold & 
 +                   uniqjuncfraction >= uniqjuncfracthreshold) %>% 
 +   dplyr::select(gene, method, score) %>%
++   dplyr::left_join(stringtieconversion %>% dplyr::select(gene, symbol) %>%
++                      dplyr::distinct(), by = "gene") %>%
++   dplyr::select(-gene) %>% dplyr::rename(gene = symbol) %>%
 +   dplyr::rename(stringtie = score) %>%
 +   dplyr::inner_join(ensembl$genes %>% 
 +                       dplyr::filter(uniqjuncreads >= uniqjuncreadsthreshold & 
@@ -146,5 +153,51 @@ null device
 > plot_grid(ggcor,
 +           plot_grid(ggde, ggbw, nrow = 1, rel_widths = c(1, 1), labels = c("B", "C")),
 +           ncol = 1, rel_heights = c(1, 1), labels = c("A", ""))
-Error: Faceting variables must have at least one value
-Execution halted
+> dev.off()
+null device 
+          1 
+> 
+> ## For each (shared) gene and method, what fraction of the expression comes from
+> ## "new" StringTie transcripts? And conversely, what fraction of the expression
+> ## from the Ensembl catalog comes from transcripts that are not in the StringTie
+> ## catalog?
+> # strexpr <- stringtie$transcripts %>% dplyr::group_by(gene, method) %>% 
+> #   dplyr::summarize(fracExprSTR = sum(TPM[grepl("^STRG", transcript)])/sum(TPM))
+> # ensexpr <- ensembl$transcripts %>% dplyr::group_by(gene, method) %>%
+> #   dplyr::summarize(fracExprRem = sum(TPM[!(transcript %in% stringtie$transcripts$transcript)])/sum(TPM))
+> 
+> saveRDS(NULL, file = outrds)
+> date()
+[1] "Fri Jun 29 21:59:27 2018"
+> sessionInfo()
+R Under development (unstable) (2017-12-14 r73916)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 16.04.4 LTS
+
+Matrix products: default
+BLAS: /usr/local/R/R-devel/lib/libRblas.so
+LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
+ [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
+ [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
+[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] bindrcpp_0.2.2 cowplot_0.9.2  ggplot2_2.2.1  tidyr_0.8.0    dplyr_0.7.4   
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_0.12.16     digest_0.6.15    assertthat_0.2.0 plyr_1.8.4      
+ [5] grid_3.5.0       R6_2.2.2         gtable_0.2.0     magrittr_1.5    
+ [9] scales_0.5.0     pillar_1.2.1     rlang_0.2.0      lazyeval_0.2.1  
+[13] labeling_0.3     glue_1.2.0       munsell_0.4.3    purrr_0.2.4     
+[17] compiler_3.5.0   colorspace_1.3-2 pkgconfig_2.0.1  tidyselect_0.2.4
+[21] bindr_0.1.1      tibble_1.4.2    
+> 
+> proc.time()
+   user  system elapsed 
+ 55.764   1.048  56.877 

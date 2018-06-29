@@ -9,6 +9,7 @@
 ## * scorerdsstringtie: list containing abundance estimates and               ##
 ##                      characteristics for junctions, transcripts and genes, ##
 ##                      as well as gene scores, for the StringTie annotation. ##
+## * convtablechess: conversion table for StringTie genes.                    ##
 ## * uniqjuncreadsthreshold: the total number of uniquely mapping junction    ##
 ##                           reads (in a gene), only genes with more than     ##
 ##                           this number for both annotations will be used    ##
@@ -31,6 +32,7 @@ for (i in 1:length(args)) {
 
 print(scorerdsensembl)
 print(scorerdsstringtie)
+print(convtablestringtie)
 print(uniqjuncreadsthreshold)
 print(uniqjuncfracthreshold)
 print(outrds)
@@ -44,6 +46,7 @@ suppressPackageStartupMessages({
 
 stringtie <- readRDS(scorerdsstringtie)
 ensembl <- readRDS(scorerdsensembl)
+stringtieconversion <- readRDS(convtablestringtie)
 
 ## Plot distribution of all scores
 combined <- rbind(stringtie$genes %>% dplyr::select(gene, method, score) %>% 
@@ -83,6 +86,9 @@ a <- stringtie$genes %>%
   dplyr::filter(uniqjuncreads >= uniqjuncreadsthreshold & 
                   uniqjuncfraction >= uniqjuncfracthreshold) %>% 
   dplyr::select(gene, method, score) %>%
+  dplyr::left_join(stringtieconversion %>% dplyr::select(gene, symbol) %>%
+                     dplyr::distinct(), by = "gene") %>%
+  dplyr::select(-gene) %>% dplyr::rename(gene = symbol) %>%
   dplyr::rename(stringtie = score) %>%
   dplyr::inner_join(ensembl$genes %>% 
                       dplyr::filter(uniqjuncreads >= uniqjuncreadsthreshold & 
@@ -124,10 +130,10 @@ dev.off()
 ## "new" StringTie transcripts? And conversely, what fraction of the expression
 ## from the Ensembl catalog comes from transcripts that are not in the StringTie
 ## catalog?
-strexpr <- stringtie$transcripts %>% dplyr::group_by(gene, method) %>% 
-  dplyr::summarize(fracExprSTR = sum(TPM[grepl("^STRG", transcript)])/sum(TPM))
-ensexpr <- ensembl$transcripts %>% dplyr::group_by(gene, method) %>%
-  dplyr::summarize(fracExprRem = sum(TPM[!(transcript %in% stringtie$transcripts$transcript)])/sum(TPM))
+# strexpr <- stringtie$transcripts %>% dplyr::group_by(gene, method) %>% 
+#   dplyr::summarize(fracExprSTR = sum(TPM[grepl("^STRG", transcript)])/sum(TPM))
+# ensexpr <- ensembl$transcripts %>% dplyr::group_by(gene, method) %>%
+#   dplyr::summarize(fracExprRem = sum(TPM[!(transcript %in% stringtie$transcripts$transcript)])/sum(TPM))
 
 saveRDS(NULL, file = outrds)
 date()

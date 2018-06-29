@@ -40,6 +40,7 @@ define scorecompannotchessrule
 figures/comparison_scores_chess_ensembl/comparison_scores_chess_ensembl_$(1).rds: \
 output/$(1)_chess_combined_coverages_with_scores.rds \
 output/$(1)_combined_coverages_with_scores.rds \
+reference_chess/chess2.0_assembly_fixed_tx2gene_withsymbol.rds \
 Rscripts/plot_ensembl_vs_chess_scores.R
 	mkdir -p $$(@D)
 	$(R) "--args scorerdsensembl='output/$(1)_combined_coverages_with_scores.rds' scorerdschess='output/$(1)_chess_combined_coverages_with_scores.rds' convtablechess='reference_chess/chess2.0_assembly_fixed_tx2gene_withsymbol.rds' uniqjuncreadsthreshold=25 uniqjuncfracthreshold=0.75 outrds='$$@'" Rscripts/plot_ensembl_vs_chess_scores.R Rout/plot_ensembl_vs_chess_scores_$(1).Rout
@@ -50,9 +51,10 @@ define scorecompannotstringtierule
 figures/comparison_scores_stringtie_tx_ensembl/comparison_scores_stringtie_tx_ensembl_$(1).rds: \
 output/$(1)_stringtie_tx_combined_coverages_with_scores.rds \
 output/$(1)_combined_coverages_with_scores.rds \
+reference/$(1)_stringtie_tx_tx2gene_withsymbol.rds \
 Rscripts/plot_ensembl_vs_stringtie_scores.R
 	mkdir -p $$(@D)
-	$(R) "--args scorerdsensembl='output/$(1)_combined_coverages_with_scores.rds' scorerdsstringtie='output/$(1)_stringtie_tx_combined_coverages_with_scores.rds' uniqjuncreadsthreshold=25 uniqjuncfracthreshold=0.75 outrds='$$@'" Rscripts/plot_ensembl_vs_stringtie_scores.R Rout/plot_ensembl_vs_stringtie_scores_$(1).Rout
+	$(R) "--args scorerdsensembl='output/$(1)_combined_coverages_with_scores.rds' scorerdsstringtie='output/$(1)_stringtie_tx_combined_coverages_with_scores.rds' convtablestringtie='reference/$(1)_stringtie_tx_tx2gene_withsymbol.rds' uniqjuncreadsthreshold=25 uniqjuncfracthreshold=0.75 outrds='$$@'" Rscripts/plot_ensembl_vs_stringtie_scores.R Rout/plot_ensembl_vs_stringtie_scores_$(1).Rout
 endef
 $(foreach F,$(fastqfilesreal),$(eval $(call scorecompannotstringtierule,$(notdir $(F)))))
 

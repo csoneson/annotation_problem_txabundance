@@ -41,7 +41,7 @@ Type 'q()' to quit R.
 > print(txome)
 [1] "stringtie/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_stringtie_tx.fa"
 > print(idconvrds)
-[1] ""
+[1] "reference/20151016.A-Cortex_RNA_stringtie_tx_tx2gene_withsymbol.rds"
 > print(outtxt)
 [1] "stats/annotation_characteristics_20151016.A-Cortex_RNA_stringtie_tx.txt"
 > 
@@ -164,7 +164,7 @@ Type 'q()' to quit R.
 +             quote = FALSE, sep = "\t")
 > 
 > date()
-[1] "Fri Jun 29 14:10:14 2018"
+[1] "Fri Jun 29 22:00:11 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -215,4 +215,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
- 94.448   3.804  98.706 
+ 97.632   2.516 100.404 

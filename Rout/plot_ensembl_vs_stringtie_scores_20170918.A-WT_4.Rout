@@ -28,7 +28,8 @@ Type 'q()' to quit R.
 > ## * scorerdsstringtie: list containing abundance estimates and               ##
 > ##                      characteristics for junctions, transcripts and genes, ##
 > ##                      as well as gene scores, for the StringTie annotation. ##
-> ## * convtablechess: conversion table for StringTie genes.                    ##
+> ## * convtablestringtie: conversion table for StringTie genes.                ##
+> ## * convtablestringtietx: conversion table for StringTie transcripts.        ##
 > ## * uniqjuncreadsthreshold: the total number of uniquely mapping junction    ##
 > ##                           reads (in a gene), only genes with more than     ##
 > ##                           this number for both annotations will be used    ##
@@ -55,6 +56,8 @@ Type 'q()' to quit R.
 [1] "output/20170918.A-WT_4_stringtie_tx_combined_coverages_with_scores.rds"
 > print(convtablestringtie)
 [1] "reference/20170918.A-WT_4_stringtie_tx_tx2gene_withsymbol.rds"
+> print(convtablestringtietx)
+[1] "reference/20170918.A-WT_4_stringtie_tx_tx2symbol.rds"
 > print(uniqjuncreadsthreshold)
 [1] 25
 > print(uniqjuncfracthreshold)
@@ -72,6 +75,10 @@ Type 'q()' to quit R.
 > stringtie <- readRDS(scorerdsstringtie)
 > ensembl <- readRDS(scorerdsensembl)
 > stringtieconversion <- readRDS(convtablestringtie)
+> stringtieconversiontx <- readRDS(convtablestringtietx)
+> 
+> ## Keep only StringTie transcripts with an Ensembl correspondence
+> stringtieconversiontx <- subset(stringtieconversiontx, !is.na(symbol))
 > 
 > ## Plot distribution of all scores
 > combined <- rbind(stringtie$genes %>% dplyr::select(gene, method, score) %>% 
@@ -168,7 +175,7 @@ null device
 > 
 > saveRDS(NULL, file = outrds)
 > date()
-[1] "Fri Jun 29 21:59:27 2018"
+[1] "Fri Jun 29 22:33:43 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -200,4 +207,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
- 55.764   1.048  56.877 
+ 54.204   5.596  59.898 

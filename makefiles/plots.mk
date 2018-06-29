@@ -52,9 +52,10 @@ figures/comparison_scores_stringtie_tx_ensembl/comparison_scores_stringtie_tx_en
 output/$(1)_stringtie_tx_combined_coverages_with_scores.rds \
 output/$(1)_combined_coverages_with_scores.rds \
 reference/$(1)_stringtie_tx_tx2gene_withsymbol.rds \
+reference/$(1)_stringtie_tx_tx2symbol.rds \
 Rscripts/plot_ensembl_vs_stringtie_scores.R
 	mkdir -p $$(@D)
-	$(R) "--args scorerdsensembl='output/$(1)_combined_coverages_with_scores.rds' scorerdsstringtie='output/$(1)_stringtie_tx_combined_coverages_with_scores.rds' convtablestringtie='reference/$(1)_stringtie_tx_tx2gene_withsymbol.rds' uniqjuncreadsthreshold=25 uniqjuncfracthreshold=0.75 outrds='$$@'" Rscripts/plot_ensembl_vs_stringtie_scores.R Rout/plot_ensembl_vs_stringtie_scores_$(1).Rout
+	$(R) "--args scorerdsensembl='output/$(1)_combined_coverages_with_scores.rds' scorerdsstringtie='output/$(1)_stringtie_tx_combined_coverages_with_scores.rds' convtablestringtie='reference/$(1)_stringtie_tx_tx2gene_withsymbol.rds' convtablestringtietx='reference/$(1)_stringtie_tx_tx2symbol.rds' uniqjuncreadsthreshold=25 uniqjuncfracthreshold=0.75 outrds='$$@'" Rscripts/plot_ensembl_vs_stringtie_scores.R Rout/plot_ensembl_vs_stringtie_scores_$(1).Rout
 endef
 $(foreach F,$(fastqfilesreal),$(eval $(call scorecompannotstringtierule,$(notdir $(F)))))
 

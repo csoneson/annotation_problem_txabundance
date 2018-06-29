@@ -9,7 +9,8 @@
 ## * scorerdsstringtie: list containing abundance estimates and               ##
 ##                      characteristics for junctions, transcripts and genes, ##
 ##                      as well as gene scores, for the StringTie annotation. ##
-## * convtablechess: conversion table for StringTie genes.                    ##
+## * convtablestringtie: conversion table for StringTie genes.                ##
+## * convtablestringtietx: conversion table for StringTie transcripts.        ##
 ## * uniqjuncreadsthreshold: the total number of uniquely mapping junction    ##
 ##                           reads (in a gene), only genes with more than     ##
 ##                           this number for both annotations will be used    ##
@@ -33,6 +34,7 @@ for (i in 1:length(args)) {
 print(scorerdsensembl)
 print(scorerdsstringtie)
 print(convtablestringtie)
+print(convtablestringtietx)
 print(uniqjuncreadsthreshold)
 print(uniqjuncfracthreshold)
 print(outrds)
@@ -47,6 +49,10 @@ suppressPackageStartupMessages({
 stringtie <- readRDS(scorerdsstringtie)
 ensembl <- readRDS(scorerdsensembl)
 stringtieconversion <- readRDS(convtablestringtie)
+stringtieconversiontx <- readRDS(convtablestringtietx)
+
+## Keep only StringTie transcripts with an Ensembl correspondence
+stringtieconversiontx <- subset(stringtieconversiontx, !is.na(symbol))
 
 ## Plot distribution of all scores
 combined <- rbind(stringtie$genes %>% dplyr::select(gene, method, score) %>% 

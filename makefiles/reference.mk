@@ -43,9 +43,15 @@ reference/$(1)$(2)_tx2gene.rds: $(3) Rscripts/generate_tx2gene_from_gtf.R
 endef
 $(foreach F,$(fastqfiles),$(eval $(call tx2generule,$(notdir $(F)),_stringtie_tx,stringtie/$(notdir $(F))/$(notdir $(F))_filtered.gtf)))
 
+define gene2symbolrule
+reference/$(1)$(2)_gene2symbol.rds: $(3) Rscripts/generate_gene2symbol_from_gtf.R
+	$(R) "--args gtf='$$<' outrds='$$@'" Rscripts/generate_gene2symbol_from_gtf.R Rout/generate_gene2symbol_from_gtf_$(1)$(2).Rout
+endef
+$(foreach F,$(fastqfiles),$(eval $(call gene2symbolrule,$(notdir $(F)),_stringtie_tx,stringtie/$(notdir $(F))/$(notdir $(F))_filtered.gtf)))
+
 ## Add symbol information to tx2gene
 define tx2genesymbolrule
-reference/$(1)$(2)_tx2gene_withsymbol.rds: reference/$(1)$(2)_tx2gene.rds $(tx2geneext) Rscripts/add_symbol_to_tx2gene.R
+reference/$(1)$(2)_tx2gene_withsymbol.rds: reference/$(1)$(2)_tx2gene.rds reference/$(1)$(2)_gene2symbol.rds Rscripts/add_symbol_to_tx2gene.R
 	$(R) "--args tx2gene='$$(word 1,$$^)' info='$$(word 2,$$^)' outrds='$$@'" Rscripts/add_symbol_to_tx2gene.R Rout/add_symbol_to_tx2gene_$(1)$(2).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call tx2genesymbolrule,$(notdir $(F)),_stringtie_tx)))

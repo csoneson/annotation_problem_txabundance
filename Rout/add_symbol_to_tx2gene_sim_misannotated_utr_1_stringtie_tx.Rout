@@ -39,7 +39,7 @@ Type 'q()' to quit R.
 > print(tx2gene)
 [1] "reference/sim_misannotated_utr_1_stringtie_tx_tx2gene.rds"
 > print(info)
-[1] "reference/Homo_sapiens.GRCh38.90_tx2gene_ext.rds"
+[1] "reference/sim_misannotated_utr_1_stringtie_tx_gene2symbol.rds"
 > print(outrds)
 [1] "reference/sim_misannotated_utr_1_stringtie_tx_tx2gene_withsymbol.rds"
 > 
@@ -61,7 +61,7 @@ Type 'q()' to quit R.
 > saveRDS(tx2gene, outrds)
 > 
 > date()
-[1] "Sun Jun 24 19:25:22 2018"
+[1] "Fri Jun 29 14:44:34 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -90,4 +90,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-  1.772   0.120   1.903 
+  0.876   0.080   0.962 

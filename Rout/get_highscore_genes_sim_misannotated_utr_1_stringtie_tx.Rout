@@ -96,14 +96,14 @@ Selecting by score
 +                 uniqjuncfraction, nbr_junctions_in_gene, score)
 > 
 > print(length(unique(scores_shared$gene)))
-[1] 38
+[1] 44
 > 
 > write.table(scores_shared, file = gsub("\\.txt", "_shared.txt", outtxt), 
 +             row.names = FALSE, col.names = TRUE,
 +             sep = "\t", quote = FALSE)
 > 
 > date()
-[1] "Sun Jun 24 14:42:44 2018"
+[1] "Fri Jun 29 14:08:45 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -142,4 +142,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-  9.204   0.452   9.670 
+  8.776   0.500   9.507 

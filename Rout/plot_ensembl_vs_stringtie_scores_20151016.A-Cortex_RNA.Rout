@@ -82,7 +82,7 @@ Type 'q()' to quit R.
 +   geom_line(stat = "density", size = 1.5) + facet_wrap(~ method) + theme_bw() + 
 +   scale_color_manual(values = c(StringTie = "#B17BA6", Ensembl = "#90C987"))
 Warning message:
-Removed 625699 rows containing non-finite values (stat_density). 
+Removed 611132 rows containing non-finite values (stat_density). 
 > dev.off()
 null device 
           1 
@@ -146,42 +146,5 @@ null device
 > plot_grid(ggcor,
 +           plot_grid(ggde, ggbw, nrow = 1, rel_widths = c(1, 1), labels = c("B", "C")),
 +           ncol = 1, rel_heights = c(1, 1), labels = c("A", ""))
-> dev.off()
-null device 
-          1 
-> 
-> saveRDS(NULL, file = outrds)
-> date()
-[1] "Sun Jun 24 12:05:29 2018"
-> sessionInfo()
-R Under development (unstable) (2017-12-14 r73916)
-Platform: x86_64-pc-linux-gnu (64-bit)
-Running under: Ubuntu 16.04.4 LTS
-
-Matrix products: default
-BLAS: /usr/local/R/R-devel/lib/libRblas.so
-LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
-
-locale:
- [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
- [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
- [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
-[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
-
-attached base packages:
-[1] stats     graphics  grDevices utils     datasets  methods   base     
-
-other attached packages:
-[1] bindrcpp_0.2.2 cowplot_0.9.2  ggplot2_2.2.1  tidyr_0.8.0    dplyr_0.7.4   
-
-loaded via a namespace (and not attached):
- [1] Rcpp_0.12.16     digest_0.6.15    assertthat_0.2.0 plyr_1.8.4      
- [5] grid_3.5.0       R6_2.2.2         gtable_0.2.0     magrittr_1.5    
- [9] scales_0.5.0     pillar_1.2.1     rlang_0.2.0      lazyeval_0.2.1  
-[13] labeling_0.3     glue_1.2.0       munsell_0.4.3    purrr_0.2.4     
-[17] compiler_3.5.0   colorspace_1.3-2 pkgconfig_2.0.1  tidyselect_0.2.4
-[21] bindr_0.1.1      tibble_1.4.2    
-> 
-> proc.time()
-   user  system elapsed 
- 52.900   0.900  54.344 
+Error: Faceting variables must have at least one value
+Execution halted

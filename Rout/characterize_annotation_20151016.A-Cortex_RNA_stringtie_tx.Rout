@@ -164,7 +164,7 @@ Type 'q()' to quit R.
 +             quote = FALSE, sep = "\t")
 > 
 > date()
-[1] "Sun Jun 24 11:36:53 2018"
+[1] "Fri Jun 29 14:10:14 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -215,4 +215,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-106.248   2.416 108.802 
+ 94.448   3.804  98.706 

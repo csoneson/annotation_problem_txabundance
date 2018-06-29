@@ -32,13 +32,10 @@ uniqjuncreadsthreshold := 25
 .PHONY: all
 
 all: prepref quant alpineprep scalecov \
-plots nanopore simulation \
+plots nanopore simulation stats plotscomparison \
+preprefstringtie quantstringtie alpineprepstringtie scalecovstringtie plotsstringtie \
 preprefchess alpineprepchess quantchess scalecovchess plotschess plotssummarychess \
 plotssummary 
-
-others: stats plotscomparison
-
-stringtie: preprefstringtie quantstringtie alpineprepstringtie scalecovstringtie plotsstringtie
 
 ## Include makefiles. These need to be included after the definition of the "all" rule, 
 ## otherwise the default rule will be the first one from these makefiles

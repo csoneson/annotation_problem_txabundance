@@ -136,10 +136,48 @@ dev.off()
 ## "new" StringTie transcripts? And conversely, what fraction of the expression
 ## from the Ensembl catalog comes from transcripts that are not in the StringTie
 ## catalog?
-# strexpr <- stringtie$transcripts %>% dplyr::group_by(gene, method) %>%
-#   dplyr::summarize(fracExprSTR = sum(TPM[!(transcript %in% stringtieconversiontx$tx)])/sum(TPM))
-# ensexpr <- ensembl$transcripts %>% dplyr::group_by(gene, method) %>%
-#   dplyr::summarize(fracExprRem = sum(TPM[!(transcript %in% stringtie$transcripts$transcript)])/sum(TPM))
+strexpr <- stringtie$transcripts %>% dplyr::filter(symbol %in% ensembl$transcripts$gene) %>% 
+  dplyr::group_by(symbol, method) %>%
+  dplyr::summarize(fracExprSTR = sum(TPM[!(transcript %in% stringtieconversiontx$tx)])/sum(TPM)) %>%
+  dplyr::mutate(fracExprSTR = replace(fracExprSTR, is.na(fracExprSTR), 0))
+ensexpr <- ensembl$transcripts %>% dplyr::filter(gene %in% stringtie$transcripts$symbol) %>%
+  dplyr::group_by(gene, method) %>%
+  dplyr::summarize(fracExprRemoved = sum(TPM[!(transcript %in% stringtieconversiontx$symbol)])/sum(TPM)) %>%
+  dplyr::mutate(fracExprRemoved = replace(fracExprRemoved, is.na(fracExprRemoved), 0))
+
+b <- a %>% dplyr::left_join(strexpr %>% dplyr::rename(gene = symbol), 
+                            by = c("gene", "method")) %>%
+  dplyr::left_join(ensexpr, by = c("gene", "method")) %>%
+  dplyr::mutate(str_vs_ens = NA_character_) %>%
+  dplyr::mutate(str_vs_ens = replace(str_vs_ens, stringtie > ensembl, 
+                                     "StringTie score > Ensembl score"),
+                str_vs_ens = replace(str_vs_ens, stringtie < ensembl, 
+                                     "StringTie score < Ensembl score"),
+                str_vs_ens = replace(str_vs_ens, stringtie == ensembl, 
+                                     "StringTie score = Ensembl score")) %>%
+  dplyr::left_join(stringtie$transcripts %>% dplyr::select(gene, symbol) %>% 
+                     dplyr::distinct() %>% 
+                     dplyr::rename(strid = gene), by = c("gene" = "symbol"))
+bb <- tidyr::gather(b, fractype, fracexpr, fracExprSTR, fracExprRemoved)
+
+method_colors <- c("#DC050C", "#7BAFDE", "#B17BA6", "#F1932D",
+                   "#4EB265", "#CAEDAB", "#777777", "#E8601C",
+                   "#1965B0", "#882E72", "#F6C141", "#F7EE55",
+                   "#90C987")[seq_len(length(unique(bb$method)))]
+names(method_colors) <- unique(bb$method)
+
+png(gsub("\\.rds$", "_new_missing_tx.png", outrds), width = 12, height = 7,
+    unit = "in", res = 400)
+ggplot(bb %>% dplyr::mutate(fractype = replace(fractype, fractype == "fracExprRemoved", 
+                                               "Removed Ensembl transcripts"), 
+                            fractype = replace(fractype, fractype == "fracExprSTR",
+                                               "New StringTie transcripts")), 
+       aes(x = str_vs_ens, y = fracexpr, color = method)) + 
+  geom_boxplot() + 
+  facet_wrap(~ fractype) + theme_bw() + xlab("") + 
+  theme(axis.text.x = element_text(angle = 70, hjust = 1, vjust = 1)) + 
+  ylab("Fraction of gene TPM") + scale_color_manual(values = method_colors, name = "")
+dev.off()
 
 saveRDS(NULL, file = outrds)
 date()

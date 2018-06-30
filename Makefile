@@ -35,7 +35,7 @@ all: prepref quant alpineprep scalecov \
 plots nanopore simulation stats plotscomparison \
 preprefstringtie quantstringtie alpineprepstringtie scalecovstringtie plotsstringtie \
 preprefchess alpineprepchess quantchess scalecovchess plotschess plotssummarychess \
-plotssummary 
+plotssummary plotssummarystringtie 
 
 ## Include makefiles. These need to be included after the definition of the "all" rule, 
 ## otherwise the default rule will be the first one from these makefiles
@@ -185,7 +185,9 @@ $(foreach F,$(fastqfiles),figures/gene_scores/gene_scores_$(notdir $(F))_stringt
 plotschess: $(foreach F,/home/Shared/data/seq/roche_pacbio_targeted_cdna/Illumina_RNA_seq/20151016.A-Cortex_RNA,figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F))_chess.rds) \
 $(foreach F,/home/Shared/data/seq/roche_pacbio_targeted_cdna/Illumina_RNA_seq/20151016.A-Cortex_RNA,figures/gene_scores/gene_scores_$(notdir $(F))_chess.rds)
 
-plotssummarychess: $(foreach G,$(genes_to_plot_summary_chess),$(foreach F,/home/Shared/data/seq/roche_pacbio_targeted_cdna/Illumina_RNA_seq/20151016.A-Cortex_RNA,figures/genewise_summary_chess/$(notdir $(F))_chess_$(G).png))
+plotssummarychess: $(foreach G,$(genes_to_plot_summary_chess),$(foreach F,$(fastqfilesreal),figures/genewise_summary_chess/$(notdir $(F))_chess_$(G).png))
+
+plotssummarystringtie: $(foreach F,$(fastqfilesreal),$(foreach G,$(genes_to_plot_summary_stringtie$(notdir $(F))),figures/genewise_summary_stringtie_tx/$(notdir $(F))_stringtie_tx_$(G).png))
 
 plotssummary: $(foreach G,$(genes_to_plot_summary),$(foreach F,$(fastqfilesreal),figures/genewise_summary/$(notdir $(F))_$(G).png)) \
 $(foreach G,$(genes_to_plot_summary),$(foreach F,$(fastqfilesreal),figures/comparison_annotation_catalogs/annotation_comparison_$(notdir $(F))_$(G).png))

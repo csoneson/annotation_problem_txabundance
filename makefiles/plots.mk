@@ -82,9 +82,9 @@ $(4) Rscripts/plot_genewise_summary.R
 	mkdir -p $$(@D)
 	$(R) "--args usegene='$(3)' bigwig='$$(word 1,$$^)' genemodels='$(4)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonSTAR,SalmonCDS,SalmonKeepDup,StringTie' scorerds='$$(word 2,$$^)' outpng='$$@'" Rscripts/plot_genewise_summary.R Rout/plot_genewise_summary_$(1)$(2)_$(3).Rout
 endef
-$(foreach G,$(genes_to_plot_summary),$(foreach F,20151016.A-Cortex_RNA,$(eval $(call geneplotrule2,$(F),,$(G),$(gvizgenemodels)))))
-$(foreach G,$(genes_to_plot_summary),$(foreach F,20170918.A-WT_4,$(eval $(call geneplotrule2,$(F),,$(G),$(gvizgenemodels)))))
-$(foreach G,$(genes_to_plot_summary_chess),$(foreach F,20151016.A-Cortex_RNA,$(eval $(call geneplotrule2,$(F),_chess,$(G),$(gvizgenemodels_chess)))))
+$(foreach G,$(genes_to_plot_summary),$(foreach F,$(fastqfilesreal),$(eval $(call geneplotrule2,$(notdir $(F)),,$(G),$(gvizgenemodels)))))
+$(foreach G,$(genes_to_plot_summary_chess),$(foreach F,$(fastqfilesreal),$(eval $(call geneplotrule2,$(notdir $(F)),_chess,$(G),$(gvizgenemodels_chess)))))
+$(foreach F,$(fastqfilesreal),$(foreach G,$(genes_to_plot_summary_stringtie$(notdir $(F))),$(eval $(call geneplotrule2,$(notdir $(F)),_stringtie_tx,$(G),stringtie/$(notdir $(F))/$(notdir $(F))_gviz_genemodels.rds))))
 
 ## ==================================================================================== ##
 ##                    correlation with inferential variance                             ##

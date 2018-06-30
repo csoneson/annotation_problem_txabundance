@@ -56,6 +56,8 @@ bwfiles <- structure(bigwig, names = "")
 bwcond <- structure("g1", names = "")
 
 ## Gene model track
+if (!("gene_name" %in% colnames(mcols(genemodels))))
+  mcols(genemodels)$gene_name <- mcols(genemodels)$ref_gene_id
 gm <- subset(genemodels, tolower(gene) == tolower(usegene) | tolower(gene_name) == tolower(usegene))
 gm <- subset(gm, gene == gene[1])  ## Select only one gene if there are many with the same name
 id <- unique(gm$gene_name)

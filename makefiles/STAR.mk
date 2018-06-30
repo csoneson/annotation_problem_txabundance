@@ -64,3 +64,4 @@ STAR$(2)/$(1)/$(1)_Aligned.sortedByCoord.out.bam
 endef
 $(foreach F,$(fastqfiles),$(eval $(call bwrule,$(notdir $(F)),)))
 $(foreach F,$(fastqfiles),$(eval $(call bwrule,$(notdir $(F)),_chess)))
+$(foreach F,$(fastqfiles),$(eval $(call bwrule,$(notdir $(F)),_stringtie_tx)))

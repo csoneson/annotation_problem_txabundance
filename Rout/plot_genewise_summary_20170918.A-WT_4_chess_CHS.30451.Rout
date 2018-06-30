@@ -1,0 +1,276 @@
+
+R Under development (unstable) (2017-12-14 r73916) -- "Unsuffered Consequences"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ################################################################################
+> ##                                                                            ##
+> ## Generate reduced summary plots for one gene                                ##
+> ##                                                                            ##
+> ## Inputs:                                                                    ##
+> ## * gene: gene of interest, or file listing genes of interest (one per row)  ##
+> ## * bigwig: bigwig file of alignments for visualization                      ##
+> ## * genemodels: gene models for Gviz                                         ##
+> ## * quantmethods: string containing the quantification methods to consider,  ##
+> ##                 separated by commas (no spaces)                            ##
+> ## * scorerds: object with junction coverages, transcript abundances and gene ##
+> ##             scores                                                         ##
+> ## * outpng: output png file                                                  ##
+> ##                                                                            ##
+> ## Outputs:                                                                   ##
+> ## * A png figure with coverage patterns, gene models and junction scores for ##
+> ##   each gene of interest, as well as TPM estimates                          ##
+> ##                                                                            ##
+> ################################################################################
+> 
+> args <- (commandArgs(trailingOnly = TRUE))
+> for (i in 1:length(args)) {
++   eval(parse(text = args[[i]]))
++ }
+> 
+> quantmethods <- strsplit(quantmethods, ",")[[1]]
+> 
+> print(usegene)
+[1] "CHS.30451"
+> print(bigwig)
+[1] "STARbigwig_chess/20170918.A-WT_4_Aligned.sortedByCoord.out.bw"
+> print(genemodels) 
+[1] "reference_chess/chess2.0_assembly_fixed_gviz_genemodels.rds"
+> print(quantmethods)
+[1] "hera"          "kallisto"      "RSEM"          "Salmon"       
+[5] "SalmonSTAR"    "SalmonCDS"     "SalmonKeepDup" "StringTie"    
+> print(scorerds)
+[1] "output/20170918.A-WT_4_chess_combined_coverages_with_scores.rds"
+> print(outpng)
+[1] "figures/genewise_summary_chess/20170918.A-WT_4_chess_CHS.30451.png"
+> 
+> suppressPackageStartupMessages({
++   library(dplyr)
++   library(ggplot2)
++   library(cowplot)
++   library(ggrepel)
++   library(rtracklayer)
++   library(Gviz)
++   library(scatterpie)
++ })
+> 
+> options(ucscChromosomeNames = FALSE, envir = .GlobalEnv)
+> 
+> ## Read gene models for Gviz plot (pregenerated from gtf to save time) and
+> ## quantifications
+> genemodels <- readRDS(genemodels)$genemodels_exon
+> scores <- readRDS(scorerds)
+> 
+> jl <- scores$junctions %>% dplyr::filter(gene == usegene & 
++                                            method %in% quantmethods)
+> 
+> bwfiles <- structure(bigwig, names = "")
+> bwcond <- structure("g1", names = "")
+> 
+> ## Gene model track
+> if (!("gene_name" %in% colnames(mcols(genemodels))))
++   mcols(genemodels)$gene_name <- mcols(genemodels)$ref_gene_id
+> gm <- subset(genemodels, tolower(gene) == tolower(usegene) | tolower(gene_name) == tolower(usegene))
+> gm <- subset(gm, gene == gene[1])  ## Select only one gene if there are many with the same name
+> id <- unique(gm$gene_name)
+> idshow <- paste0(id, " (", unique(gm$gene), ")")
+> show_chr <- unique(seqnames(gm))[1]
+> gm <- subset(gm, seqnames == show_chr)
+> min_coord <- min(start(gm)) - 0.2*(max(end(gm)) - min(start(gm)))
+> max_coord <- max(end(gm)) + 0.05*(max(end(gm)) - min(start(gm)))
+> gm$transcript <- factor(gm$transcript, levels = unique(gm$transcript))
+> 
+> ## Other features in the considered region
+> gmo <- genemodels[overlapsAny(genemodels,
++                               GRanges(seqnames = show_chr,
++                                       ranges = IRanges(start = min_coord,
++                                                        end = max_coord),
++                                       strand = "*"))]
+> gmo <- gmo[!(gmo %in% gm)]
+> gmo <- reduce(gmo)
+> 
+> ## Define colors
+> muted <- c("#DC050C","#E8601C","#7BAFDE","#1965B0","#B17BA6",
++            "#882E72","#F1932D","#F6C141","#F7EE55","#4EB265",
++            "#90C987","#CAEDAB","#777777")
+> txs <- levels(gm$transcript)
+> ncols <- nlevels(gm$transcript)
+> cols <- colorRampPalette(muted)(ncols)
+> names(cols) <- txs
+> 
+> grtr <- GeneRegionTrack(gm, showId = TRUE, col = NULL, fill = cols[gm$transcript],
++                         name = "", col.title = "black", 
++                         background.title = "transparent", min.height = 15)
+> grtr2 <- GeneRegionTrack(gmo, showId = TRUE, col = "black", fill = "white",
++                          name = "", col.title = "black", showId = FALSE,
++                          background.title = "transparent", min.height = 15)
+> 
+> gtr <- GenomeAxisTrack()
+> 
+> tracks <- c(gtr, grtr, grtr2)
+> 
+> multiTracks_rnaseq <- lapply(1:length(bwfiles), function(i) {
++   assign(paste0("rnaseqtr", i), 
++          DataTrack(range = bwfiles[i],
++                    type = "histogram",
++                    chromosome = unique(seqnames(gm)),
++                    col.title = "black",
++                    fill = "grey",
++                    col = "grey",
++                    col.histogram = "grey",
++                    fill.histogram = "grey",
++                    cex.title = 0,
++          ))
++ })
+> tracks <- c(multiTracks_rnaseq, tracks)
+> 
+> rn <- round(1e6*runif(1))
+> png(paste0("gviz", rn, ".png"), width = 10.5, height = 5.25, unit = "in", res = 400)
+> plotTracks(tracks, chromosome = show_chr, 
++            from = min_coord, to = max_coord, main = idshow, 
++            min.width = 0, min.distance = 0, collapse = FALSE)
+> dev.off()
+null device 
+          1 
+> 
+> tpms <- ggplot(scores$transcripts %>% dplyr::filter(gene == usegene & method %in% quantmethods) %>%
++                  dplyr::mutate(transcript = factor(transcript, levels = levels(gm$transcript))),
++                aes(x = method, y = TPM, fill = transcript)) + 
++   geom_bar(stat = "identity", position = "fill") + 
++   scale_fill_manual(values = cols, name = "") + xlab("") + 
++   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 9),
++         legend.text = element_text(size = 7))
+> 
+> for (tt in txs) {
++   jl[[tt]] <- grepl(tt, jl$transcript)
++ }
+> jl[, txs] <- sweep(jl[, txs], 1, rowSums(jl[, txs]), "/")
+> 
+> jcov <- ggplot() + geom_abline(intercept = 0, slope = 1) + 
++   geom_scatterpie(aes(x = scaled.cov, y = uniqreads, r = max(scaled.cov)/13), 
++                   cols = txs, data = jl, color = NA) + 
++   facet_wrap(~ methodscore, nrow = 2) + 
++   coord_equal(ratio = 1) + 
++   expand_limits(x = range(c(jl$scaled.cov, jl$uniqreads)), 
++                 y = range(c(jl$scaled.cov, jl$uniqreads))) + 
++   scale_fill_manual(values = cols, name = "") + 
++   xlab("Scaled predicted coverage") + 
++   ylab("Number of uniquely mapped reads") + 
++   theme_bw() + theme(strip.text = element_text(size = 7),
++                      legend.text = element_text(size = 7))
+> 
+> # jcov <- ggplot(jl, aes(x = scaled.cov, y = uniqreads)) + 
+> #   geom_point(size = 3) + 
+> #   facet_wrap(~ methodscore, nrow = 2) + 
+> #   geom_abline(intercept = 0, slope = 1) + 
+> #   xlab("Scaled predicted coverage") + 
+> #   ylab("Number of uniquely mapped reads") + 
+> #   theme_bw() + theme(strip.text = element_text(size = 7))
+> 
+> png(outpng, width = 12, height = 10, unit = "in", res = 400)
+> print(cowplot::plot_grid(ggdraw() + draw_image(paste0("gviz", rn, ".png")),
++                          plot_grid(tpms + theme(legend.position = "none"), 
++                                    jcov + theme(legend.position = "none"), 
++                                    nrow = 1, labels = c("B", "C"), rel_widths = c(0.9, 1)), 
++                          get_legend(tpms + theme(legend.direction = "horizontal",
++                                                  legend.justification = "center",
++                                                  legend.box.just = "bottom") + 
++                                       guides(fill = guide_legend(nrow = ifelse(length(txs) <= 8, 1, 2)))),
++                          ncol = 1, rel_heights = c(1, 0.8, 0.1), 
++                          labels = c("A", "", "")))
+> dev.off()
+null device 
+          1 
+> 
+> unlink(paste0("gviz", rn, ".png"))
+> date()
+[1] "Sat Jun 30 18:20:11 2018"
+> sessionInfo()
+R Under development (unstable) (2017-12-14 r73916)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 16.04.4 LTS
+
+Matrix products: default
+BLAS: /usr/local/R/R-devel/lib/libRblas.so
+LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
+ [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
+ [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
+[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+
+attached base packages:
+ [1] grid      parallel  stats4    stats     graphics  grDevices utils    
+ [8] datasets  methods   base     
+
+other attached packages:
+ [1] bindrcpp_0.2.2        scatterpie_0.1.0      Gviz_1.24.0          
+ [4] rtracklayer_1.39.12   GenomicRanges_1.31.23 GenomeInfoDb_1.15.5  
+ [7] IRanges_2.13.28       S4Vectors_0.17.42     BiocGenerics_0.26.0  
+[10] ggrepel_0.7.0         cowplot_0.9.2         ggplot2_2.2.1        
+[13] dplyr_0.7.4          
+
+loaded via a namespace (and not attached):
+ [1] ProtGenerics_1.11.0         bitops_1.0-6               
+ [3] matrixStats_0.53.1          bit64_0.9-7                
+ [5] RColorBrewer_1.1-2          progress_1.1.2             
+ [7] httr_1.3.1                  tools_3.5.0                
+ [9] backports_1.1.2             R6_2.2.2                   
+[11] rpart_4.1-13                Hmisc_4.1-1                
+[13] DBI_0.8                     lazyeval_0.2.1             
+[15] colorspace_1.3-2            nnet_7.3-12                
+[17] tidyselect_0.2.4            gridExtra_2.3              
+[19] prettyunits_1.0.2           bit_1.1-12                 
+[21] curl_3.2                    compiler_3.5.0             
+[23] Biobase_2.39.2              htmlTable_1.11.2           
+[25] DelayedArray_0.5.30         labeling_0.3               
+[27] scales_0.5.0                checkmate_1.8.5            
+[29] stringr_1.3.0               digest_0.6.15              
+[31] Rsamtools_1.31.3            foreign_0.8-70             
+[33] XVector_0.20.0              base64enc_0.1-3            
+[35] dichromat_2.0-0             pkgconfig_2.0.1            
+[37] htmltools_0.3.6             ensembldb_2.3.15           
+[39] BSgenome_1.47.5             htmlwidgets_1.0            
+[41] rlang_0.2.0                 rstudioapi_0.7             
+[43] RSQLite_2.1.0               bindr_0.1.1                
+[45] BiocParallel_1.13.3         acepack_1.4.1              
+[47] VariantAnnotation_1.25.13   RCurl_1.95-4.10            
+[49] magrittr_1.5                GenomeInfoDbData_1.1.0     
+[51] Formula_1.2-2               Matrix_1.2-14              
+[53] Rcpp_0.12.16                munsell_0.4.3              
+[55] stringi_1.1.7               MASS_7.3-49                
+[57] SummarizedExperiment_1.9.16 zlibbioc_1.26.0            
+[59] plyr_1.8.4                  blob_1.1.1                 
+[61] udunits2_0.13               lattice_0.20-35            
+[63] Biostrings_2.47.12          splines_3.5.0              
+[65] GenomicFeatures_1.31.10     magick_1.9                 
+[67] knitr_1.20                  pillar_1.2.1               
+[69] biomaRt_2.35.13             XML_3.98-1.11              
+[71] glue_1.2.0                  biovizBase_1.28.0          
+[73] latticeExtra_0.6-28         data.table_1.10.4-3        
+[75] tweenr_0.1.5                purrr_0.2.4                
+[77] gtable_0.2.0                tidyr_0.8.0                
+[79] assertthat_0.2.0            ggforce_0.1.2              
+[81] AnnotationFilter_1.3.2      survival_2.42-3            
+[83] tibble_1.4.2                GenomicAlignments_1.15.13  
+[85] AnnotationDbi_1.41.5        memoise_1.1.0              
+[87] units_0.5-1                 cluster_2.0.7-1            
+> 
+> proc.time()
+   user  system elapsed 
+ 73.904   4.488  78.618 

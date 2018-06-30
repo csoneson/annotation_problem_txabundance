@@ -82,6 +82,8 @@ Type 'q()' to quit R.
 > bwcond <- structure("g1", names = "")
 > 
 > ## Gene model track
+> if (!("gene_name" %in% colnames(mcols(genemodels))))
++   mcols(genemodels)$gene_name <- mcols(genemodels)$ref_gene_id
 > gm <- subset(genemodels, tolower(gene) == tolower(usegene) | tolower(gene_name) == tolower(usegene))
 > gm <- subset(gm, gene == gene[1])  ## Select only one gene if there are many with the same name
 > id <- unique(gm$gene_name)
@@ -196,7 +198,7 @@ null device
 > 
 > unlink(paste0("gviz", rn, ".png"))
 > date()
-[1] "Tue Jun 19 12:32:45 2018"
+[1] "Sat Jun 30 18:21:31 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -271,4 +273,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
- 80.792   2.092  83.039 
+ 93.304   2.184  95.854 

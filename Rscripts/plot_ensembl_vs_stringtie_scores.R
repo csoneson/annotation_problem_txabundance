@@ -136,8 +136,8 @@ dev.off()
 ## "new" StringTie transcripts? And conversely, what fraction of the expression
 ## from the Ensembl catalog comes from transcripts that are not in the StringTie
 ## catalog?
-# strexpr <- stringtie$transcripts %>% dplyr::group_by(gene, method) %>% 
-#   dplyr::summarize(fracExprSTR = sum(TPM[grepl("^STRG", transcript)])/sum(TPM))
+# strexpr <- stringtie$transcripts %>% dplyr::group_by(gene, method) %>%
+#   dplyr::summarize(fracExprSTR = sum(TPM[!(transcript %in% stringtieconversiontx$tx)])/sum(TPM))
 # ensexpr <- ensembl$transcripts %>% dplyr::group_by(gene, method) %>%
 #   dplyr::summarize(fracExprRem = sum(TPM[!(transcript %in% stringtie$transcripts$transcript)])/sum(TPM))
 

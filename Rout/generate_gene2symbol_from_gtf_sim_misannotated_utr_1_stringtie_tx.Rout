@@ -51,7 +51,10 @@ Type 'q()' to quit R.
 +                           symbol = gtf$ref_gene_id,
 +                           stringsAsFactors = FALSE) %>%
 +   dplyr::filter(!is.na(symbol)) %>% 
-+   dplyr::distinct()
++   dplyr::distinct() %>%
++   dplyr::group_by(gene) %>%
++   dplyr::summarize(symbol = paste(symbol, collapse = "__")) %>%
++   as.data.frame()
 > gene2symbol <- rbind(gene2symbol, 
 +                      data.frame(gene = setdiff(gtf$gene_id, gene2symbol$gene),
 +                                 symbol = NA,
@@ -60,7 +63,7 @@ Type 'q()' to quit R.
 > saveRDS(gene2symbol, file = outrds)
 > 
 > date()
-[1] "Fri Jun 29 14:44:33 2018"
+[1] "Sat Jun 30 11:20:36 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -104,4 +107,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
- 12.884   0.656  13.557 
+ 16.624   0.828  17.472 

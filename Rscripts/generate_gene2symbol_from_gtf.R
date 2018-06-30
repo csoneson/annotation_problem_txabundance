@@ -30,7 +30,10 @@ gene2symbol <- data.frame(gene = gtf$gene_id,
                           symbol = gtf$ref_gene_id,
                           stringsAsFactors = FALSE) %>%
   dplyr::filter(!is.na(symbol)) %>% 
-  dplyr::distinct()
+  dplyr::distinct() %>%
+  dplyr::group_by(gene) %>%
+  dplyr::summarize(symbol = paste(symbol, collapse = "__")) %>%
+  as.data.frame()
 gene2symbol <- rbind(gene2symbol, 
                      data.frame(gene = setdiff(gtf$gene_id, gene2symbol$gene),
                                 symbol = NA,

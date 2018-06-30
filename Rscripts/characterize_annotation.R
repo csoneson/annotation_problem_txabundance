@@ -44,8 +44,12 @@ if (idconvrds != "") {
   idconvtable <- readRDS(idconvrds)
   gtf$symbol <- idconvtable$symbol[match(gtf$gene_id, idconvtable$gene)]
   nbrGenesEnsemblID <- sum(grepl("^ENSG", unique(gtf$symbol)))
+  nbrGenesSingleEnsemblID <- sum(grepl("^ENSG", unique(gtf$symbol)) & 
+                                   !(grepl("__", unique(gtf$symbol))))
 } else {
   nbrGenesEnsemblID <- sum(grepl("^ENSG", unique(gtf$gene_id)))
+  nbrGenesSingleEnsemblID <- sum(grepl("^ENSG", unique(gtf$gene_id)) & 
+                                   !(grepl("__", unique(gtf$gene_id))))
 }
 
 ## Number of transcripts in gtf file
@@ -113,6 +117,7 @@ saveRDS(list(nbrJunctionsPerTxGtf = nbrJunctionsPerTxGtf,
 
 write.table(t(data.frame(nbrGenesGtf = nbrGenesGtf,
                          nbrGenesEnsemblID = nbrGenesEnsemblID,
+                         nbrGenesSingleEnsemblID = nbrGenesSingleEnsemblID,
                          nbrTxGtf = nbrTxGtf,
                          minNbrTxPerGeneGtf = minNbrTxPerGeneGtf,
                          meanNbrTxPerGeneGtf = meanNbrTxPerGeneGtf,

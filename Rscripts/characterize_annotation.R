@@ -43,13 +43,13 @@ nbrGenesGtf <- length(unique(setdiff(gtf$gene_id, NA)))
 if (idconvrds != "") {
   idconvtable <- readRDS(idconvrds)
   gtf$symbol <- idconvtable$symbol[match(gtf$gene_id, idconvtable$gene)]
-  nbrGenesEnsemblID <- sum(grepl("^ENSG", unique(gtf$symbol)))
-  nbrGenesSingleEnsemblID <- sum(grepl("^ENSG", unique(gtf$symbol)) & 
-                                   !(grepl("__", unique(gtf$symbol))))
+  nbrGenesEnsemblID <- length(unique(gtf$gene_id[grepl("^ENSG", gtf$symbol)]))
+  nbrGenesSingleEnsemblID <- length(unique(gtf$gene_id[grepl("^ENSG", gtf$symbol) & 
+                                                         !(grepl("__", gtf$symbol))]))
 } else {
-  nbrGenesEnsemblID <- sum(grepl("^ENSG", unique(gtf$gene_id)))
-  nbrGenesSingleEnsemblID <- sum(grepl("^ENSG", unique(gtf$gene_id)) & 
-                                   !(grepl("__", unique(gtf$gene_id))))
+  nbrGenesEnsemblID <- length(unique(gtf$gene_id[grepl("^ENSG", gtf$gene_id)]))
+  nbrGenesSingleEnsemblID <- length(unique(gtf$gene_id[grepl("^ENSG", gtf$gene_id) & 
+                                                         !(grepl("__", gtf$gene_id))]))
 }
 
 ## Number of transcripts in gtf file

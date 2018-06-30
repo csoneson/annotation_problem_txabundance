@@ -168,14 +168,14 @@ null device
 > ## "new" StringTie transcripts? And conversely, what fraction of the expression
 > ## from the Ensembl catalog comes from transcripts that are not in the StringTie
 > ## catalog?
-> # strexpr <- stringtie$transcripts %>% dplyr::group_by(gene, method) %>% 
-> #   dplyr::summarize(fracExprSTR = sum(TPM[grepl("^STRG", transcript)])/sum(TPM))
+> # strexpr <- stringtie$transcripts %>% dplyr::group_by(gene, method) %>%
+> #   dplyr::summarize(fracExprSTR = sum(TPM[!(transcript %in% stringtieconversiontx$tx)])/sum(TPM))
 > # ensexpr <- ensembl$transcripts %>% dplyr::group_by(gene, method) %>%
 > #   dplyr::summarize(fracExprRem = sum(TPM[!(transcript %in% stringtie$transcripts$transcript)])/sum(TPM))
 > 
 > saveRDS(NULL, file = outrds)
 > date()
-[1] "Fri Jun 29 22:33:43 2018"
+[1] "Sat Jun 30 12:38:39 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -207,4 +207,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
- 54.204   5.596  59.898 
+ 48.816   1.176  50.037 

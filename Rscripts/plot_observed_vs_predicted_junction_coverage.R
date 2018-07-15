@@ -183,7 +183,7 @@ gg <- ggplot(y, aes(x = uniqreads, y = coverage)) +
   geom_label(data = corrs, x = -Inf, y = Inf, hjust = -0.05, vjust = 1.1, 
              aes(label = paste0("Pearson: ", pearson, "\nSpearman: ", spearman))) + 
   facet_grid(method ~ covtype) + 
-  xlab("Number of uniquely mapping reads spanning junction") + 
+  xlab("Number of uniquely mapped reads spanning junction") + 
   ylab("Predicted number of reads spanning junction") + 
   scale_color_manual(name = paste0("Fraction\nuniquely mapping\nreads < ", 
                                    fracuniqjuncreadsthreshold), 

@@ -133,15 +133,15 @@ for (tt in txs) {
 jl[, txs] <- sweep(jl[, txs], 1, rowSums(jl[, txs]), "/")
 
 jcov <- ggplot() + geom_abline(intercept = 0, slope = 1) + 
-  geom_scatterpie(aes(x = scaled.cov, y = uniqreads, r = max(scaled.cov)/13), 
+  geom_scatterpie(aes(x = uniqreads, y = scaled.cov, r = max(scaled.cov)/13), 
                   cols = txs, data = jl, color = NA) + 
   facet_wrap(~ methodscore, nrow = 2) + 
   coord_equal(ratio = 1) + 
   expand_limits(x = range(c(jl$scaled.cov, jl$uniqreads)), 
                 y = range(c(jl$scaled.cov, jl$uniqreads))) + 
   scale_fill_manual(values = cols, name = "") + 
-  xlab("Scaled predicted coverage") + 
-  ylab("Number of uniquely mapped reads") + 
+  xlab("Number of uniquely mapped reads spanning junction") + 
+  ylab("Scaled predicted junction coverage") + 
   theme_bw() + theme(strip.text = element_text(size = 7),
                      legend.text = element_text(size = 7))
 

@@ -15,6 +15,7 @@
 ## * junctioncovRSEM: junction coverages and abundances from RSEM             ##
 ## * junctioncovStringTie: junction coverages and abundances from StringTie   ##
 ## * junctioncovNanopore: junction coverages and abundances from Nanopore     ##
+## * junctioncovSalmon0.11: junction coverages and abundances from Salmon0.11 ##
 ## * genecharacteristics: table with gene characteristics                     ##
 ## * exoncountstxt: text file with exon counts for each gene                  ##
 ## * introncountstxt: text file with intron counts for each gene              ##
@@ -41,6 +42,7 @@ print(junctioncovkallisto)
 print(junctioncovRSEM)
 print(junctioncovStringTie)
 print(junctioncovNanopore)
+print(junctioncovSalmon0.11)
 print(genecharacteristics)
 print(exoncountstxt)
 print(introncountstxt)
@@ -92,6 +94,9 @@ if (junctioncovSalmonCDS != "") {
 }
 if (junctioncovSalmonKeepDup != "") {
   jcovscaled <- rbind(jcovscaled, readRDS(junctioncovSalmonKeepDup)$allcovs)
+}
+if (junctioncovSalmon0.11 != "") {
+  jcovscaled <- rbind(jcovscaled, readRDS(junctioncovSalmon0.11)$allcovs)
 }
 
 ## Count the number of junctions per gene
@@ -145,6 +150,9 @@ if (junctioncovSalmonCDS != "") {
 }
 if (junctioncovSalmonKeepDup != "") {
   allquants <- rbind(allquants, readRDS(junctioncovSalmonKeepDup)$quants)
+}
+if (junctioncovSalmon0.11 != "") {
+  allquants <- rbind(allquants, readRDS(junctioncovSalmon0.11)$quants)
 }
 
 ## Summarize abundances on gene level

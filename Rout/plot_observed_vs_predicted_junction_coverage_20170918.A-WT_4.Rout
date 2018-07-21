@@ -55,7 +55,8 @@ Type 'q()' to quit R.
 [1] "output/20170918.A-WT_4_combined_coverages_with_scores.rds"
 > print(quantmethods)
 [1] "hera"          "kallisto"      "RSEM"          "Salmon"       
-[5] "SalmonSTAR"    "SalmonCDS"     "SalmonKeepDup" "StringTie"    
+[5] "SalmonSTAR"    "SalmonCDS"     "SalmonKeepDup" "Salmon0.11"   
+[9] "StringTie"    
 > print(uniqjuncreadsthreshold)
 [1] 25
 > print(fracuniqjuncreadsthreshold)
@@ -234,10 +235,10 @@ null device
           1 
 > 
 > 
-> saveRDS(NULL, outrds)
+> saveRDS(list(junctionscatter = gg), outrds)
 > 
 > date()
-[1] "Sun Jul 15 23:29:42 2018"
+[1] "Sat Jul 21 14:06:37 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -270,4 +271,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-559.600  26.808 591.048 
+737.804   4.732 744.031 

@@ -52,7 +52,8 @@ Type 'q()' to quit R.
 [1] "reference/Gviz/Homo_sapiens.GRCh38.90_gviz_genemodels.rds"
 > print(quantmethods)
 [1] "hera"          "kallisto"      "RSEM"          "Salmon"       
-[5] "SalmonSTAR"    "SalmonCDS"     "SalmonKeepDup" "StringTie"    
+[5] "SalmonSTAR"    "SalmonCDS"     "SalmonKeepDup" "Salmon0.11"   
+[9] "StringTie"    
 > print(scorerds)
 [1] "output/20151016.A-Cortex_RNA_combined_coverages_with_scores.rds"
 > print(outpng)
@@ -198,7 +199,7 @@ null device
 > 
 > unlink(paste0("gviz", rn, ".png"))
 > date()
-[1] "Sun Jul 15 23:22:55 2018"
+[1] "Sat Jul 21 14:45:08 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -273,4 +274,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
- 97.216   3.880 101.361 
+ 83.040   6.264  89.438 

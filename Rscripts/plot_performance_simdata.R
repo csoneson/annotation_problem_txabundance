@@ -14,6 +14,7 @@
 ## * uniqjuncreadsthreshold: the total number of uniquely mapping junction    ##
 ##                           reads (in a gene), only genes with more than     ##
 ##                           this number will be used for the comparison      ##
+## * nthreads: number of threads to use for multithreaded calculations        ##
 ## * outrds: output file                                                      ##
 ##                                                                            ##
 ## Outputs:                                                                   ##
@@ -33,6 +34,7 @@ print(truthrda)
 print(truthmodgenesrds)
 print(gtf)
 print(uniqjuncreadsthreshold)
+print(nthreads)
 print(outrds)
 
 suppressPackageStartupMessages({
@@ -43,6 +45,7 @@ suppressPackageStartupMessages({
   library(GenomicRanges)
   library(GenomicFeatures)
   library(cowplot)
+  library(parallel)
 })
 
 scores <- readRDS(scorerds)
@@ -96,7 +99,7 @@ dev.off()
 txdb <- makeTxDbFromGRanges(gtf)
 ebt <- exonsBy(txdb, "tx", use.names = TRUE)
 utrs0 <- subset(gtf, type == "three_prime_utr")
-L <- as(lapply(seq_len(nrow(modtrans)), function(i) {
+L <- as(mclapply(seq_len(nrow(modtrans)), function(i) {
   ## Full UTR-contributing transcript
   utrtx <- ebt[[modtrans$utr_tx[i]]]
   ## Full internal structure-contributing transcript
@@ -106,19 +109,19 @@ L <- as(lapply(seq_len(nrow(modtrans)), function(i) {
   ## 3'UTR of internal structure-contributing transcript
   utrinttx <- subset(utrs0, transcript_id == modtrans$internal_tx[i])
   GenomicRanges::reduce(GenomicRanges::union(GenomicRanges::setdiff(inttx, utrinttx), utrutrtx))
-}), "GRangesList")
+}, mc.preschedule = FALSE, mc.cores = nthreads), "GRangesList")
 names(L) <- modtrans$mod_transcript
 
 ## Find overlaps between modified transcripts and annotated ones
 ol <- findOverlaps(L, ebt)
 
 ## Find most similar transcript for each artificial transcript
-jaccards <- do.call(rbind, lapply(seq_len(length(ol)), function(i) {
+jaccards <- do.call(rbind, mclapply(seq_len(length(ol)), function(i) {
   pin <- GenomicRanges::intersect(L[[queryHits(ol)[i]]], ebt[[subjectHits(ol)[i]]])
   pun <- GenomicRanges::union(L[[queryHits(ol)[i]]], ebt[[subjectHits(ol)[i]]])
   overlap <- sum(width(pin))/sum(width(pun))
   data.frame(artificial_tx = queryHits(ol)[i], reference_tx = subjectHits(ol)[i], jaccard = overlap)
-}))
+}, mc.preschedule = FALSE, mc.cores = nthreads))
 jaccards <- jaccards %>% 
   dplyr::mutate(artificial_tx = names(L)[artificial_tx],
                 reference_tx = names(ebt)[reference_tx]) %>%
@@ -132,9 +135,23 @@ jaccards <- jaccards %>%
 
 summary(jaccards$jaccard)
 
+## Add most similar transcript and Jaccard similarity to table
+modtrans <- modtrans %>% dplyr::left_join(
+  jaccards %>% dplyr::rename(most_similar_tx = reference_tx),
+  by = c("mod_transcript" = "artificial_tx")
+)
+
 ## Remove transcripts that are identical to an annotated transcript from the
 ## list of modified transcripts
-modtrans <- subset(modtrans, mod_transcript %in% jaccards$artificial_tx[jaccards$jaccard < 1])
+modtrans_removed <- subset(modtrans, jaccard == 1)
+dim(modtrans_removed)
+table(modtrans_removed$internal_tx == modtrans_removed$most_similar_tx)
+table(modtrans_removed$utr_tx == modtrans_removed$most_similar_tx)
+
+modtrans <- subset(modtrans, jaccard < 1)
+dim(modtrans)
+table(modtrans$internal_tx == modtrans$most_similar_tx)
+table(modtrans$utr_tx == modtrans$most_similar_tx)
 
 ## Subset transcript abundance table to only the transcripts in the modified genes
 gene_summary <- transcripts %>% 
@@ -143,7 +160,7 @@ gene_summary <- transcripts %>%
                                  "Contributing internal structure", 
                                  ifelse(transcript %in% modtrans$utr_tx, 
                                         "Contributing 3'UTR", "Other"))) %>%
-  dplyr::mutate(tr_type2 = ifelse(transcript %in% jaccards$reference_tx, 
+  dplyr::mutate(tr_type2 = ifelse(transcript %in% modtrans$most_similar_tx, 
                                   "Most similar reference transcript", "Other")) %>% 
   dplyr::left_join(modtrans %>% dplyr::select(gene, utr_selected, utr_fraction_of_length)) %>%
   dplyr::select(transcript, gene, count, TPM, tr_type, utr_selected, method, 
@@ -345,6 +362,6 @@ print(ggplot(genes %>% dplyr::left_join(gene_summary %>%
 dev.off()
 
 
-saveRDS(list(genes = genes, gene_summary = gene_summary), file = outrds)
+saveRDS(list(genes = genes, gene_summary = gene_summary, modtrans = modtrans), file = outrds)
 date()
 sessionInfo()

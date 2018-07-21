@@ -46,6 +46,9 @@ suppressPackageStartupMessages({
   library(cowplot)
 })
 
+## Load method colors
+source("Rscripts/define_plot_colors.R")
+
 stringtie <- readRDS(scorerdsstringtie)
 ensembl <- readRDS(scorerdsensembl)
 stringtieconversion <- readRDS(convtablestringtie)
@@ -159,12 +162,6 @@ b <- a %>% dplyr::left_join(strexpr %>% dplyr::rename(gene = symbol),
                      dplyr::distinct() %>% 
                      dplyr::rename(strid = gene), by = c("gene" = "symbol"))
 bb <- tidyr::gather(b, fractype, fracexpr, fracExprSTR, fracExprRemoved)
-
-method_colors <- c("#DC050C", "#7BAFDE", "#B17BA6", "#F1932D",
-                   "#4EB265", "#CAEDAB", "#777777", "#E8601C",
-                   "#1965B0", "#882E72", "#F6C141", "#F7EE55",
-                   "#90C987")[seq_len(length(unique(bb$method)))]
-names(method_colors) <- unique(bb$method)
 
 png(gsub("\\.rds$", "_new_missing_tx.png", outrds), width = 12, height = 7,
     unit = "in", res = 400)

@@ -72,6 +72,9 @@ Type 'q()' to quit R.
 +   library(cowplot)
 + })
 > 
+> ## Load method colors
+> source("Rscripts/define_plot_colors.R")
+> 
 > stringtie <- readRDS(scorerdsstringtie)
 > ensembl <- readRDS(scorerdsensembl)
 > stringtieconversion <- readRDS(convtablestringtie)
@@ -194,12 +197,6 @@ Warning message:
 Column `method` joining factor and character vector, coercing into character vector 
 > bb <- tidyr::gather(b, fractype, fracexpr, fracExprSTR, fracExprRemoved)
 > 
-> method_colors <- c("#DC050C", "#7BAFDE", "#B17BA6", "#F1932D",
-+                    "#4EB265", "#CAEDAB", "#777777", "#E8601C",
-+                    "#1965B0", "#882E72", "#F6C141", "#F7EE55",
-+                    "#90C987")[seq_len(length(unique(bb$method)))]
-> names(method_colors) <- unique(bb$method)
-> 
 > png(gsub("\\.rds$", "_new_missing_tx.png", outrds), width = 12, height = 7,
 +     unit = "in", res = 400)
 > ggplot(bb %>% dplyr::mutate(fractype = replace(fractype, fractype == "fracExprRemoved", 
@@ -217,7 +214,7 @@ null device
 > 
 > saveRDS(NULL, file = outrds)
 > date()
-[1] "Sat Jun 30 18:07:31 2018"
+[1] "Tue Jul 17 14:15:00 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -249,4 +246,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
     user   system  elapsed 
-1767.272   19.196 1790.571 
+1844.192   22.460 1869.410 

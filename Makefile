@@ -6,17 +6,19 @@ bedtools := /usr/local/bin/bedtools
 ## List FASTQ files (without the _{R1,R2}.fastq.gz part)
 fastqfilesreal := \
 /home/Shared/data/seq/roche_pacbio_targeted_cdna/Illumina_RNA_seq/20151016.A-Cortex_RNA \
-/home/Shared/data/seq/hussain_bath_nanopore_rnaseq/Illumina/FASTQ/20170918.A-WT_4
+/home/Shared/data/seq/hussain_bath_nanopore_rnaseq/Illumina/FASTQ/20170918.A-WT_4# \
+#/home/charlotte/annotation_problem_txabundance/FASTQ/SRR7059404
 fastqfilessim := simulation/misannotated_utr/sim_misannotated_utr_1
 fastqfiles := $(fastqfilesreal) $(fastqfilessim)
 
 ## Abundance quantification methods
-quantmethods20151016.A-Cortex_RNA := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup
-quantmethods20170918.A-WT_4 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup SalmonMinimap2Nanopore WubMinimap2Nanopore
-quantmethodssim_misannotated_utr_1 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup
-quantmethodsstringtie := Salmon SalmonSTAR kallisto RSEM StringTie hera
+quantmethods20151016.A-Cortex_RNA := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup Salmon0.11
+#quantmethodsSRR7059404 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup
+quantmethods20170918.A-WT_4 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup Salmon0.11 SalmonMinimap2Nanopore WubMinimap2Nanopore
+quantmethodssim_misannotated_utr_1 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup Salmon0.11
+quantmethodsstringtie := Salmon SalmonSTAR kallisto RSEM StringTie hera Salmon0.11
 
-nthreads := 24
+nthreads := 48
 
 ## Define the multimapping fraction threshold. Junctions with MM/(UM+MM)>mmfracthreshold will not be 
 ## included when calculating the "MM-aware" score
@@ -65,6 +67,7 @@ $(flatgtfexons) \
 $(salmoncdnancrnaindex)/hash.bin \
 $(salmoncdsindex)/hash.bin \
 $(salmonkeepdupindex)/hash.bin \
+$(salmon011cdnancrnaindex)/hash.bin \
 $(kallistocdnancrnaindex) \
 $(STARindextxome)/SA \
 reference/RSEM/Homo_sapiens.GRCh38.rsem.cdna.ncrna/Homo_sapiens.GRCh38.rsem.cdna.ncrna.n2g.idx.fa \
@@ -78,6 +81,7 @@ $(gvizgenemodels)
 quant: $(foreach F,$(fastqfiles),salmon/cDNAncRNA/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),salmon/cDNAncRNAkeepdup/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),salmon/cds/$(notdir $(F))/quant.sf) \
+$(foreach F,$(fastqfiles),salmon011/cDNAncRNA/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),kallisto/cDNAncRNA/$(notdir $(F))/abundance.tsv) \
 $(foreach F,$(fastqfiles),salmonstartx/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),RSEM/cDNAncRNA/$(notdir $(F))/$(notdir $(F)).isoforms.results) \
@@ -93,7 +97,7 @@ alpineprep: $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_fitbiasmodel.
 $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_predicted_coverage.rds)
 
 ## Scale coverage and calculate scores
-scalecov: $(foreach F,$(fastqfiles),$(foreach M,$(quantmethods$(F)),alpine/$(notdir $(F))/scaled_junction_coverage_$(M).rds)) \
+scalecov: $(foreach F,$(fastqfiles),$(foreach M,$(quantmethods$(notdir $(F))),alpine/$(notdir $(F))/scaled_junction_coverage_$(M).rds)) \
 $(foreach F,$(fastqfiles),output/$(notdir $(F))_combined_coverages.rds) \
 $(foreach F,$(fastqfiles),output/$(notdir $(F))_combined_coverages_with_scores.rds)
 

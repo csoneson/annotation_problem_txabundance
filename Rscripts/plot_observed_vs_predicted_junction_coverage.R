@@ -202,7 +202,7 @@ print(gg + scale_x_sqrt() + scale_y_sqrt())
 dev.off()
 
 
-saveRDS(NULL, outrds)
+saveRDS(list(junctionscatter = gg), outrds)
 
 date()
 sessionInfo()

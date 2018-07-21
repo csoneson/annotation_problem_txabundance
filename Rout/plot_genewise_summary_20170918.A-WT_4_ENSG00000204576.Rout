@@ -52,7 +52,8 @@ Type 'q()' to quit R.
 [1] "reference/Gviz/Homo_sapiens.GRCh38.90_gviz_genemodels.rds"
 > print(quantmethods)
 [1] "hera"          "kallisto"      "RSEM"          "Salmon"       
-[5] "SalmonSTAR"    "SalmonCDS"     "SalmonKeepDup" "StringTie"    
+[5] "SalmonSTAR"    "SalmonCDS"     "SalmonKeepDup" "Salmon0.11"   
+[9] "StringTie"    
 > print(scorerds)
 [1] "output/20170918.A-WT_4_combined_coverages_with_scores.rds"
 > print(outpng)
@@ -202,15 +203,15 @@ null device
 +                          ncol = 1, rel_heights = c(1, 0.8, 0.1), 
 +                          labels = c("A", "", "")))
 Warning messages:
-1: Removed 1 rows containing missing values (geom_bar). 
-2: Removed 1 rows containing missing values (geom_bar). 
+1: Removed 2 rows containing missing values (geom_bar). 
+2: Removed 2 rows containing missing values (geom_bar). 
 > dev.off()
 null device 
           1 
 > 
 > unlink(paste0("gviz", rn, ".png"))
 > date()
-[1] "Sun Jul 15 23:24:44 2018"
+[1] "Sat Jul 21 14:50:53 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -285,4 +286,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
- 83.700   4.884  88.732 
+ 83.048   6.212  89.436 

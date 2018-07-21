@@ -7,12 +7,15 @@ Rscripts/alpine_fitbiasmodel.R
 endef
 $(eval $(call fitbiasrule,20151016.A-Cortex_RNA,,$(gtf),126,100,300,Homo_sapiens,GRCh38,90,TRUE))
 $(eval $(call fitbiasrule,20170918.A-WT_4,,$(gtf),151,140,450,Homo_sapiens,GRCh38,90,TRUE))
+#$(eval $(call fitbiasrule,SRR7056167,,$(gtf),XXX,XXX,XXX,Homo_sapiens,GRCh38,90,TRUE))
 $(eval $(call fitbiasrule,sim_misannotated_utr_1,,$(gtf),125,230,370,Homo_sapiens,GRCh38,90,FALSE))
 $(eval $(call fitbiasrule,20151016.A-Cortex_RNA,_stringtie_tx,stringtie/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_filtered.gtf,126,100,300,Homo_sapiens,GRCh38,90,TRUE))
 $(eval $(call fitbiasrule,20170918.A-WT_4,_stringtie_tx,stringtie/20170918.A-WT_4/20170918.A-WT_4_filtered.gtf,151,140,450,Homo_sapiens,GRCh38,90,TRUE))
+#$(eval $(call fitbiasrule,SRR7056167,_stringtie_tx,stringtie/SRR7056167/SRR7056167_filtered.gtf,XXX,XXX,XXX,Homo_sapiens,GRCh38,90,TRUE))
 $(eval $(call fitbiasrule,sim_misannotated_utr_1,_stringtie_tx,stringtie/sim_misannotated_utr_1/sim_misannotated_utr_1_filtered.gtf,125,230,370,Homo_sapiens,GRCh38,90,TRUE))
 $(eval $(call fitbiasrule,20151016.A-Cortex_RNA,_chess,$(gtf_chess),126,100,300,Homo_sapiens,GRCh38,90,TRUE))
 $(eval $(call fitbiasrule,20170918.A-WT_4,_chess,$(gtf_chess),151,140,450,Homo_sapiens,GRCh38,90,TRUE))
+#$(eval $(call fitbiasrule,SRR7056167,_chess,$(gtf_chess),XXX,XXX,XXX,Homo_sapiens,GRCh38,90,TRUE))
 
 ## Predict transcript and junction coverage profiles for all transcripts that have at least one 
 ## junction and are longer than the fragment length
@@ -37,6 +40,7 @@ $(eval $(call juncscalerule,20151016.A-Cortex_RNA,,Salmon,salmon/cDNAncRNA/20151
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,,SalmonSTAR,salmonstartx/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,,SalmonKeepDup,salmon/cDNAncRNAkeepdup/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,,SalmonCDS,salmon/cds/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,,Salmon0.11,salmon011/cDNAncRNA/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,,kallisto,kallisto/cDNAncRNA/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_kallisto.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,,RSEM,RSEM/cDNAncRNA/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA.isoforms.results,Rscripts/read_quant_rsem.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,,hera,hera/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_hera.R,$(tx2geneext),yes))
@@ -46,6 +50,7 @@ $(eval $(call juncscalerule,20170918.A-WT_4,,Salmon,salmon/cDNAncRNA/20170918.A-
 $(eval $(call juncscalerule,20170918.A-WT_4,,SalmonSTAR,salmonstartx/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,,SalmonKeepDup,salmon/cDNAncRNAkeepdup/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,,SalmonCDS,salmon/cds/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
+$(eval $(call juncscalerule,20170918.A-WT_4,,Salmon0.11,salmon011/cDNAncRNA/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,,kallisto,kallisto/cDNAncRNA/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_kallisto.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,,RSEM,RSEM/cDNAncRNA/20170918.A-WT_4/20170918.A-WT_4.isoforms.results,Rscripts/read_quant_rsem.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,,hera,hera/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_hera.R,$(tx2geneext),yes))
@@ -57,6 +62,7 @@ $(eval $(call juncscalerule,sim_misannotated_utr_1,,Salmon,salmon/cDNAncRNA/sim_
 $(eval $(call juncscalerule,sim_misannotated_utr_1,,SalmonSTAR,salmonstartx/sim_misannotated_utr_1/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,sim_misannotated_utr_1,,SalmonKeepDup,salmon/cDNAncRNAkeepdup/sim_misannotated_utr_1/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,sim_misannotated_utr_1,,SalmonCDS,salmon/cds/sim_misannotated_utr_1/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
+$(eval $(call juncscalerule,sim_misannotated_utr_1,,Salmon0.11,salmon011/cDNAncRNA/sim_misannotated_utr_1/quant.sf,Rscripts/read_quant_salmon.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,sim_misannotated_utr_1,,kallisto,kallisto/cDNAncRNA/sim_misannotated_utr_1/abundance.tsv,Rscripts/read_quant_kallisto.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,sim_misannotated_utr_1,,RSEM,RSEM/cDNAncRNA/sim_misannotated_utr_1/sim_misannotated_utr_1.isoforms.results,Rscripts/read_quant_rsem.R,$(tx2geneext),yes))
 $(eval $(call juncscalerule,sim_misannotated_utr_1,,hera,hera/sim_misannotated_utr_1/abundance.tsv,Rscripts/read_quant_hera.R,$(tx2geneext),yes))
@@ -64,6 +70,7 @@ $(eval $(call juncscalerule,sim_misannotated_utr_1,,StringTie,stringtie_onlyref/
 
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_stringtie_tx,Salmon,salmon_stringtie_tx/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,reference/20151016.A-Cortex_RNA_stringtie_tx_tx2gene_withsymbol.rds,yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_stringtie_tx,SalmonSTAR,salmonstartx_stringtie_tx/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,reference/20151016.A-Cortex_RNA_stringtie_tx_tx2gene_withsymbol.rds,yes))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,_stringtie_tx,Salmon0.11,salmon011_stringtie_tx/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,reference/20151016.A-Cortex_RNA_stringtie_tx_tx2gene_withsymbol.rds,yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_stringtie_tx,kallisto,kallisto_stringtie_tx/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_kallisto.R,reference/20151016.A-Cortex_RNA_stringtie_tx_tx2gene_withsymbol.rds,yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_stringtie_tx,RSEM,RSEM_stringtie_tx/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA.isoforms.results,Rscripts/read_quant_rsem.R,reference/20151016.A-Cortex_RNA_stringtie_tx_tx2gene_withsymbol.rds,yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_stringtie_tx,hera,hera_stringtie_tx/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_hera.R,reference/20151016.A-Cortex_RNA_stringtie_tx_tx2gene_withsymbol.rds,yes))
@@ -71,6 +78,7 @@ $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_stringtie_tx,StringTie,string
 
 $(eval $(call juncscalerule,20170918.A-WT_4,_stringtie_tx,Salmon,salmon_stringtie_tx/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,reference/20170918.A-WT_4_stringtie_tx_tx2gene_withsymbol.rds,yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,_stringtie_tx,SalmonSTAR,salmonstartx_stringtie_tx/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,reference/20170918.A-WT_4_stringtie_tx_tx2gene_withsymbol.rds,yes))
+$(eval $(call juncscalerule,20170918.A-WT_4,_stringtie_tx,Salmon0.11,salmon011_stringtie_tx/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,reference/20170918.A-WT_4_stringtie_tx_tx2gene_withsymbol.rds,yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,_stringtie_tx,kallisto,kallisto_stringtie_tx/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_kallisto.R,reference/20170918.A-WT_4_stringtie_tx_tx2gene_withsymbol.rds,yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,_stringtie_tx,RSEM,RSEM_stringtie_tx/20170918.A-WT_4/20170918.A-WT_4.isoforms.results,Rscripts/read_quant_rsem.R,reference/20170918.A-WT_4_stringtie_tx_tx2gene_withsymbol.rds,yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,_stringtie_tx,hera,hera_stringtie_tx/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_hera.R,reference/20170918.A-WT_4_stringtie_tx_tx2gene_withsymbol.rds,yes))
@@ -78,6 +86,7 @@ $(eval $(call juncscalerule,20170918.A-WT_4,_stringtie_tx,StringTie,stringtie/20
 
 $(eval $(call juncscalerule,sim_misannotated_utr_1,_stringtie_tx,Salmon,salmon_stringtie_tx/sim_misannotated_utr_1/quant.sf,Rscripts/read_quant_salmon.R,reference/sim_misannotated_utr_1_stringtie_tx_tx2gene_withsymbol.rds,yes))
 $(eval $(call juncscalerule,sim_misannotated_utr_1,_stringtie_tx,SalmonSTAR,salmonstartx_stringtie_tx/sim_misannotated_utr_1/quant.sf,Rscripts/read_quant_salmon.R,reference/sim_misannotated_utr_1_stringtie_tx_tx2gene_withsymbol.rds,yes))
+$(eval $(call juncscalerule,sim_misannotated_utr_1,_stringtie_tx,Salmon0.11,salmon011_stringtie_tx/sim_misannotated_utr_1/quant.sf,Rscripts/read_quant_salmon.R,reference/sim_misannotated_utr_1_stringtie_tx_tx2gene_withsymbol.rds,yes))
 $(eval $(call juncscalerule,sim_misannotated_utr_1,_stringtie_tx,kallisto,kallisto_stringtie_tx/sim_misannotated_utr_1/abundance.tsv,Rscripts/read_quant_kallisto.R,reference/sim_misannotated_utr_1_stringtie_tx_tx2gene_withsymbol.rds,yes))
 $(eval $(call juncscalerule,sim_misannotated_utr_1,_stringtie_tx,RSEM,RSEM_stringtie_tx/sim_misannotated_utr_1/sim_misannotated_utr_1.isoforms.results,Rscripts/read_quant_rsem.R,reference/sim_misannotated_utr_1_stringtie_tx_tx2gene_withsymbol.rds,yes))
 $(eval $(call juncscalerule,sim_misannotated_utr_1,_stringtie_tx,hera,hera_stringtie_tx/sim_misannotated_utr_1/abundance.tsv,Rscripts/read_quant_hera.R,reference/sim_misannotated_utr_1_stringtie_tx_tx2gene_withsymbol.rds,yes))
@@ -86,6 +95,7 @@ $(eval $(call juncscalerule,sim_misannotated_utr_1,_stringtie_tx,StringTie,strin
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_chess,Salmon,salmon_chess/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_chess_withsymbol),yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_chess,SalmonSTAR,salmonstartx_chess/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_chess_withsymbol),yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_chess,SalmonKeepDup,salmon_chesskeepdup/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_chess_withsymbol),yes))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,_chess,Salmon0.11,salmon011_chess/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_chess_withsymbol),yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_chess,kallisto,kallisto_chess/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_kallisto.R,$(tx2gene_chess_withsymbol),yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_chess,RSEM,RSEM_chess/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA.isoforms.results,Rscripts/read_quant_rsem.R,$(tx2gene_chess_withsymbol),yes))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_chess,hera,hera_chess/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_hera.R,$(tx2gene_chess_withsymbol),yes))
@@ -94,6 +104,7 @@ $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_chess,StringTie,stringtie_che
 $(eval $(call juncscalerule,20170918.A-WT_4,_chess,Salmon,salmon_chess/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_chess_withsymbol),yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,_chess,SalmonSTAR,salmonstartx_chess/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_chess_withsymbol),yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,_chess,SalmonKeepDup,salmon_chesskepdup/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_chess_withsymbol),yes))
+$(eval $(call juncscalerule,20170918.A-WT_4,_chess,Salmon0.11,salmon011_chess/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_chess_withsymbol),yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,_chess,kallisto,kallisto_chess/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_kallisto.R,$(tx2gene_chess_withsymbol),yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,_chess,RSEM,RSEM_chess/20170918.A-WT_4/20170918.A-WT_4.isoforms.results,Rscripts/read_quant_rsem.R,$(tx2gene_chess_withsymbol),yes))
 $(eval $(call juncscalerule,20170918.A-WT_4,_chess,hera,hera_chess/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_hera.R,$(tx2gene_chess_withsymbol),yes))
@@ -106,16 +117,16 @@ alpine/$(1)$(2)/scaled_junction_coverage_Salmon.rds alpine/$(1)$(2)/scaled_junct
 alpine/$(1)$(2)/scaled_junction_coverage_RSEM.rds alpine/$(1)$(2)/scaled_junction_coverage_StringTie.rds \
 alpine/$(1)$(2)/scaled_junction_coverage_SalmonSTAR.rds alpine/$(1)$(2)/scaled_junction_coverage_kallisto.rds \
 output/gene_characteristics.rds featureCounts/$(1)/$(1)_STAR_exons.txt featureCounts/$(1)/$(1)_STAR_introns.txt \
-Rscripts/combine_scaled_coverages.R $(3) $(4) $(5)
+Rscripts/combine_scaled_coverages.R $(3) $(4) $(5) $(6)
 	mkdir -p $$(@D)
-	$(R) "--args junctioncovSTAR='STAR$(2)/$(1)/$(1)_SJ.out.tab' junctioncovSalmon='$$(word 2,$$^)' junctioncovSalmonSTAR='$$(word 6,$$^)' junctioncovSalmonKeepDup='$(5)' junctioncovSalmonCDS='$(4)' junctioncovNanopore='$(3)' junctioncovhera='$$(word 3,$$^)' junctioncovkallisto='$$(word 7,$$^)' junctioncovRSEM='$$(word 4,$$^)' junctioncovStringTie='$$(word 5,$$^)' genecharacteristics='$$(word 8,$$^)' exoncountstxt='$$(word 9,$$^)' introncountstxt='$$(word 10,$$^)' outrds='$$@'" Rscripts/combine_scaled_coverages.R Rout/combine_scaled_coverages_$(1)$(2).Rout
+	$(R) "--args junctioncovSTAR='STAR$(2)/$(1)/$(1)_SJ.out.tab' junctioncovSalmon='$$(word 2,$$^)' junctioncovSalmonSTAR='$$(word 6,$$^)' junctioncovSalmonKeepDup='$(5)' junctioncovSalmonCDS='$(4)' junctioncovNanopore='$(3)' junctioncovhera='$$(word 3,$$^)' junctioncovkallisto='$$(word 7,$$^)' junctioncovRSEM='$$(word 4,$$^)' junctioncovStringTie='$$(word 5,$$^)' junctioncovSalmon0.11='$(6)' genecharacteristics='$$(word 8,$$^)' exoncountstxt='$$(word 9,$$^)' introncountstxt='$$(word 10,$$^)' outrds='$$@'" Rscripts/combine_scaled_coverages.R Rout/combine_scaled_coverages_$(1)$(2).Rout
 endef
-$(eval $(call combcovrule,20151016.A-Cortex_RNA,,,alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_SalmonCDS.rds,alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_SalmonKeepDup.rds))
-$(eval $(call combcovrule,20170918.A-WT_4,,alpine/20170918.A-WT_4/scaled_junction_coverage_WubMinimap2Nanopore.rds,alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonCDS.rds,alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonKeepDup.rds))
-$(eval $(call combcovrule,sim_misannotated_utr_1,,,alpine/sim_misannotated_utr_1/scaled_junction_coverage_SalmonCDS.rds,alpine/sim_misannotated_utr_1/scaled_junction_coverage_SalmonKeepDup.rds))
-$(eval $(call combcovrule,20151016.A-Cortex_RNA,_stringtie_tx,,,))
-$(eval $(call combcovrule,20170918.A-WT_4,_stringtie_tx,,,))
-$(eval $(call combcovrule,sim_misannotated_utr_1,_stringtie_tx,,,))
+$(eval $(call combcovrule,20151016.A-Cortex_RNA,,,alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_SalmonCDS.rds,alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_SalmonKeepDup.rds,alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_Salmon0.11.rds))
+$(eval $(call combcovrule,20170918.A-WT_4,,alpine/20170918.A-WT_4/scaled_junction_coverage_WubMinimap2Nanopore.rds,alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonCDS.rds,alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonKeepDup.rds,alpine/20170918.A-WT_4/scaled_junction_coverage_Salmon0.11.rds))
+$(eval $(call combcovrule,sim_misannotated_utr_1,,,alpine/sim_misannotated_utr_1/scaled_junction_coverage_SalmonCDS.rds,alpine/sim_misannotated_utr_1/scaled_junction_coverage_SalmonKeepDup.rds,alpine/sim_misannotated_utr_1/scaled_junction_coverage_Salmon0.11.rds))
+$(eval $(call combcovrule,20151016.A-Cortex_RNA,_stringtie_tx,,,,alpine/20151016.A-Cortex_RNA_stringtie_tx/scaled_junction_coverage_Salmon0.11.rds))
+$(eval $(call combcovrule,20170918.A-WT_4,_stringtie_tx,,,,alpine/20170918.A-WT_4_stringtie_tx/scaled_junction_coverage_Salmon0.11.rds))
+$(eval $(call combcovrule,sim_misannotated_utr_1,_stringtie_tx,,,,alpine/sim_misannotated_utr_1/scaled_junction_coverage_Salmon0.11.rds))
 
 ## Combine coverages for all methods, CHESS
 define combcovchessrule

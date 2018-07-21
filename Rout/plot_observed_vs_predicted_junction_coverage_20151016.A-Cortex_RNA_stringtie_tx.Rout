@@ -234,10 +234,10 @@ null device
           1 
 > 
 > 
-> saveRDS(NULL, outrds)
+> saveRDS(list(junctionscatter = gg), outrds)
 > 
 > date()
-[1] "Sun Jul 15 23:25:22 2018"
+[1] "Fri Jul 20 15:08:19 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -270,4 +270,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-321.012   7.656 330.861 
+291.628   9.040 304.783 

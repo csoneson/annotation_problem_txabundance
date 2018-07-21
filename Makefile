@@ -6,17 +6,15 @@ bedtools := /usr/local/bin/bedtools
 ## List FASTQ files (without the _{R1,R2}.fastq.gz part)
 fastqfilesreal := \
 /home/Shared/data/seq/roche_pacbio_targeted_cdna/Illumina_RNA_seq/20151016.A-Cortex_RNA \
-/home/Shared/data/seq/hussain_bath_nanopore_rnaseq/Illumina/FASTQ/20170918.A-WT_4# \
-#/home/charlotte/annotation_problem_txabundance/FASTQ/SRR7059404
+/home/Shared/data/seq/hussain_bath_nanopore_rnaseq/Illumina/FASTQ/20170918.A-WT_4
 fastqfilessim := simulation/misannotated_utr/sim_misannotated_utr_1
 fastqfiles := $(fastqfilesreal) $(fastqfilessim)
 
 ## Abundance quantification methods
-quantmethods20151016.A-Cortex_RNA := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup Salmon0.11
-#quantmethodsSRR7059404 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup
-quantmethods20170918.A-WT_4 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup Salmon0.11 SalmonMinimap2Nanopore WubMinimap2Nanopore
-quantmethodssim_misannotated_utr_1 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup Salmon0.11
-quantmethodsstringtie := Salmon SalmonSTAR kallisto RSEM StringTie hera Salmon0.11
+quantmethods20151016.A-Cortex_RNA := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup
+uantmethods20170918.A-WT_4 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup SalmonMinimap2Nanopore WubMinimap2Nanopore
+quantmethodssim_misannotated_utr_1 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup 
+quantmethodsstringtie := Salmon SalmonSTAR kallisto RSEM StringTie hera 
 
 nthreads := 48
 
@@ -67,7 +65,6 @@ $(flatgtfexons) \
 $(salmoncdnancrnaindex)/hash.bin \
 $(salmoncdsindex)/hash.bin \
 $(salmonkeepdupindex)/hash.bin \
-$(salmon011cdnancrnaindex)/hash.bin \
 $(kallistocdnancrnaindex) \
 $(STARindextxome)/SA \
 reference/RSEM/Homo_sapiens.GRCh38.rsem.cdna.ncrna/Homo_sapiens.GRCh38.rsem.cdna.ncrna.n2g.idx.fa \
@@ -81,7 +78,6 @@ $(gvizgenemodels)
 quant: $(foreach F,$(fastqfiles),salmon/cDNAncRNA/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),salmon/cDNAncRNAkeepdup/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),salmon/cds/$(notdir $(F))/quant.sf) \
-$(foreach F,$(fastqfiles),salmon011/cDNAncRNA/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),kallisto/cDNAncRNA/$(notdir $(F))/abundance.tsv) \
 $(foreach F,$(fastqfiles),salmonstartx/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfiles),RSEM/cDNAncRNA/$(notdir $(F))/$(notdir $(F)).isoforms.results) \
@@ -106,8 +102,8 @@ $(foreach F,$(fastqfiles),output/$(notdir $(F))_combined_coverages_with_scores.r
 ########################################################################################################
 ## Prepare reference files and indexes
 preprefchess: $(gtf_chess) $(txome_chess) $(tx2gene_chess) \
-reference/salmon/chess2.0_assembly_fixed_sidx_v0.9.1/hash.bin \
-reference/salmon/chess2.0_assembly_fixed_keepdup_sidx_v0.9.1/hash.bin \
+reference/salmon/chess2.0_assembly_fixed_sidx_v0.11.0/hash.bin \
+reference/salmon/chess2.0_assembly_fixed_keepdup_sidx_v0.11.0/hash.bin \
 reference/kallisto/chess2.0_assembly_fixed_kidx_v0.44.0
 
 alpineprepchess: $(foreach F,$(fastqfilesreal),STAR_chess/$(notdir $(F))/$(notdir $(F))_Aligned.sortedByCoord.out.bam.bai) \
@@ -128,7 +124,7 @@ $(foreach F,$(fastqfilesreal),output/$(notdir $(F))_chess_combined_coverages_wit
 ## Prepare reference files and indexes
 preprefstringtie: $(foreach F,$(fastqfiles),reference/$(notdir $(F))_stringtie_tx_tx2gene.rds) \
 $(foreach F,$(fastqfiles),reference/$(notdir $(F))_stringtie_tx_tx2gene_withsymbol.rds) \
-$(foreach F,$(fastqfiles),reference/salmon/$(notdir $(F))_stringtie_tx_sidx_v0.9.1/hash.bin) \
+$(foreach F,$(fastqfiles),reference/salmon/$(notdir $(F))_stringtie_tx_sidx_v0.11.0/hash.bin) \
 $(foreach F,$(fastqfiles),reference/kallisto/$(notdir $(F))_stringtie_tx_kidx_v0.44.0) \
 $(foreach F,$(fastqfiles),reference/STAR/$(notdir $(F))_stringtie_tx_STAR2.5.3a/SA) \
 $(foreach F,$(fastqfiles),reference/$(notdir $(F))_stringtie_tx_rsemgene2tx.txt) \
@@ -207,7 +203,7 @@ stats: $(foreach F,$(fastqfiles),stats/alpine_coverage_prediction_summary_$(notd
 $(foreach F,$(fastqfiles),stats/alpine_coverage_prediction_summary_$(notdir $(F))_stringtie_tx.txt) \
 $(foreach F,$(fastqfiles),stats/genes_with_high_score_$(notdir $(F)).txt) \
 $(foreach F,$(fastqfiles),stats/genes_with_high_score_$(notdir $(F))_stringtie_tx.txt) \
-stats/nbr_duplicate_transcripts_Salmon_Homo_sapiens.GRCh38.cdna.ncrna_sidx_v0.9.1.txt \
+stats/nbr_duplicate_transcripts_Salmon_Homo_sapiens.GRCh38.cdna.ncrna_sidx_v0.11.0.txt \
 stats/annotation_characteristics_ensembl.38.90.txt \
 stats/annotation_characteristics_chess2.0_assembly_fixed.txt \
 $(foreach F,$(fastqfilesreal),stats/annotation_characteristics_$(notdir $(F))_stringtie_tx.txt)

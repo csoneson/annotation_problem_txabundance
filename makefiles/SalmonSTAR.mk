@@ -1,5 +1,5 @@
 STAR := /home/charlotte/software/STAR-2.5.3a/bin/Linux_x86_64/STAR
-salmon := /home/charlotte/software/Salmon-0.9.1_linux_x86_64/bin/salmon
+salmon := /home/charlotte/software/salmon-0.11.0-linux_x86_64/bin/salmon
 
 STARindextxome := reference/STAR/Homo_sapiens.GRCh38.cdna.ncrna_STAR2.5.3a
 
@@ -39,4 +39,4 @@ $(2)/$(1)/quant.sf: $(3)/$(1)/$(1)_Aligned.out.bam $(4)
 endef
 $(foreach F,$(fastqfiles),$(eval $(call salmonstarrule,$(notdir $(F)),salmonstartx,STARtxome,$(txome))))
 $(foreach F,$(fastqfiles),$(eval $(call salmonstarrule,$(notdir $(F)),salmonstartx_stringtie_tx,STARtxome_stringtie_tx,stringtie/$(notdir $(F))/$(notdir $(F))_stringtie_tx.fa)))
-$(foerach F,$(fastqfilesreal),$(eval $(call salmonstarrule,$(notdir $(F)),salmonstartx_chess,STARtxome_chess,$(txome_chess))))
+$(foreach F,$(fastqfilesreal),$(eval $(call salmonstarrule,$(notdir $(F)),salmonstartx_chess,STARtxome_chess,$(txome_chess))))

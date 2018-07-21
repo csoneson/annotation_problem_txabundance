@@ -154,3 +154,21 @@ In .get_cds_IDX(type, phase) :
 +   overlap <- sum(width(pin))/sum(width(pun))
 +   data.frame(artificial_tx = queryHits(ol)[i], reference_tx = subjectHits(ol)[i], jaccard = overlap)
 + }, mc.preschedule = FALSE, mc.cores = nthreads))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Execution halted

@@ -116,11 +116,13 @@ Joining, by = "gene"
 > cowplot::plot_grid(
 +   ggplot(df_tx, aes(x = CV, y = score)) + 
 +     geom_point(alpha = 0.3, size = 1) + geom_smooth() + 
-+     theme_bw() + ggtitle("Transcript"),
++     theme_bw() + ggtitle("Transcript") + ylab("JCC score") + 
++     theme(axis.text = element_text(size = 14)),
 +   
-+   ggplot(df_gene, aes(x = CV, y = score)) + 
++   ggplot(df_gene %>% dplyr::mutate(CV = replace(CV, CV > 1, 1)), aes(x = CV, y = score)) + 
 +     geom_point(alpha = 0.3, size = 1) + geom_smooth(data = df_gene %>% dplyr::filter(CV < 1)) + 
-+     theme_bw() + ggtitle("Gene"),
++     theme_bw() + ggtitle("Gene") + ylab("JCC score") + 
++     theme(axis.text = element_text(size = 14)),
 +   
 +   ncol = 1
 + )
@@ -137,7 +139,7 @@ null device
 > 
 > saveRDS(NULL, file = outrds)
 > date()
-[1] "Sat Jul 21 13:28:44 2018"
+[1] "Sun Jul 22 13:52:27 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -171,4 +173,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
- 85.196   7.784  93.323 
+ 74.916   1.948  76.962 

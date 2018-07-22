@@ -17,6 +17,12 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
+> ################################################################################
+> ##                                                                            ##
+> ## List packages used by going through Rout files                             ##
+> ##                                                                            ##
+> ################################################################################
+> 
 > lf <- list.files("Rout")
 > all_packages <- c()
 > for (f in lf) {
@@ -37,4 +43,4 @@ Type 'q()' to quit R.
 > 
 > proc.time()
    user  system elapsed 
-  1.868   0.104   1.971 
+  3.316   0.252  10.051 

@@ -123,6 +123,7 @@ tpms <- ggplot(scores$transcripts %>% dplyr::filter(gene == usegene & method %in
                  dplyr::mutate(transcript = factor(transcript, levels = levels(gm$transcript))),
                aes(x = method, y = TPM, fill = transcript)) + 
   geom_bar(stat = "identity", position = "fill") + 
+  ylab("Relative TPM") + 
   scale_fill_manual(values = cols, name = "") + xlab("") + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 9),
         legend.text = element_text(size = 7))

@@ -35,7 +35,7 @@ all: prepref quant alpineprep scalecov \
 plots nanopore simulation stats plotscomparison \
 preprefstringtie quantstringtie alpineprepstringtie scalecovstringtie plotsstringtie \
 preprefchess alpineprepchess quantchess scalecovchess plotschess plotssummarychess \
-plotssummary plotssummarystringtie 
+plotssummary plotssummarystringtie plotssim
 
 ## Include makefiles. These need to be included after the definition of the "all" rule, 
 ## otherwise the default rule will be the first one from these makefiles
@@ -175,9 +175,9 @@ $(foreach F,$(fastqfiles),figures/correlation_with_inferential_variance/correlat
 $(foreach F,$(fastqfiles),figures/correlation_between_methods/correlation_between_methods_$(notdir $(F)).rds) \
 figures/correlation_between_nanopore_and_illumina_scores/correlation_between_nanopore_and_illumina_scores_20170918.A-WT_4.rds \
 $(foreach F,$(fastqfiles),figures/correlation_with_true_abundances/correlation_with_true_abundances_$(notdir $(F)).rds) \
-$(foreach F,$(fastqfiles),figures/association_exoncdscorrelation_score/association_exoncdscorrelation_score_$(notdir $(F)).rds) \
-$(foreach F,$(fastqfilessim),figures/performance_simulated_data/performance_simulated_data_$(notdir $(F)).rds)
-#$(foreach G,$(genes_to_plot),$(foreach F,$(fastqfiles),output_genewise/$(notdir $(F))/check/$(G).rds)) \
+$(foreach F,$(fastqfiles),figures/association_exoncdscorrelation_score/association_exoncdscorrelation_score_$(notdir $(F)).rds)
+
+plotssim: $(foreach F,$(fastqfilessim),figures/performance_simulated_data/performance_simulated_data_$(notdir $(F)).rds)
 
 plotsstringtie: $(foreach F,$(fastqfiles),figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F))_stringtie_tx.rds) \
 $(foreach F,$(fastqfiles),figures/gene_scores/gene_scores_$(notdir $(F))_stringtie_tx.rds)

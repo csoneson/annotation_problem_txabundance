@@ -54,8 +54,7 @@ Type 'q()' to quit R.
 [1] "output/20151016.A-Cortex_RNA_combined_coverages_with_scores.rds"
 > print(quantmethods)
 [1] "hera"          "kallisto"      "RSEM"          "Salmon"       
-[5] "SalmonSTAR"    "SalmonCDS"     "SalmonKeepDup" "Salmon0.11"   
-[9] "StringTie"    
+[5] "SalmonSTAR"    "SalmonCDS"     "SalmonKeepDup" "StringTie"    
 > print(truthrda)
 [1] ""
 > print(truthmodgenesrds)
@@ -87,7 +86,7 @@ Type 'q()' to quit R.
 +               lower = list(continuous = wrap("points", alpha = 0.3, size = 0.25)),
 +               upper = list(continuous = combinecor)) + 
 +         theme_bw())
-There were 45 warnings (use warnings() to see them)
+There were 36 warnings (use warnings() to see them)
 > dev.off()
 null device 
           1 
@@ -101,7 +100,7 @@ null device
 +               lower = list(continuous = wrap("points", alpha = 0.3, size = 0.25)),
 +               upper = list(continuous = combinecor)) + 
 +         theme_bw())
-There were 45 warnings (use warnings() to see them)
+There were 36 warnings (use warnings() to see them)
 > dev.off()
 null device 
           1 
@@ -183,7 +182,7 @@ null device
 > 
 > saveRDS(NULL, file = outrds)
 > date()
-[1] "Sat Jul 21 14:01:52 2018"
+[1] "Sun Jul 22 10:17:06 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -218,4 +217,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-452.072   6.788 459.698 
+354.948   4.108 359.376 

@@ -87,11 +87,13 @@ png(gsub("rds$", "png", outrds), width = 6, height = 12, unit = "in", res = 300)
 cowplot::plot_grid(
   ggplot(df_tx, aes(x = CV, y = score)) + 
     geom_point(alpha = 0.3, size = 1) + geom_smooth() + 
-    theme_bw() + ggtitle("Transcript"),
+    theme_bw() + ggtitle("Transcript") + ylab("JCC score") + 
+    theme(axis.text = element_text(size = 14)),
   
-  ggplot(df_gene, aes(x = CV, y = score)) + 
+  ggplot(df_gene %>% dplyr::mutate(CV = replace(CV, CV > 1, 1)), aes(x = CV, y = score)) + 
     geom_point(alpha = 0.3, size = 1) + geom_smooth(data = df_gene %>% dplyr::filter(CV < 1)) + 
-    theme_bw() + ggtitle("Gene"),
+    theme_bw() + ggtitle("Gene") + ylab("JCC score") + 
+    theme(axis.text = element_text(size = 14)),
   
   ncol = 1
 )

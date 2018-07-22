@@ -84,11 +84,10 @@ Warning messages:
 2: Removed 48 rows containing missing values (geom_point). 
 3: Removed 48 rows containing missing values (geom_point). 
 4: Removed 107 rows containing missing values (geom_point). 
-5: Removed 107 rows containing missing values (geom_point). 
-6: Removed 881 rows containing missing values (geom_point). 
+5: Removed 881 rows containing missing values (geom_point). 
+6: Removed 48 rows containing missing values (geom_point). 
 7: Removed 48 rows containing missing values (geom_point). 
 8: Removed 48 rows containing missing values (geom_point). 
-9: Removed 48 rows containing missing values (geom_point). 
 > dev.off()
 null device 
           1 
@@ -161,7 +160,7 @@ null device
 > 
 > saveRDS(NULL, file = outrds)
 > date()
-[1] "Sat Jul 21 13:27:55 2018"
+[1] "Sun Jul 22 10:11:55 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -193,4 +192,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
- 43.508   0.636  44.220 
+ 45.276   2.424  47.777 

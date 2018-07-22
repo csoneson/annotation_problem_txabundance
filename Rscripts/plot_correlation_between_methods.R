@@ -61,12 +61,12 @@ points_identityline <- function(data, mapping, ...){
     geom_abline(intercept = 0, slope = 1) + 
     geom_point(alpha = 0.3, size = 0.25)
 }
-png(gsub("\\.rds$", "_pairs.png", outrds), width = 8, height = 8, 
+png(gsub("\\.rds$", "_pairs.png", outrds), width = 10, height = 10, 
     unit = "in", res = 300)
 print(ggpairs(scores_wide,
               lower = list(continuous = points_identityline),
               upper = list(continuous = combinecor)) + 
-        theme_bw())
+        theme_bw() + xlab("JCC score") + ylab("JCC score"))
 dev.off()
 
 ## Heatmap of mean of differences between each pair of methods
@@ -91,6 +91,7 @@ cormat <- cor(scores_wide, use = "pairwise.complete.obs")
 distmat <- as.dist(sqrt(2*(1 - cormat)))
 hcl <- hclust(distmat)
 nodePar <- list(pch = c(NA, 19), col = "black")
+par(mar = c(6.1, 4.1, 4.1, 2.1)
 plot(as.dendrogram(hcl), type = "rectangle", ylab = "Dissimilarity", nodePar = nodePar)
 dev.off()
 

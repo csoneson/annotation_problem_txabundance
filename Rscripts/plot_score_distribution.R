@@ -71,7 +71,7 @@ scoresNA <- scores %>%
     other = length(score) - valid_score - not_expressed - no_junctions - 
       junctions_but_no_unique_reads - junctions_but_too_few_unique_reads) %>% 
   tidyr::gather(reason, number, -method) %>% 
-  dplyr::mutate(reason = replace(reason, reason == "valid_score", "Valid score"),
+  dplyr::mutate(reason = replace(reason, reason == "valid_score", "Valid JCC score"),
                 reason = replace(reason, reason == "not_expressed", "Estimated abundance = 0"),
                 reason = replace(reason, reason == "no_junctions", "No junctions"),
                 reason = replace(reason, reason == "junctions_but_no_unique_reads", 
@@ -83,7 +83,7 @@ scoresNA <- scores %>%
     reason, levels = c("Has junctions, but too large fraction multimapping junction reads",
                        "Has junctions, but no uniquely mapping junction reads",
                        "No junctions",
-                       "Other", "Estimated abundance = 0", "Valid score")))
+                       "Other", "Estimated abundance = 0", "Valid JCC score")))
 
 png(gsub("\\.rds$", "_NAscores.png", outrds), width = 8, height = 6, 
     unit = "in", res = 300)
@@ -92,7 +92,7 @@ print(ggplot(scoresNA, aes(x = method, y = number, fill = reason)) +
         theme(legend.position = "bottom") + 
         guides(fill = guide_legend(nrow = 2, title = "")) + 
         scale_fill_manual(
-          values = c(`Valid score` = "#000099",
+          values = c(`Valid JCC score` = "#000099",
                      `Estimated abundance = 0` = "#9999ff",
                      `Other` = "#b30059",
                      `No junctions` = "#99e600",
@@ -159,7 +159,7 @@ for (mincount in uniqjuncreadsthresholds) {
     geom_point(alpha = 0.5, size = 0.5) + theme_bw() + ylab("JCC score") + 
     facet_wrap(~ method, nrow = 1, scales = "free_x") +
     geom_smooth(color = "black", method = "loess") + 
-    xlab("Number of uniquely mapped junction reads") +
+    xlab("Number of uniquely \nmapped junction reads") +
     theme(legend.position = "none") + scale_x_sqrt() + 
     scale_color_manual(values = method_colors)
       

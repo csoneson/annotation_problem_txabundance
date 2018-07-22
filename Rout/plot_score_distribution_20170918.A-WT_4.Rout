@@ -56,8 +56,7 @@ Type 'q()' to quit R.
 [1] "output/20170918.A-WT_4_combined_coverages_with_scores.rds"
 > print(quantmethods)
 [1] "hera"          "kallisto"      "RSEM"          "Salmon"       
-[5] "SalmonSTAR"    "SalmonCDS"     "SalmonKeepDup" "Salmon0.11"   
-[9] "StringTie"    
+[5] "SalmonSTAR"    "SalmonCDS"     "SalmonKeepDup" "StringTie"    
 > print(uniqjuncreadsthresholds)
 [1]  0 25
 > print(outrds)
@@ -96,7 +95,7 @@ Type 'q()' to quit R.
 +     other = length(score) - valid_score - not_expressed - no_junctions - 
 +       junctions_but_no_unique_reads - junctions_but_too_few_unique_reads) %>% 
 +   tidyr::gather(reason, number, -method) %>% 
-+   dplyr::mutate(reason = replace(reason, reason == "valid_score", "Valid score"),
++   dplyr::mutate(reason = replace(reason, reason == "valid_score", "Valid JCC score"),
 +                 reason = replace(reason, reason == "not_expressed", "Estimated abundance = 0"),
 +                 reason = replace(reason, reason == "no_junctions", "No junctions"),
 +                 reason = replace(reason, reason == "junctions_but_no_unique_reads", 
@@ -108,7 +107,7 @@ Type 'q()' to quit R.
 +     reason, levels = c("Has junctions, but too large fraction multimapping junction reads",
 +                        "Has junctions, but no uniquely mapping junction reads",
 +                        "No junctions",
-+                        "Other", "Estimated abundance = 0", "Valid score")))
++                        "Other", "Estimated abundance = 0", "Valid JCC score")))
 > 
 > png(gsub("\\.rds$", "_NAscores.png", outrds), width = 8, height = 6, 
 +     unit = "in", res = 300)
@@ -117,7 +116,7 @@ Type 'q()' to quit R.
 +         theme(legend.position = "bottom") + 
 +         guides(fill = guide_legend(nrow = 2, title = "")) + 
 +         scale_fill_manual(
-+           values = c(`Valid score` = "#000099",
++           values = c(`Valid JCC score` = "#000099",
 +                      `Estimated abundance = 0` = "#9999ff",
 +                      `Other` = "#b30059",
 +                      `No junctions` = "#99e600",
@@ -186,7 +185,7 @@ null device
 +     geom_point(alpha = 0.5, size = 0.5) + theme_bw() + ylab("JCC score") + 
 +     facet_wrap(~ method, nrow = 1, scales = "free_x") +
 +     geom_smooth(color = "black", method = "loess") + 
-+     xlab("Number of uniquely mapped junction reads") +
++     xlab("Number of uniquely \nmapped junction reads") +
 +     theme(legend.position = "none") + scale_x_sqrt() + 
 +     scale_color_manual(values = method_colors)
 +       
@@ -272,40 +271,3 @@ null device
 +                        g5 + facet_wrap(~ method, ncol = 1), 
 +                        nrow = 1, align = "h", axis = "tb")
 + }
-There were 24 warnings (use warnings() to see them)
-> 
-> saveRDS(list(subplots = subplots), file = outrds)
-> sessionInfo()
-R Under development (unstable) (2017-12-14 r73916)
-Platform: x86_64-pc-linux-gnu (64-bit)
-Running under: Ubuntu 16.04.4 LTS
-
-Matrix products: default
-BLAS: /usr/local/R/R-devel/lib/libRblas.so
-LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
-
-locale:
- [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
- [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
- [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
-[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
-
-attached base packages:
-[1] stats     graphics  grDevices utils     datasets  methods   base     
-
-other attached packages:
-[1] bindrcpp_0.2.2 cowplot_0.9.2  ggplot2_2.2.1  dplyr_0.7.4   
-
-loaded via a namespace (and not attached):
- [1] Rcpp_0.12.16     tidyr_0.8.0      digest_0.6.15    assertthat_0.2.0
- [5] plyr_1.8.4       grid_3.5.0       R6_2.2.2         gtable_0.2.0    
- [9] magrittr_1.5     scales_0.5.0     pillar_1.2.1     rlang_0.2.0     
-[13] lazyeval_0.2.1   labeling_0.3     glue_1.2.0       purrr_0.2.4     
-[17] munsell_0.4.3    compiler_3.5.0   colorspace_1.3-2 pkgconfig_2.0.1 
-[21] tidyselect_0.2.4 bindr_0.1.1      tibble_1.4.2    
-> date()
-[1] "Sat Jul 21 16:20:50 2018"
-> 
-> proc.time()
-    user   system  elapsed 
-2341.544 1829.672 4175.576 

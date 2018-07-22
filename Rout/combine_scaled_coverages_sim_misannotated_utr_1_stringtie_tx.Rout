@@ -267,8 +267,8 @@ loaded via a namespace (and not attached):
  [5] pillar_1.2.1     glue_1.2.0       tibble_1.4.2     Rcpp_0.12.16    
  [9] pkgconfig_2.0.1  rlang_0.2.0      bindr_0.1.1     
 > date()
-[1] "Sat Jun 30 11:34:28 2018"
+[1] "Sun Jul 22 07:05:27 2018"
 > 
 > proc.time()
    user  system elapsed 
- 67.108   0.796  68.017 
+ 67.692   0.896  68.858 

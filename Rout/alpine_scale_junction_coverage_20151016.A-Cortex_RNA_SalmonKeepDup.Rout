@@ -181,8 +181,8 @@ loaded via a namespace (and not attached):
 [53] assertthat_0.2.0            SummarizedExperiment_1.9.16
 [55] stringi_1.1.7               RCurl_1.95-4.10            
 > date()
-[1] "Mon Jun 18 15:38:20 2018"
+[1] "Sun Jul 22 09:02:41 2018"
 > 
 > proc.time()
     user   system  elapsed 
-8286.264  161.344 8485.873 
+7686.008  166.140 7888.220 

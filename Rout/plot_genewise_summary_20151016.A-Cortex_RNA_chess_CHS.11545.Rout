@@ -151,6 +151,7 @@ null device
 +                  dplyr::mutate(transcript = factor(transcript, levels = levels(gm$transcript))),
 +                aes(x = method, y = TPM, fill = transcript)) + 
 +   geom_bar(stat = "identity", position = "fill") + 
++   ylab("Relative TPM") + 
 +   scale_fill_manual(values = cols, name = "") + xlab("") + 
 +   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 9),
 +         legend.text = element_text(size = 7))
@@ -198,7 +199,7 @@ null device
 > 
 > unlink(paste0("gviz", rn, ".png"))
 > date()
-[1] "Sun Jul 15 23:21:12 2018"
+[1] "Sun Jul 22 13:46:35 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -273,4 +274,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
- 69.792   4.272  81.063 
+ 81.048   3.840  85.284 

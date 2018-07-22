@@ -271,3 +271,40 @@ null device
 +                        g5 + facet_wrap(~ method, ncol = 1), 
 +                        nrow = 1, align = "h", axis = "tb")
 + }
+There were 24 warnings (use warnings() to see them)
+> 
+> saveRDS(list(subplots = subplots), file = outrds)
+> sessionInfo()
+R Under development (unstable) (2017-12-14 r73916)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 16.04.4 LTS
+
+Matrix products: default
+BLAS: /usr/local/R/R-devel/lib/libRblas.so
+LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
+ [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
+ [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
+[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] bindrcpp_0.2.2 cowplot_0.9.2  ggplot2_2.2.1  dplyr_0.7.4   
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_0.12.16     tidyr_0.8.0      digest_0.6.15    assertthat_0.2.0
+ [5] plyr_1.8.4       grid_3.5.0       R6_2.2.2         gtable_0.2.0    
+ [9] magrittr_1.5     scales_0.5.0     pillar_1.2.1     rlang_0.2.0     
+[13] lazyeval_0.2.1   labeling_0.3     glue_1.2.0       purrr_0.2.4     
+[17] munsell_0.4.3    compiler_3.5.0   colorspace_1.3-2 pkgconfig_2.0.1 
+[21] tidyselect_0.2.4 bindr_0.1.1      tibble_1.4.2    
+> date()
+[1] "Sun Jul 22 14:05:25 2018"
+> 
+> proc.time()
+   user  system elapsed 
+663.780 190.296 854.983 

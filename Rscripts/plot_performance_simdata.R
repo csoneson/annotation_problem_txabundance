@@ -343,24 +343,30 @@ genes <- scores$genes %>%
   dplyr::mutate(geneclass = ifelse(gene %in% modgenes, "modified", "unmodified")) %>%
   dplyr::filter(uniqjuncreads > uniqjuncreadsthreshold)
 png(gsub("\\.rds$", "_scores.png", outrds), width = 10, height = 7, unit = "in", res = 300)
-print(ggplot(genes, aes(x = geneclass, y = score, color = geneclass)) + 
-        geom_boxplot(outlier.size = 0.3) + 
-        facet_wrap(~ method, nrow = 2) + theme_bw() + 
-        scale_color_manual(values = c(modified = "#9900cc", unmodified = "#009933"),
-                           name = "Gene class") + 
-        xlab("") + theme(legend.position = "bottom"))
+gs1 <- ggplot(genes, aes(x = geneclass, y = score, color = geneclass)) + 
+  geom_boxplot(outlier.size = 0.3) + 
+  facet_wrap(~ method, nrow = 2) + theme_bw() + ylab("JCC score") + 
+  scale_color_manual(values = c(modified = "#9900cc", unmodified = "#009933"),
+                     name = "Gene class") + 
+  xlab("") + theme(legend.position = "none")
+print(gs1)
 dev.off()
 
 png(gsub("\\.rds$", "_scores2.png", outrds), width = 10, height = 7, unit = "in", res = 300)
-print(ggplot(genes %>% dplyr::left_join(gene_summary %>% 
-                                          dplyr::select(gene, method, utr_fraction_of_length) %>% 
-                                          dplyr::distinct()),
-             aes(x = utr_fraction_of_length, y = score)) + 
-        geom_point(alpha = 0.3, size = 0.3) + geom_smooth() +  
-        facet_wrap(~ method, nrow = 2) + theme_bw() + 
-        xlab("Fraction of artificial transcript consisting of 3'UTR"))
+gs2 <- ggplot(genes %>% dplyr::left_join(gene_summary %>% 
+                                           dplyr::select(gene, method, utr_fraction_of_length) %>% 
+                                           dplyr::distinct()),
+              aes(x = utr_fraction_of_length, y = score)) + 
+  geom_point(alpha = 0.3, size = 0.3) + geom_smooth() +  
+  facet_wrap(~ method, nrow = 2) + theme_bw() + ylab("JCC score") + 
+  xlab("Fraction of artificial transcript consisting of 3'UTR")
+print(gs2)
 dev.off()
 
+png(gsub("\\.rds$", "_scoresmerged.png", outrds), width = 12, height = 5, unit = "in", res = 300)
+print(cowplot::plot_grid(gs1, gs2, nrow = 1, rel_widths = c(1, 1), 
+                         labels = c("A", "B"), align = "h", axis = "tb"))
+dev.off()
 
 saveRDS(list(genes = genes, gene_summary = gene_summary, modtrans = modtrans), file = outrds)
 date()

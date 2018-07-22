@@ -11,6 +11,8 @@
 ##                      as well as gene scores, for the StringTie annotation. ##
 ## * convtablestringtie: conversion table for StringTie genes.                ##
 ## * convtablestringtietx: conversion table for StringTie transcripts.        ##
+## * quantmethods: string containing the quantification methods to consider,  ##
+##                 separated by commas (no spaces)                            ##
 ## * uniqjuncreadsthreshold: the total number of uniquely mapping junction    ##
 ##                           reads (in a gene), only genes with more than     ##
 ##                           this number for both annotations will be used    ##
@@ -31,10 +33,13 @@ for (i in 1:length(args)) {
   eval(parse(text = args[[i]]))
 }
 
+quantmethods <- strsplit(quantmethods, ",")[[1]]
+
 print(scorerdsensembl)
 print(scorerdsstringtie)
 print(convtablestringtie)
 print(convtablestringtietx)
+print(quantmethods)
 print(uniqjuncreadsthreshold)
 print(uniqjuncfracthreshold)
 print(outrds)
@@ -62,7 +67,8 @@ combined <- rbind(stringtie$genes %>% dplyr::select(gene, method, score) %>%
                     dplyr::mutate(annotation = "StringTie"),
                   ensembl$genes %>% dplyr::select(gene, method, score) %>% 
                     dplyr::filter(!(method %in% c("SalmonCDS", "SalmonKeepDup"))) %>%
-                    dplyr::mutate(annotation = "Ensembl"))
+                    dplyr::mutate(annotation = "Ensembl")) %>%
+  dplyr::filter(method %in% quantmethods)
 
 png(gsub("\\.rds$", "_distribution_allgenes.png", outrds), width = 8, height = 6, 
     unit = "in", res = 400)
@@ -82,12 +88,16 @@ combinedfilt <- rbind(stringtie$genes %>%
                                         uniqjuncfraction >= uniqjuncfracthreshold) %>% 
                         dplyr::select(gene, method, score) %>% 
                         dplyr::filter(!(method %in% c("SalmonCDS", "SalmonKeepDup"))) %>%
-                        dplyr::mutate(annotation = "Ensembl"))
+                        dplyr::mutate(annotation = "Ensembl")) %>%
+  dplyr::filter(method %in% quantmethods)
 
 ggde <- ggplot(combinedfilt, aes(x = score, color = annotation)) + 
   geom_line(stat = "density", size = 1.5) + facet_wrap(~ method) + theme_bw() + 
-  scale_color_manual(values = c(StringTie = "#B17BA6", Ensembl = "#90C987")) + 
-  xlab("Score") + ylab("Density") + theme(legend.position = "bottom")
+  scale_color_manual(values = c(StringTie = "#B17BA6", Ensembl = "#90C987"),
+                     name = "") + 
+  xlab("JCC score") + ylab("Density") + 
+  theme(legend.position = "bottom",
+        axis.title = element_text(size = 15))
 
 ## Keep only genes with enough (unique) junction reads with both annotations,
 ## and compare the scores of the genes that can be matched
@@ -105,33 +115,49 @@ a <- stringtie$genes %>%
                       dplyr::select(gene, method, score) %>%
                       dplyr::filter(!(method %in% c("SalmonCDS", "SalmonKeepDup"))) %>%
                       dplyr::rename(ensembl = score), by = c("gene", "method")) %>%
+  dplyr::filter(method %in% quantmethods) %>%
   dplyr::mutate(method = factor(method, levels = unique(method)))
 
 ggcor <- ggplot(a, aes(x = stringtie, y = ensembl)) + geom_point(alpha = 0.3) +
   facet_wrap(~ method) + geom_abline(slope = 1, intercept = 0) + 
-  theme_bw() + xlab("StringTie score") + ylab("Ensembl score")
+  theme_bw() + xlab("JCC score (StringTie)") + ylab("JCC score (Ensembl)") + 
+  theme(axis.title = element_text(size = 15))
 
 ggbw <- ggplot(a %>% dplyr::group_by(method) %>% 
-                 dplyr::summarize(stringtieworse = sum(stringtie > ensembl), 
+                 dplyr::summarize(stringtiemuchworse = sum(stringtie - ensembl > 0.1),
+                                  stringtielittleworse = sum(stringtie - ensembl > 0 &
+                                                               stringtie - ensembl <= 0.1),
                                   equal = sum(stringtie == ensembl), 
-                                  ensemblworse = sum(ensembl > stringtie)) %>% 
+                                  ensembllittleworse = sum(ensembl - stringtie > 0 & 
+                                                             ensembl - stringtie <= 0.1),
+                                  ensemblmuchworse = sum(ensembl - stringtie > 0.1)) %>% 
                  tidyr::gather(comparison, value, -method) %>%
-                  dplyr::mutate(comparison = replace(comparison, comparison == "stringtieworse", "StringTie score > Ensembl score"),
+                  dplyr::mutate(comparison = replace(comparison, comparison == "stringtiemuchworse", "StringTie score-Ensembl score > 0.1"),
+                                comparison = replace(comparison, comparison == "stringtielittleworse", "0 < StringTie score-Ensembl score <= 0.1"),
                                 comparison = replace(comparison, comparison == "equal", "StringTie score = Ensembl score"),
-                                comparison = replace(comparison, comparison == "ensemblworse", "StringTie score < Ensembl score")), 
+                                comparison = replace(comparison, comparison == "ensembllittleworse", "-0.1 <= StringTie score-Ensembl score < 0"),
+                                comparison = replace(comparison, comparison == "ensemblmuchworse", "StringTie score-Ensembl score < -0.1")) %>%
+                 dplyr::mutate(comparison = factor(comparison,
+                                                   levels = c("StringTie score-Ensembl score > 0.1",
+                                                              "0 < StringTie score-Ensembl score <= 0.1",
+                                                              "StringTie score = Ensembl score",
+                                                              "-0.1 <= StringTie score-Ensembl score < 0",
+                                                              "StringTie score-Ensembl score < -0.1"))), 
                aes(x = method, y = value, fill = comparison)) + 
   geom_bar(stat = "identity", position = "dodge") + 
-  scale_fill_manual(values = c("#B17BA6", "#90C987", "#7BAFDE"), name = "", na.value = "grey50") + 
+  scale_fill_manual(values = c("#1965B0", "#7BAFDE", "#777777", "#90C987", "#4EB265"),
+                    name = "", na.value = "grey50") + 
   xlab("") + ylab("Number of genes") + theme(legend.direction = "horizontal",
                                              legend.justification = "center",
                                              legend.box.just = "bottom",
-                                             legend.position = "bottom") + 
-  guides(fill = guide_legend(nrow = 2))
+                                             legend.position = "bottom",
+                                             axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + 
+  guides(fill = guide_legend(nrow = 5))
 
-png(gsub("\\.rds$", "_combined_expressed.png", outrds), width = 10, height = 10,
+png(gsub("\\.rds$", "_combined_expressed.png", outrds), width = 12, height = 10,
     unit = "in", res = 400)
 plot_grid(ggcor,
-          plot_grid(ggde, ggbw, nrow = 1, rel_widths = c(1, 1), labels = c("B", "C")),
+          plot_grid(ggde, ggbw, nrow = 1, rel_widths = c(1, 1.2), labels = c("B", "C")),
           ncol = 1, rel_heights = c(1, 1), labels = c("A", ""))
 dev.off()
 
@@ -152,18 +178,31 @@ b <- a %>% dplyr::left_join(strexpr %>% dplyr::rename(gene = symbol),
                             by = c("gene", "method")) %>%
   dplyr::left_join(ensexpr, by = c("gene", "method")) %>%
   dplyr::mutate(str_vs_ens = NA_character_) %>%
-  dplyr::mutate(str_vs_ens = replace(str_vs_ens, stringtie > ensembl, 
-                                     "StringTie score > Ensembl score"),
-                str_vs_ens = replace(str_vs_ens, stringtie < ensembl, 
-                                     "StringTie score < Ensembl score"),
+  dplyr::mutate(str_vs_ens = replace(str_vs_ens, stringtie - ensembl > 0.1, 
+                                     "StringTie score-Ensembl score > 0.1"),
+                str_vs_ens = replace(str_vs_ens, stringtie - ensembl > 0 & 
+                                       stringtie - ensembl <= 0.1, 
+                                     "0 < StringTie score-Ensembl score <= 0.1"),
+                str_vs_ens = replace(str_vs_ens, stringtie - ensembl < -0.1, 
+                                     "StringTie score-Ensembl score < -0.1"),
+                str_vs_ens = replace(str_vs_ens, stringtie - ensembl >= -0.1 & 
+                                       stringtie - ensembl < 0,
+                                     "-0.1 <= StringTie score-Ensembl score < 0"),
                 str_vs_ens = replace(str_vs_ens, stringtie == ensembl, 
                                      "StringTie score = Ensembl score")) %>%
+  dplyr::mutate(str_vs_ens = factor(str_vs_ens, 
+                                    levels = c("StringTie score-Ensembl score > 0.1",
+                                               "0 < StringTie score-Ensembl score <= 0.1",
+                                               "StringTie score = Ensembl score",
+                                               "-0.1 <= StringTie score-Ensembl score < 0",
+                                               "StringTie score-Ensembl score < -0.1"))) %>%
+  dplyr::filter(method %in% quantmethods) %>%
   dplyr::left_join(stringtie$transcripts %>% dplyr::select(gene, symbol) %>% 
                      dplyr::distinct() %>% 
                      dplyr::rename(strid = gene), by = c("gene" = "symbol"))
 bb <- tidyr::gather(b, fractype, fracexpr, fracExprSTR, fracExprRemoved)
 
-png(gsub("\\.rds$", "_new_missing_tx.png", outrds), width = 12, height = 7,
+png(gsub("\\.rds$", "_new_missing_tx.png", outrds), width = 15, height = 7,
     unit = "in", res = 400)
 ggplot(bb %>% dplyr::mutate(fractype = replace(fractype, fractype == "fracExprRemoved", 
                                                "Removed Ensembl transcripts"), 

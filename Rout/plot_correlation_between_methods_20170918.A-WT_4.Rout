@@ -85,12 +85,12 @@ Type 'q()' to quit R.
 +     geom_abline(intercept = 0, slope = 1) + 
 +     geom_point(alpha = 0.3, size = 0.25)
 + }
-> png(gsub("\\.rds$", "_pairs.png", outrds), width = 8, height = 8, 
+> png(gsub("\\.rds$", "_pairs.png", outrds), width = 10, height = 10, 
 +     unit = "in", res = 300)
 > print(ggpairs(scores_wide,
 +               lower = list(continuous = points_identityline),
 +               upper = list(continuous = combinecor)) + 
-+         theme_bw())
++         theme_bw() + xlab("JCC score") + ylab("JCC score"))
 There were 36 warnings (use warnings() to see them)
 > dev.off()
 null device 
@@ -120,6 +120,7 @@ null device
 > distmat <- as.dist(sqrt(2*(1 - cormat)))
 > hcl <- hclust(distmat)
 > nodePar <- list(pch = c(NA, 19), col = "black")
+> par(mar = c(7.1, 4.1, 4.1, 2.1))
 > plot(as.dendrogram(hcl), type = "rectangle", ylab = "Dissimilarity", nodePar = nodePar)
 > dev.off()
 null device 
@@ -127,7 +128,7 @@ null device
 > 
 > saveRDS(NULL, file = outrds)
 > date()
-[1] "Sun Jul 22 10:12:13 2018"
+[1] "Sun Jul 22 14:55:33 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -161,4 +162,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
- 64.164   1.900  66.183 
+ 53.536   0.864  54.502 

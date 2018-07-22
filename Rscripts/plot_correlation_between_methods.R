@@ -91,7 +91,7 @@ cormat <- cor(scores_wide, use = "pairwise.complete.obs")
 distmat <- as.dist(sqrt(2*(1 - cormat)))
 hcl <- hclust(distmat)
 nodePar <- list(pch = c(NA, 19), col = "black")
-par(mar = c(6.1, 4.1, 4.1, 2.1)
+par(mar = c(7.1, 4.1, 4.1, 2.1))
 plot(as.dendrogram(hcl), type = "rectangle", ylab = "Dissimilarity", nodePar = nodePar)
 dev.off()
 

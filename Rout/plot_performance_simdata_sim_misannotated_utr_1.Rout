@@ -452,12 +452,13 @@ null device
 +   dplyr::mutate(geneclass = ifelse(gene %in% modgenes, "modified", "unmodified")) %>%
 +   dplyr::filter(uniqjuncreads > uniqjuncreadsthreshold)
 > png(gsub("\\.rds$", "_scores.png", outrds), width = 10, height = 7, unit = "in", res = 300)
-> print(ggplot(genes, aes(x = geneclass, y = score, color = geneclass)) + 
-+         geom_boxplot(outlier.size = 0.3) + 
-+         facet_wrap(~ method, nrow = 2) + theme_bw() + 
-+         scale_color_manual(values = c(modified = "#9900cc", unmodified = "#009933"),
-+                            name = "Gene class") + 
-+         xlab("") + theme(legend.position = "bottom"))
+> gs1 <- ggplot(genes, aes(x = geneclass, y = score, color = geneclass)) + 
++   geom_boxplot(outlier.size = 0.3) + 
++   facet_wrap(~ method, nrow = 2) + theme_bw() + ylab("JCC score") + 
++   scale_color_manual(values = c(modified = "#9900cc", unmodified = "#009933"),
++                      name = "Gene class") + 
++   xlab("") + theme(legend.position = "none")
+> print(gs1)
 Warning message:
 Removed 410 rows containing non-finite values (stat_boxplot). 
 > dev.off()
@@ -465,14 +466,15 @@ null device
           1 
 > 
 > png(gsub("\\.rds$", "_scores2.png", outrds), width = 10, height = 7, unit = "in", res = 300)
-> print(ggplot(genes %>% dplyr::left_join(gene_summary %>% 
-+                                           dplyr::select(gene, method, utr_fraction_of_length) %>% 
-+                                           dplyr::distinct()),
-+              aes(x = utr_fraction_of_length, y = score)) + 
-+         geom_point(alpha = 0.3, size = 0.3) + geom_smooth() +  
-+         facet_wrap(~ method, nrow = 2) + theme_bw() + 
-+         xlab("Fraction of artificial transcript consisting of 3'UTR"))
+> gs2 <- ggplot(genes %>% dplyr::left_join(gene_summary %>% 
++                                            dplyr::select(gene, method, utr_fraction_of_length) %>% 
++                                            dplyr::distinct()),
++               aes(x = utr_fraction_of_length, y = score)) + 
++   geom_point(alpha = 0.3, size = 0.3) + geom_smooth() +  
++   facet_wrap(~ method, nrow = 2) + theme_bw() + ylab("JCC score") + 
++   xlab("Fraction of artificial transcript consisting of 3'UTR")
 Joining, by = c("gene", "method")
+> print(gs2)
 `geom_smooth()` using method = 'gam'
 Warning messages:
 1: Removed 48609 rows containing non-finite values (stat_smooth). 
@@ -481,10 +483,21 @@ Warning messages:
 null device 
           1 
 > 
+> png(gsub("\\.rds$", "_scoresmerged.png", outrds), width = 12, height = 5, unit = "in", res = 300)
+> print(cowplot::plot_grid(gs1, gs2, nrow = 1, rel_widths = c(1, 1), 
++                          labels = c("A", "B"), align = "h", axis = "tb"))
+`geom_smooth()` using method = 'gam'
+Warning messages:
+1: Removed 410 rows containing non-finite values (stat_boxplot). 
+2: Removed 48609 rows containing non-finite values (stat_smooth). 
+3: Removed 48609 rows containing missing values (geom_point). 
+> dev.off()
+null device 
+          1 
 > 
 > saveRDS(list(genes = genes, gene_summary = gene_summary, modtrans = modtrans), file = outrds)
 > date()
-[1] "Sun Jul 22 13:01:05 2018"
+[1] "Sun Jul 22 17:49:05 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -542,4 +555,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
      user    system   elapsed 
-30195.796 34987.600  6440.184 
+31232.128 32477.644  6273.036 

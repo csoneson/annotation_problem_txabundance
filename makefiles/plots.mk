@@ -5,7 +5,7 @@ define obsvspredrule
 figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(1)$(2).rds: output/$(1)$(2)_combined_coverages_with_scores.rds \
 Rscripts/plot_observed_vs_predicted_junction_coverage.R
 	mkdir -p $$(@D)
-	$(R) "--args scorerds='$$<' quantmethods='hera,kallisto,RSEM,Salmon,SalmonSTAR,SalmonCDS,SalmonKeepDup,StringTie' uniqjuncreadsthreshold=$(uniqjuncreadsthreshold) fracuniqjuncreadsthreshold=0.75 outrds='$$@'" Rscripts/plot_observed_vs_predicted_junction_coverage.R Rout/plot_observed_vs_predicted_junction_coverage_$(1)$(2).Rout
+	$(R) "--args scorerds='$$<' quantmethods='hera,kallisto,RSEM,Salmon,SalmonSTAR,SalmonCDS,SalmonKeepDup,StringTie' uniqjuncreadsthreshold=$(uniqjuncreadsthreshold) fracuniqjuncreadsthreshold=$(fracuniqjuncreadsthreshold) outrds='$$@'" Rscripts/plot_observed_vs_predicted_junction_coverage.R Rout/plot_observed_vs_predicted_junction_coverage_$(1)$(2).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call obsvspredrule,$(notdir $(F)),)))
 $(foreach F,$(fastqfiles),$(eval $(call obsvspredrule,$(notdir $(F)),_stringtie_tx)))
@@ -43,7 +43,7 @@ output/$(1)_combined_coverages_with_scores.rds \
 reference_chess/chess2.0_assembly_fixed_tx2gene_withsymbol.rds \
 Rscripts/plot_ensembl_vs_chess_scores.R
 	mkdir -p $$(@D)
-	$(R) "--args scorerdsensembl='output/$(1)_combined_coverages_with_scores.rds' scorerdschess='output/$(1)_chess_combined_coverages_with_scores.rds' convtablechess='reference_chess/chess2.0_assembly_fixed_tx2gene_withsymbol.rds' quantmethods='hera,kallisto,RSEM,Salmon,SalmonSTAR,SalmonCDS,SalmonKeepDup,StringTie' uniqjuncreadsthreshold=25 uniqjuncfracthreshold=0.75 outrds='$$@'" Rscripts/plot_ensembl_vs_chess_scores.R Rout/plot_ensembl_vs_chess_scores_$(1).Rout
+	$(R) "--args scorerdsensembl='output/$(1)_combined_coverages_with_scores.rds' scorerdschess='output/$(1)_chess_combined_coverages_with_scores.rds' convtablechess='reference_chess/chess2.0_assembly_fixed_tx2gene_withsymbol.rds' quantmethods='hera,kallisto,RSEM,Salmon,SalmonSTAR,SalmonCDS,SalmonKeepDup,StringTie' uniqjuncreadsthreshold=$(uniqjuncreadsthreshold) uniqjuncfracthreshold=0.75 outrds='$$@'" Rscripts/plot_ensembl_vs_chess_scores.R Rout/plot_ensembl_vs_chess_scores_$(1).Rout
 endef
 $(foreach F,$(fastqfilesreal),$(eval $(call scorecompannotchessrule,$(notdir $(F)))))
 
@@ -55,7 +55,7 @@ reference/$(1)_stringtie_tx_tx2gene_withsymbol.rds \
 reference/$(1)_stringtie_tx_tx2symbol.rds \
 Rscripts/plot_ensembl_vs_stringtie_scores.R Rscripts/define_plot_colors.R
 	mkdir -p $$(@D)
-	$(R) "--args scorerdsensembl='output/$(1)_combined_coverages_with_scores.rds' scorerdsstringtie='output/$(1)_stringtie_tx_combined_coverages_with_scores.rds' convtablestringtie='reference/$(1)_stringtie_tx_tx2gene_withsymbol.rds' convtablestringtietx='reference/$(1)_stringtie_tx_tx2symbol.rds' quantmethods='hera,kallisto,RSEM,Salmon,SalmonSTAR,SalmonCDS,SalmonKeepDup,StringTie' uniqjuncreadsthreshold=25 uniqjuncfracthreshold=0.75 outrds='$$@'" Rscripts/plot_ensembl_vs_stringtie_scores.R Rout/plot_ensembl_vs_stringtie_scores_$(1).Rout
+	$(R) "--args scorerdsensembl='output/$(1)_combined_coverages_with_scores.rds' scorerdsstringtie='output/$(1)_stringtie_tx_combined_coverages_with_scores.rds' convtablestringtie='reference/$(1)_stringtie_tx_tx2gene_withsymbol.rds' convtablestringtietx='reference/$(1)_stringtie_tx_tx2symbol.rds' quantmethods='hera,kallisto,RSEM,Salmon,SalmonSTAR,SalmonCDS,SalmonKeepDup,StringTie' uniqjuncreadsthreshold=$(uniqjuncreadsthreshold) uniqjuncfracthreshold=0.75 outrds='$$@'" Rscripts/plot_ensembl_vs_stringtie_scores.R Rout/plot_ensembl_vs_stringtie_scores_$(1).Rout
 endef
 $(foreach F,$(fastqfilesreal),$(eval $(call scorecompannotstringtierule,$(notdir $(F)))))
 

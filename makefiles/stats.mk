@@ -2,10 +2,11 @@ define covpredsumrule
 stats/alpine_coverage_prediction_summary_$(1)$(2).txt: alpine/$(1)$(2)/alpine_predicted_coverage.rds \
 Rscripts/summarize_predicted_coverage_alpine.R
 	mkdir -p $$(@D)
-	$(R) "--args covrds='$$(word 1,$$^)' outtxt='$$@'" Rscripts/summarize_predicted_coverage_alpine.R Rout/summarize_predicted_coverage_alpine_$(1)$(2).Rout
+	$(R) "--args covrds='$$<' outtxt='$$@'" Rscripts/summarize_predicted_coverage_alpine.R Rout/summarize_predicted_coverage_alpine_$(1)$(2).Rout
 endef
 $(foreach F,$(fastqfiles),$(eval $(call covpredsumrule,$(notdir $(F)),)))
 $(foreach F,$(fastqfiles),$(eval $(call covpredsumrule,$(notdir $(F)),_stringtie_tx)))
+$(foreach F,$(fastqfiles),$(eval $(call covpredsumrule,$(notdir $(F)),_chess)))
 
 ## Extract genes with high scores
 define highscorerule
@@ -16,6 +17,7 @@ Rscripts/get_highscore_genes.R
 endef
 $(foreach F,$(fastqfiles),$(eval $(call highscorerule,$(notdir $(F)),)))
 $(foreach F,$(fastqfiles),$(eval $(call highscorerule,$(notdir $(F)),_stringtie_tx)))
+$(foreach F,$(fastqfiles),$(eval $(call highscorerule,$(notdir $(F)),_chess)))
 
 ## Characterize annotation catalogs (gtf files)
 define annotcharrule

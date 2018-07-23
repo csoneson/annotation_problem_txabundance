@@ -22,6 +22,10 @@ nthreads := 48
 ## included when calculating the "MM-aware" score
 mmfracthreshold := 0.25
 
+## Define the unique junction read fraction threshold. Genes with less than this fraction of uniquely 
+## mapping junction reads will be excluded from some comparisons and evaluations
+fracuniqjuncreadsthreshold := 0.75
+
 ## Define the unique junction read threshold. Genes with less than this number of uniquely mapping 
 ## junction reads will be excluded from comparisons and evaluations
 uniqjuncreadsthreshold := 25

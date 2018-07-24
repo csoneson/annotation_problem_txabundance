@@ -108,17 +108,16 @@ output/$(1)$(2)_combined_coverages.rds: STAR$(2)/$(1)/$(1)_Aligned.sortedByCoord
 alpine/$(1)$(2)/scaled_junction_coverage_Salmon.rds alpine/$(1)$(2)/scaled_junction_coverage_hera.rds \
 alpine/$(1)$(2)/scaled_junction_coverage_RSEM.rds alpine/$(1)$(2)/scaled_junction_coverage_StringTie.rds \
 alpine/$(1)$(2)/scaled_junction_coverage_SalmonSTAR.rds alpine/$(1)$(2)/scaled_junction_coverage_kallisto.rds \
-output/gene_characteristics.rds featureCounts/$(1)/$(1)_STAR_exons.txt featureCounts/$(1)/$(1)_STAR_introns.txt \
-Rscripts/combine_scaled_coverages.R $(3) $(4) $(5) $(6)
+Rscripts/combine_scaled_coverages.R $(3) $(4) $(5) $(6) $(7) $(8)
 	mkdir -p $$(@D)
-	$(R) "--args junctioncovSTAR='STAR$(2)/$(1)/$(1)_SJ.out.tab' junctioncovSalmon='$$(word 2,$$^)' junctioncovSalmonSTAR='$$(word 6,$$^)' junctioncovSalmonKeepDup='$(5)' junctioncovSalmonCDS='$(4)' junctioncovNanopore='$(3)' junctioncovhera='$$(word 3,$$^)' junctioncovkallisto='$$(word 7,$$^)' junctioncovRSEM='$$(word 4,$$^)' junctioncovStringTie='$$(word 5,$$^)' genecharacteristics='$$(word 8,$$^)' exoncountstxt='$$(word 9,$$^)' introncountstxt='$$(word 10,$$^)' outrds='$$@'" Rscripts/combine_scaled_coverages.R Rout/combine_scaled_coverages_$(1)$(2).Rout
+	$(R) "--args junctioncovSTAR='STAR$(2)/$(1)/$(1)_SJ.out.tab' junctioncovSalmon='$$(word 2,$$^)' junctioncovSalmonSTAR='$$(word 6,$$^)' junctioncovSalmonKeepDup='$(5)' junctioncovSalmonCDS='$(4)' junctioncovNanopore='$(3)' junctioncovhera='$$(word 3,$$^)' junctioncovkallisto='$$(word 7,$$^)' junctioncovRSEM='$$(word 4,$$^)' junctioncovStringTie='$$(word 5,$$^)' genecharacteristics='$(6)' exoncountstxt='$(7)' introncountstxt='$(8)' outrds='$$@'" Rscripts/combine_scaled_coverages.R Rout/combine_scaled_coverages_$(1)$(2).Rout
 endef
-$(eval $(call combcovrule,20151016.A-Cortex_RNA,,,alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_SalmonCDS.rds,alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_SalmonKeepDup.rds))
-$(eval $(call combcovrule,20170918.A-WT_4,,alpine/20170918.A-WT_4/scaled_junction_coverage_WubMinimap2Nanopore.rds,alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonCDS.rds,alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonKeepDup.rds))
-$(eval $(call combcovrule,sim_misannotated_utr_1,,,alpine/sim_misannotated_utr_1/scaled_junction_coverage_SalmonCDS.rds,alpine/sim_misannotated_utr_1/scaled_junction_coverage_SalmonKeepDup.rds))
-$(eval $(call combcovrule,20151016.A-Cortex_RNA,_stringtie_tx,,,))
-$(eval $(call combcovrule,20170918.A-WT_4,_stringtie_tx,,,))
-$(eval $(call combcovrule,sim_misannotated_utr_1,_stringtie_tx,,,))
+$(eval $(call combcovrule,20151016.A-Cortex_RNA,,,alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_SalmonCDS.rds,alpine/20151016.A-Cortex_RNA/scaled_junction_coverage_SalmonKeepDup.rds,output/gene_characteristics.rds,featureCounts/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_STAR_exons.txt,featureCounts/20151016.A-Cortex_RNA/20151016.A-Cortex_RNA_STAR_introns.txt))
+$(eval $(call combcovrule,20170918.A-WT_4,,alpine/20170918.A-WT_4/scaled_junction_coverage_WubMinimap2Nanopore.rds,alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonCDS.rds,alpine/20170918.A-WT_4/scaled_junction_coverage_SalmonKeepDup.rds,output/gene_characteristics.rds,featureCounts/20170918.A-WT_4/20170918.A-WT_4_STAR_exons.txt,featureCounts/20170918.A-WT_4/20170918.A-WT_4_STAR_introns.txt))
+$(eval $(call combcovrule,sim_misannotated_utr_1,,,alpine/sim_misannotated_utr_1/scaled_junction_coverage_SalmonCDS.rds,alpine/sim_misannotated_utr_1/scaled_junction_coverage_SalmonKeepDup.rds,output/gene_characteristics.rds,featureCounts/sim_misannotated_utr_1/sim_misannotated_utr_1_STAR_exons.txt,featureCounts/sim_misannotated_utr_1/sim_misannotated_utr_1_STAR_introns.txt))
+$(eval $(call combcovrule,20151016.A-Cortex_RNA,_stringtie_tx,,,,,,))
+$(eval $(call combcovrule,20170918.A-WT_4,_stringtie_tx,,,,,,))
+$(eval $(call combcovrule,sim_misannotated_utr_1,_stringtie_tx,,,,,,))
 
 ## Combine coverages for all methods, CHESS
 define combcovchessrule

@@ -138,21 +138,13 @@ jcov <- ggplot() + geom_abline(intercept = 0, slope = 1) +
                   cols = txs, data = jl, color = NA) + 
   facet_wrap(~ methodscore, nrow = 2) + 
   coord_equal(ratio = 1) + 
-  expand_limits(x = range(c(jl$scaled.cov, jl$uniqreads)), 
-                y = range(c(jl$scaled.cov, jl$uniqreads))) + 
+  expand_limits(x = range(c(0, jl$scaled.cov, jl$uniqreads)), 
+                y = range(c(0, jl$scaled.cov, jl$uniqreads))) + 
   scale_fill_manual(values = cols, name = "") + 
   xlab("Number of uniquely mapped reads spanning junction") + 
   ylab("Scaled predicted junction coverage") + 
   theme_bw() + theme(strip.text = element_text(size = 7),
                      legend.text = element_text(size = 7))
-
-# jcov <- ggplot(jl, aes(x = scaled.cov, y = uniqreads)) + 
-#   geom_point(size = 3) + 
-#   facet_wrap(~ methodscore, nrow = 2) + 
-#   geom_abline(intercept = 0, slope = 1) + 
-#   xlab("Scaled predicted coverage") + 
-#   ylab("Number of uniquely mapped reads") + 
-#   theme_bw() + theme(strip.text = element_text(size = 7))
 
 png(outpng, width = 12, height = 10, unit = "in", res = 400)
 print(cowplot::plot_grid(ggdraw() + draw_image(paste0("gviz", rn, ".png")),
@@ -162,7 +154,7 @@ print(cowplot::plot_grid(ggdraw() + draw_image(paste0("gviz", rn, ".png")),
                          get_legend(tpms + theme(legend.direction = "horizontal",
                                                  legend.justification = "center",
                                                  legend.box.just = "bottom") + 
-                                      guides(fill = guide_legend(nrow = ifelse(length(txs) <= 8, 1, 2)))),
+                                      guides(fill = guide_legend(nrow = length(txs) %/% 8 + 1))),
                          ncol = 1, rel_heights = c(1, 0.8, 0.1), 
                          labels = c("A", "", "")))
 dev.off()

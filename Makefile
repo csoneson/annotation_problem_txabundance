@@ -12,7 +12,7 @@ fastqfiles := $(fastqfilesreal) $(fastqfilessim)
 
 ## Abundance quantification methods
 quantmethods20151016.A-Cortex_RNA := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup
-uantmethods20170918.A-WT_4 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup SalmonMinimap2Nanopore WubMinimap2Nanopore
+quantmethods20170918.A-WT_4 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup SalmonMinimap2Nanopore WubMinimap2Nanopore
 quantmethodssim_misannotated_utr_1 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup 
 quantmethodsstringtie := Salmon SalmonSTAR kallisto RSEM StringTie hera 
 
@@ -186,8 +186,8 @@ plotssim: $(foreach F,$(fastqfilessim),figures/performance_simulated_data/perfor
 plotsstringtie: $(foreach F,$(fastqfiles),figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F))_stringtie_tx.rds) \
 $(foreach F,$(fastqfiles),figures/gene_scores/gene_scores_$(notdir $(F))_stringtie_tx.rds)
 
-plotschess: $(foreach F,/home/Shared/data/seq/roche_pacbio_targeted_cdna/Illumina_RNA_seq/20151016.A-Cortex_RNA,figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F))_chess.rds) \
-$(foreach F,/home/Shared/data/seq/roche_pacbio_targeted_cdna/Illumina_RNA_seq/20151016.A-Cortex_RNA,figures/gene_scores/gene_scores_$(notdir $(F))_chess.rds)
+plotschess: $(foreach F,$(fastqfilesreal),figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(notdir $(F))_chess.rds) \
+$(foreach F,$(fastqfilesreal),figures/gene_scores/gene_scores_$(notdir $(F))_chess.rds)
 
 plotssummarychess: $(foreach G,$(genes_to_plot_summary_chess),$(foreach F,$(fastqfilesreal),figures/genewise_summary_chess/$(notdir $(F))_chess_$(G).png))
 
@@ -205,6 +205,7 @@ figures/ensembl_vs_chess_annotation_characteristics/ensembl_vs_chess_annotation_
 ########################################################################################################
 stats: $(foreach F,$(fastqfiles),stats/alpine_coverage_prediction_summary_$(notdir $(F)).txt) \
 $(foreach F,$(fastqfiles),stats/alpine_coverage_prediction_summary_$(notdir $(F))_stringtie_tx.txt) \
+$(foreach F,$(fastqfilesreal), stats/alpine_coverage_prediction_summary_$(notdir $(F))_chess.txt) \
 $(foreach F,$(fastqfiles),stats/genes_with_high_score_$(notdir $(F)).txt) \
 $(foreach F,$(fastqfiles),stats/genes_with_high_score_$(notdir $(F))_stringtie_tx.txt) \
 stats/nbr_duplicate_transcripts_Salmon_Homo_sapiens.GRCh38.cdna.ncrna_sidx_v0.11.0.txt \

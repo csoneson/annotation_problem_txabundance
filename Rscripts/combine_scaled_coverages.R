@@ -159,9 +159,11 @@ allquants_gene <- allquants %>% dplyr::group_by(gene, method) %>%
   dplyr::ungroup()
 
 ## Add gene characteristics
-genechars <- readRDS(genecharacteristics)
-allquants_gene <- dplyr::left_join(allquants_gene, genechars, 
-                                   by = c("gene" = "gene_id"))
+if (genecharacteristics != "") {
+  genechars <- readRDS(genecharacteristics)
+  allquants_gene <- dplyr::left_join(allquants_gene, genechars, 
+                                     by = c("gene" = "gene_id"))
+}
 
 ## Add exon and intron counts
 if (exoncountstxt != "" && introncountstxt != "") {

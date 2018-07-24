@@ -166,7 +166,7 @@ dev.off()
 ## from the Ensembl catalog comes from transcripts that are not in the StringTie
 ## catalog?
 strexpr <- stringtie$transcripts %>% dplyr::filter(symbol %in% ensembl$transcripts$gene) %>% 
-  dplyr::group_by(symbol, method) %>%
+  dplyr::group_by(gene, symbol, method) %>%
   dplyr::summarize(fracExprSTR = sum(TPM[!(transcript %in% stringtieconversiontx$tx)])/sum(TPM)) %>%
   dplyr::mutate(fracExprSTR = replace(fracExprSTR, is.na(fracExprSTR), 0))
 ensexpr <- ensembl$transcripts %>% dplyr::filter(gene %in% stringtie$transcripts$symbol) %>%
@@ -174,8 +174,10 @@ ensexpr <- ensembl$transcripts %>% dplyr::filter(gene %in% stringtie$transcripts
   dplyr::summarize(fracExprRemoved = sum(TPM[!(transcript %in% stringtieconversiontx$symbol)])/sum(TPM)) %>%
   dplyr::mutate(fracExprRemoved = replace(fracExprRemoved, is.na(fracExprRemoved), 0))
 
-b <- a %>% dplyr::left_join(strexpr %>% dplyr::rename(gene = symbol), 
-                            by = c("gene", "method")) %>%
+b <- a %>% 
+  dplyr::left_join(strexpr %>% dplyr::ungroup() %>%
+                     dplyr::select(-gene) %>% dplyr::rename(gene = symbol), 
+                   by = c("gene", "method")) %>%
   dplyr::left_join(ensexpr, by = c("gene", "method")) %>%
   dplyr::mutate(str_vs_ens = NA_character_) %>%
   dplyr::mutate(str_vs_ens = replace(str_vs_ens, stringtie - ensembl > 0.1, 

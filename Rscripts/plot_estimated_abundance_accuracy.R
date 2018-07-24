@@ -47,6 +47,15 @@ suppressPackageStartupMessages({
 
 source("Rscripts/helper_plot_functions.R")
 
+## Define helper functions for pairs plots
+sqrt_diagonal <- function(data, mapping, ...) {
+  ggally_densityDiag(data, mapping, ...) + scale_x_sqrt()
+}
+sqrt_points <- function(data, mapping, ...) {
+  ggally_points(data, mapping, alpha = 0.25, size = 0.25, ...) + 
+    scale_x_sqrt() + scale_y_sqrt()
+}
+
 ## Read transcript abundance estimates
 estimates <- readRDS(scorerds)$transcripts %>% 
   dplyr::select(transcript, gene, count, method) %>%
@@ -58,8 +67,9 @@ png(gsub("\\.rds$", "_transcripts_pairs.png", outrds), width = 12, height = 12,
 toplot <- estimates %>% dplyr::select(-gene) %>% 
   tidyr::spread(method, count) %>% dplyr::select(-transcript)
 print(ggpairs(toplot, 
-              lower = list(continuous = wrap("points", alpha = 0.3, size = 0.25)),
-              upper = list(continuous = combinecor)) + 
+              lower = list(continuous = sqrt_points),
+              upper = list(continuous = combinecor),
+              diag = list(continuous = sqrt_diagonal)) + 
         theme_bw())
 dev.off()
 
@@ -69,8 +79,9 @@ toplot <- estimates %>% dplyr::select(-transcript) %>%
   dplyr::group_by(gene, method) %>% dplyr::summarize(count = sum(count)) %>% 
   dplyr::ungroup() %>% tidyr::spread(method, count) %>% dplyr::select(-gene)
 print(ggpairs(toplot, 
-              lower = list(continuous = wrap("points", alpha = 0.3, size = 0.25)),
-              upper = list(continuous = combinecor)) + 
+              lower = list(continuous = sqrt_points),
+              upper = list(continuous = combinecor),
+              diag = list(continuous = sqrt_diagonal)) + 
         theme_bw())
 dev.off()
 
@@ -111,7 +122,8 @@ if (truthrda != '' && truthmodgenesrds != '') {
           geom_point(alpha = 0.3, size = 0.5, aes(color = modified_gene)) + theme_bw() + 
           geom_label(data = corrs, x = -Inf, y = Inf, hjust = -0.05, vjust = 1.1, 
                      aes(label = paste0("Pearson: ", pearson, "\nSpearman: ", spearman))) + 
-          facet_wrap(~ method) + xlab("True count") + ylab("Estimated count"))
+          facet_wrap(~ method) + xlab("True count") + ylab("Estimated count") + 
+          scale_x_sqrt() + scale_y_sqrt())
   dev.off()
   
   ## Genes
@@ -131,7 +143,8 @@ if (truthrda != '' && truthmodgenesrds != '') {
           geom_point(alpha = 0.3, size = 0.5, aes(color = modified_gene)) + theme_bw() + 
           geom_label(data = corrsgene, x = -Inf, y = Inf, hjust = -0.05, vjust = 1.1, 
                      aes(label = paste0("Pearson: ", pearson, "\nSpearman: ", spearman))) + 
-          facet_wrap(~ method) + xlab("True count") + ylab("Estimated count"))
+          facet_wrap(~ method) + xlab("True count") + ylab("Estimated count") + 
+          scale_x_sqrt() + scale_y_sqrt())
   dev.off()
   
   ## Pairs plot
@@ -143,7 +156,8 @@ if (truthrda != '' && truthmodgenesrds != '') {
   print(ggpairs(toplot, 
                 columns = which(colnames(toplot) != "modified_gene"), 
                 mapping = ggplot2::aes(colour = modified_gene),
-                lower = list(continuous = wrap("points", alpha = 0.3, size = 0.25))) + 
+                lower = list(continuous = sqrt_points),
+                diag = list(continuous = sqrt_diagonal)) + 
           theme_bw())
   dev.off()
   

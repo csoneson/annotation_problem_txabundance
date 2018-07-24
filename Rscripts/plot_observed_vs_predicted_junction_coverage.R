@@ -187,7 +187,7 @@ gg <- ggplot(y, aes(x = uniqreads, y = coverage)) +
   ylab("Predicted number of reads spanning junction") + 
   scale_color_manual(name = paste0("Fraction\nuniquely mapping\nreads < ", 
                                    fracuniqjuncreadsthreshold), 
-                     values = c(`TRUE` = "red", `FALSE` = "blue")) + 
+                     values = c(`TRUE` = "red", `FALSE` = "black")) + 
   guides(color = guide_legend(override.aes = list(size = 3, alpha = 1))) + 
   theme_bw()
 

@@ -10,7 +10,7 @@ $(STARindexnogtf)/SA: $(genome)
 	--genomeFastaFiles $(genome)
 
 $(STARindexnogtf)/chrNameLength.txt: $(STARindexnogtf)/SA
-	touch $(STARindexnogtf)/chrNameLength.txt
+	touch $@
 
 ## ==================================================================================== ##
 ##                                     STAR                                             ##

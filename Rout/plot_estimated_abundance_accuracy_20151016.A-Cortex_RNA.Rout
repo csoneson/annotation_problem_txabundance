@@ -72,6 +72,15 @@ Type 'q()' to quit R.
 > 
 > source("Rscripts/helper_plot_functions.R")
 > 
+> ## Define helper functions for pairs plots
+> sqrt_diagonal <- function(data, mapping, ...) {
++   ggally_densityDiag(data, mapping, ...) + scale_x_sqrt()
++ }
+> sqrt_points <- function(data, mapping, ...) {
++   ggally_points(data, mapping, alpha = 0.25, size = 0.25, ...) + 
++     scale_x_sqrt() + scale_y_sqrt()
++ }
+> 
 > ## Read transcript abundance estimates
 > estimates <- readRDS(scorerds)$transcripts %>% 
 +   dplyr::select(transcript, gene, count, method) %>%
@@ -83,8 +92,9 @@ Type 'q()' to quit R.
 > toplot <- estimates %>% dplyr::select(-gene) %>% 
 +   tidyr::spread(method, count) %>% dplyr::select(-transcript)
 > print(ggpairs(toplot, 
-+               lower = list(continuous = wrap("points", alpha = 0.3, size = 0.25)),
-+               upper = list(continuous = combinecor)) + 
++               lower = list(continuous = sqrt_points),
++               upper = list(continuous = combinecor),
++               diag = list(continuous = sqrt_diagonal)) + 
 +         theme_bw())
 There were 36 warnings (use warnings() to see them)
 > dev.off()
@@ -97,8 +107,9 @@ null device
 +   dplyr::group_by(gene, method) %>% dplyr::summarize(count = sum(count)) %>% 
 +   dplyr::ungroup() %>% tidyr::spread(method, count) %>% dplyr::select(-gene)
 > print(ggpairs(toplot, 
-+               lower = list(continuous = wrap("points", alpha = 0.3, size = 0.25)),
-+               upper = list(continuous = combinecor)) + 
++               lower = list(continuous = sqrt_points),
++               upper = list(continuous = combinecor),
++               diag = list(continuous = sqrt_diagonal)) + 
 +         theme_bw())
 There were 36 warnings (use warnings() to see them)
 > dev.off()
@@ -142,7 +153,8 @@ null device
 +           geom_point(alpha = 0.3, size = 0.5, aes(color = modified_gene)) + theme_bw() + 
 +           geom_label(data = corrs, x = -Inf, y = Inf, hjust = -0.05, vjust = 1.1, 
 +                      aes(label = paste0("Pearson: ", pearson, "\nSpearman: ", spearman))) + 
-+           facet_wrap(~ method) + xlab("True count") + ylab("Estimated count"))
++           facet_wrap(~ method) + xlab("True count") + ylab("Estimated count") + 
++           scale_x_sqrt() + scale_y_sqrt())
 +   dev.off()
 +   
 +   ## Genes
@@ -162,7 +174,8 @@ null device
 +           geom_point(alpha = 0.3, size = 0.5, aes(color = modified_gene)) + theme_bw() + 
 +           geom_label(data = corrsgene, x = -Inf, y = Inf, hjust = -0.05, vjust = 1.1, 
 +                      aes(label = paste0("Pearson: ", pearson, "\nSpearman: ", spearman))) + 
-+           facet_wrap(~ method) + xlab("True count") + ylab("Estimated count"))
++           facet_wrap(~ method) + xlab("True count") + ylab("Estimated count") + 
++           scale_x_sqrt() + scale_y_sqrt())
 +   dev.off()
 +   
 +   ## Pairs plot
@@ -174,7 +187,8 @@ null device
 +   print(ggpairs(toplot, 
 +                 columns = which(colnames(toplot) != "modified_gene"), 
 +                 mapping = ggplot2::aes(colour = modified_gene),
-+                 lower = list(continuous = wrap("points", alpha = 0.3, size = 0.25))) + 
++                 lower = list(continuous = sqrt_points),
++                 diag = list(continuous = sqrt_diagonal)) + 
 +           theme_bw())
 +   dev.off()
 +   
@@ -182,7 +196,7 @@ null device
 > 
 > saveRDS(NULL, file = outrds)
 > date()
-[1] "Sun Jul 22 10:17:06 2018"
+[1] "Tue Jul 24 16:16:47 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -217,4 +231,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-354.948   4.108 359.376 
+306.152   1.584 308.385 

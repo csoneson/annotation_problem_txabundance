@@ -52,7 +52,7 @@ Type 'q()' to quit R.
 > quantmethods <- strsplit(quantmethods, ",")[[1]]
 > 
 > print(scorerds)
-[1] "output/sim_misannotated_utr_1_combined_coverages_with_scores.rds"
+[1] "output/20170918.A-WT_4_chess_combined_coverages_with_scores.rds"
 > print(quantmethods)
 [1] "hera"          "kallisto"      "RSEM"          "Salmon"       
 [5] "SalmonSTAR"    "SalmonCDS"     "SalmonKeepDup" "StringTie"    
@@ -61,7 +61,7 @@ Type 'q()' to quit R.
 > print(fracuniqjuncreadsthreshold)
 [1] 0.75
 > print(outrds)
-[1] "figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_sim_misannotated_utr_1.rds"
+[1] "figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_20170918.A-WT_4_chess.rds"
 > 
 > suppressPackageStartupMessages({
 +   library(dplyr)
@@ -84,7 +84,7 @@ Type 'q()' to quit R.
 > 
 > ## Remove a few extreme outliers
 > print(sum(y$coverage >= (2 * max(y$uniqreads))))
-[1] 17
+[1] 0
 > y <- y %>% dplyr::filter(coverage < (2 * max(uniqreads)))
 > 
 > ## ========================================================================== ##
@@ -237,7 +237,7 @@ null device
 > saveRDS(list(junctionscatter = gg), outrds)
 > 
 > date()
-[1] "Tue Jul 24 11:50:09 2018"
+[1] "Tue Jul 24 11:44:34 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -270,4 +270,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-533.676   4.016 538.107 
+197.676   5.084 203.004 

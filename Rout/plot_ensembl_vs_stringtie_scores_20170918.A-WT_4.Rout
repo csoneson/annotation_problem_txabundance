@@ -200,7 +200,7 @@ null device
 > ## from the Ensembl catalog comes from transcripts that are not in the StringTie
 > ## catalog?
 > strexpr <- stringtie$transcripts %>% dplyr::filter(symbol %in% ensembl$transcripts$gene) %>% 
-+   dplyr::group_by(symbol, method) %>%
++   dplyr::group_by(gene, symbol, method) %>%
 +   dplyr::summarize(fracExprSTR = sum(TPM[!(transcript %in% stringtieconversiontx$tx)])/sum(TPM)) %>%
 +   dplyr::mutate(fracExprSTR = replace(fracExprSTR, is.na(fracExprSTR), 0))
 > ensexpr <- ensembl$transcripts %>% dplyr::filter(gene %in% stringtie$transcripts$symbol) %>%
@@ -208,8 +208,10 @@ null device
 +   dplyr::summarize(fracExprRemoved = sum(TPM[!(transcript %in% stringtieconversiontx$symbol)])/sum(TPM)) %>%
 +   dplyr::mutate(fracExprRemoved = replace(fracExprRemoved, is.na(fracExprRemoved), 0))
 > 
-> b <- a %>% dplyr::left_join(strexpr %>% dplyr::rename(gene = symbol), 
-+                             by = c("gene", "method")) %>%
+> b <- a %>% 
++   dplyr::left_join(strexpr %>% dplyr::ungroup() %>%
++                      dplyr::select(-gene) %>% dplyr::rename(gene = symbol), 
++                    by = c("gene", "method")) %>%
 +   dplyr::left_join(ensexpr, by = c("gene", "method")) %>%
 +   dplyr::mutate(str_vs_ens = NA_character_) %>%
 +   dplyr::mutate(str_vs_ens = replace(str_vs_ens, stringtie - ensembl > 0.1, 
@@ -255,7 +257,7 @@ null device
 > 
 > saveRDS(NULL, file = outrds)
 > date()
-[1] "Sun Jul 22 17:29:39 2018"
+[1] "Tue Jul 24 15:52:54 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -287,4 +289,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
     user   system  elapsed 
-1251.492    9.704 1264.067 
+1358.848   21.848 1385.092 

@@ -215,7 +215,7 @@ null device
 +   ylab("Predicted number of reads spanning junction") + 
 +   scale_color_manual(name = paste0("Fraction\nuniquely mapping\nreads < ", 
 +                                    fracuniqjuncreadsthreshold), 
-+                      values = c(`TRUE` = "red", `FALSE` = "blue")) + 
++                      values = c(`TRUE` = "red", `FALSE` = "black")) + 
 +   guides(color = guide_legend(override.aes = list(size = 3, alpha = 1))) + 
 +   theme_bw()
 > 
@@ -237,7 +237,7 @@ null device
 > saveRDS(list(junctionscatter = gg), outrds)
 > 
 > date()
-[1] "Sun Jul 22 10:14:25 2018"
+[1] "Tue Jul 24 11:45:33 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -270,4 +270,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
-284.472   8.812 293.472 
+260.752   1.556 262.529 

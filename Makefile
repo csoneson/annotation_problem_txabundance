@@ -16,7 +16,7 @@ quantmethods20170918.A-WT_4 := Salmon SalmonSTAR kallisto RSEM StringTie hera Sa
 quantmethodssim_misannotated_utr_1 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup 
 quantmethodsstringtie := Salmon SalmonSTAR kallisto RSEM StringTie hera 
 
-nthreads := 48
+nthreads := 24
 
 ## Define the multimapping fraction threshold. Junctions with MM/(UM+MM)>mmfracthreshold will not be 
 ## included when calculating the "MM-aware" score
@@ -207,7 +207,6 @@ stats: $(foreach F,$(fastqfiles),stats/alpine_coverage_prediction_summary_$(notd
 $(foreach F,$(fastqfiles),stats/alpine_coverage_prediction_summary_$(notdir $(F))_stringtie_tx.txt) \
 $(foreach F,$(fastqfilesreal), stats/alpine_coverage_prediction_summary_$(notdir $(F))_chess.txt) \
 $(foreach F,$(fastqfiles),stats/genes_with_high_score_$(notdir $(F)).txt) \
-$(foreach F,$(fastqfiles),stats/genes_with_high_score_$(notdir $(F))_stringtie_tx.txt) \
 stats/nbr_duplicate_transcripts_Salmon_Homo_sapiens.GRCh38.cdna.ncrna_sidx_v0.11.0.txt \
 stats/annotation_characteristics_ensembl.38.90.txt \
 stats/annotation_characteristics_chess2.0_assembly_fixed.txt \

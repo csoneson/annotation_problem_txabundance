@@ -144,3 +144,133 @@ Type 'q()' to quit R.
 +   dplyr::mutate(fracunique = uniqreads/(uniqreads + mmreads)) %>% 
 +   dplyr::mutate(fracunique = replace(fracunique, is.na(fracunique), 1)) %>%
 +   dplyr::ungroup()
+Warning messages:
+1: Column `seqnames` joining factor and character vector, coercing into character vector 
+2: Column `strand` joining factor and character vector, coercing into character vector 
+> 
+> ## Define a junction ID for each junction
+> j0 <- jcovscaled %>% dplyr::select(seqnames, start, end, gene) %>%
++   dplyr::distinct() %>% dplyr::group_by(gene) %>% dplyr::arrange(start) %>%
++   dplyr::mutate(junctionid = paste0("J", seq_len(length(start)))) %>%
++   dplyr::ungroup()
+> 
+> jcovscaled <- jcovscaled %>% dplyr::left_join(j0) %>%
++   dplyr::select(junctionid, everything(), transcript)
+Joining, by = c("seqnames", "start", "end", "gene")
+> 
+> ## Read and combine transcript quantifications
+> allquants <- do.call(rbind, list(readRDS(junctioncovSalmon)$quants,
++                                  readRDS(junctioncovkallisto)$quants))
+> 
+> if (junctioncovSalmonSTAR != "") {
++   allquants <- rbind(allquants, readRDS(junctioncovSalmonSTAR)$quants)
++ }
+> if (junctioncovhera != "") {
++   allquants <- rbind(allquants, readRDS(junctioncovhera)$quants)
++ }
+> if (junctioncovRSEM != "") {
++   allquants <- rbind(allquants, readRDS(junctioncovRSEM)$quants)
++ }
+> if (junctioncovStringTie != "") {
++   allquants <- rbind(allquants, readRDS(junctioncovStringTie)$quants)
++ }
+> if (junctioncovNanopore != "") {
++   allquants <- rbind(allquants, readRDS(junctioncovNanopore)$quants)
++ }
+> if (junctioncovSalmonCDS != "") {
++   allquants <- rbind(allquants, readRDS(junctioncovSalmonCDS)$quants)
++ }
+> if (junctioncovSalmonKeepDup != "") {
++   allquants <- rbind(allquants, readRDS(junctioncovSalmonKeepDup)$quants)
++ }
+> 
+> ## Summarize abundances on gene level
+> allquants_gene <- allquants %>% dplyr::group_by(gene, method) %>%
++   dplyr::mutate(TPMrel = TPM/sum(TPM)) %>%
++   dplyr::mutate(TPMrel = replace(TPMrel, is.na(TPMrel), 0)) %>%
++   dplyr::summarize(count = sum(count),
++                    TPM = sum(TPM),
++                    nbr_expressed_transcripts = sum(TPM > 0),
++                    nbr_expressed_transcripts_5p = sum(TPMrel > 0.05),
++                    covOKfraction = length(which(covnote == "covOK"))/length(covnote)) %>%
++   dplyr::ungroup()
+> 
+> ## Add gene characteristics
+> if (genecharacteristics != "") {
++   genechars <- readRDS(genecharacteristics)
++   allquants_gene <- dplyr::left_join(allquants_gene, genechars, 
++                                      by = c("gene" = "gene_id"))
++ }
+> 
+> ## Add exon and intron counts
+> if (exoncountstxt != "" && introncountstxt != "") {
++   exoncounts <- read.delim(exoncountstxt, skip = 1, header = TRUE, as.is = TRUE) %>%
++     dplyr::select(-Chr, -Start, -End, -Strand, -Length) %>%
++     setNames(c("gene", "exoncount"))
++   introncounts <- read.delim(introncountstxt, skip = 1, header = TRUE, as.is = TRUE) %>%
++     dplyr::select(-Chr, -Start, -End, -Strand, -Length) %>%
++     setNames(c("gene", "introncount"))
++   allquants_gene <- dplyr::left_join(allquants_gene, 
++                                      dplyr::full_join(exoncounts, introncounts)) %>% 
++     dplyr::mutate(exoncount = replace(exoncount, is.na(exoncount), 0)) %>% 
++     dplyr::mutate(introncount = replace(introncount, is.na(introncount), 0)) %>%
++     dplyr::mutate(intron_exon_ratio = introncount/exoncount) %>%
++     dplyr::mutate(intron_exon_ratio = replace(intron_exon_ratio, exoncount==0 & introncount==0, 0))
++ }
+Joining, by = "gene"
+Joining, by = "gene"
+> 
+> ## Add total unique and multimapping junction reads per gene
+> totjunctionreads <- jcovscaled %>% dplyr::filter(method == "Salmon") %>%
++   dplyr::select(gene, uniqreads, mmreads) %>%
++   dplyr::group_by(gene) %>% dplyr::summarize(uniqjuncreads = sum(uniqreads),
++                                              mmjuncreads = sum(mmreads))
+> allquants_gene <- dplyr::left_join(allquants_gene, totjunctionreads, by = "gene") %>%
++   dplyr::mutate(uniqjuncreads = replace(uniqjuncreads, is.na(uniqjuncreads), 0)) %>%
++   dplyr::mutate(mmjuncreads = replace(mmjuncreads, is.na(mmjuncreads), 0)) %>%
++   dplyr::mutate(uniqjuncfraction = uniqjuncreads/(uniqjuncreads + mmjuncreads)) %>%
++   dplyr::mutate(uniqjuncfraction = replace(uniqjuncfraction, is.na(uniqjuncfraction), 1))
+> 
+> ## Add number of junctions per gene (from the junction summary). If a gene is
+> ## not in the junction summary, it means that it doesn't have any annotated
+> ## junctions.
+> allquants_gene <- allquants_gene %>% 
++   dplyr::left_join(jcovscaled %>% dplyr::select(gene, method, nbr_junctions_in_gene) %>%
++                      dplyr::distinct(),
++                    by = c("gene", "method")) %>%
++   dplyr::mutate(nbr_junctions_in_gene = replace(nbr_junctions_in_gene, is.na(nbr_junctions_in_gene), 0))
+> 
+> saveRDS(list(junctions = jcovscaled, transcripts = allquants, 
++              genes = allquants_gene), file = outrds)
+> 
+> sessionInfo()
+R Under development (unstable) (2017-12-14 r73916)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 16.04.4 LTS
+
+Matrix products: default
+BLAS: /usr/local/R/R-devel/lib/libRblas.so
+LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
+ [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
+ [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
+[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] bindrcpp_0.2.2 dplyr_0.7.4   
+
+loaded via a namespace (and not attached):
+ [1] compiler_3.5.0   magrittr_1.5     assertthat_0.2.0 R6_2.2.2        
+ [5] pillar_1.2.1     glue_1.2.0       tibble_1.4.2     Rcpp_0.12.16    
+ [9] pkgconfig_2.0.1  rlang_0.2.0      bindr_0.1.1     
+> date()
+[1] "Tue Jul 24 17:00:02 2018"
+> 
+> proc.time()
+   user  system elapsed 
+330.764   2.720 334.282 

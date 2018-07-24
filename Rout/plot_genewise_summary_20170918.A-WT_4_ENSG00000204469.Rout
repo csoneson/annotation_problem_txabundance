@@ -203,7 +203,7 @@ null device
 > 
 > unlink(paste0("gviz", rn, ".png"))
 > date()
-[1] "Tue Jul 24 11:50:53 2018"
+[1] "Tue Jul 24 17:38:27 2018"
 > sessionInfo()
 R Under development (unstable) (2017-12-14 r73916)
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -278,4 +278,4 @@ loaded via a namespace (and not attached):
 > 
 > proc.time()
    user  system elapsed 
- 84.992   6.048  91.157 
+ 80.896   2.148  83.170 

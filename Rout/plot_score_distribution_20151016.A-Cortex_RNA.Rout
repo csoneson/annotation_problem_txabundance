@@ -146,14 +146,18 @@ null device
 +           axis.ticks.x = element_blank()) + xlab("")
 +   
 +   ## Scores vs fraction of unique junction reads
-+   g2 <- ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount),
-+                aes(x = uniqjuncfraction, y = score, color = method)) +
-+     geom_point(alpha = 0.5, size = 0.5) + theme_bw() + ylab("JCC score") + 
-+     facet_wrap(~ method, nrow = 1, scales = "free_x") +
-+     geom_smooth(color = "black", method = "loess") + 
-+     xlab("Fraction uniquely mapping junction reads") +
-+     theme(legend.position = "none") + 
-+     scale_color_manual(values = method_colors)
++   if ("uniqjuncfraction" %in% colnames(scores)) {
++     g2 <- ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount),
++                  aes(x = uniqjuncfraction, y = score, color = method)) +
++       geom_point(alpha = 0.5, size = 0.5) + theme_bw() + ylab("JCC score") + 
++       facet_wrap(~ method, nrow = 1, scales = "free_x") +
++       geom_smooth(color = "black", method = "loess") + 
++       xlab("Fraction uniquely mapping junction reads") +
++       theme(legend.position = "none") + 
++       scale_color_manual(values = method_colors)
++   } else {
++     g2 <- NULL
++   }
 +       
 +   ## Scores vs maximum 3'UTR length
 +   if ("max_3putr_length" %in% colnames(scores)) {
@@ -170,34 +174,46 @@ null device
 +       
 +   ## Scores vs fraction of transcripts with valid (i.e. not imposed uniform)
 +   ## coverage prediction
-+   g4 <- ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount),
-+                aes(x = covOKfraction, y = score, color = method)) +
-+     geom_point(alpha = 0.5, size = 0.5) + theme_bw() + ylab("JCC score") + 
-+     facet_wrap(~ method, nrow = 1, scales = "free_x") +
-+     geom_smooth(color = "black", method = "loess") + 
-+     xlab("Fraction of transcripts with non-uniform predicted coverage") +
-+     theme(legend.position = "none") + 
-+     scale_color_manual(values = method_colors)
++   if ("covOKfraction" %in% colnames(scores)) {
++     g4 <- ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount),
++                  aes(x = covOKfraction, y = score, color = method)) +
++       geom_point(alpha = 0.5, size = 0.5) + theme_bw() + ylab("JCC score") + 
++       facet_wrap(~ method, nrow = 1, scales = "free_x") +
++       geom_smooth(color = "black", method = "loess") + 
++       xlab("Fraction of transcripts with non-uniform predicted coverage") +
++       theme(legend.position = "none") + 
++       scale_color_manual(values = method_colors)
++   } else {
++     g4 <- NULL
++   }
 +       
 +   ## Scores vs number of uniquely mapping junction reads
-+   g5 <- ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount),
-+                aes(x = uniqjuncreads, y = score, color = method)) +
-+     geom_point(alpha = 0.5, size = 0.5) + theme_bw() + ylab("JCC score") + 
-+     facet_wrap(~ method, nrow = 1, scales = "free_x") +
-+     geom_smooth(color = "black", method = "loess") + 
-+     xlab("Number of uniquely \nmapped junction reads") +
-+     theme(legend.position = "none") + scale_x_sqrt() + 
-+     scale_color_manual(values = method_colors)
++   if ("uniqjuncreads" %in% colnames(scores)) {
++     g5 <- ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount),
++                  aes(x = uniqjuncreads, y = score, color = method)) +
++       geom_point(alpha = 0.5, size = 0.5) + theme_bw() + ylab("JCC score") + 
++       facet_wrap(~ method, nrow = 1, scales = "free_x") +
++       geom_smooth(color = "black", method = "loess") + 
++       xlab("Number of uniquely \nmapped junction reads") +
++       theme(legend.position = "none") + scale_x_sqrt() + 
++       scale_color_manual(values = method_colors)
++   } else {
++     g5 <- NULL
++   }
 +       
 +   ## Scores vs maximum transcript length
-+   g6 <- ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount),
-+                aes(x = max_transcript_length, y = score, color = method)) +
-+     geom_point(alpha = 0.5, size = 0.5) + theme_bw() + ylab("JCC score") + 
-+     facet_wrap(~ method, nrow = 1, scales = "free_x") +
-+     geom_smooth(color = "black", method = "loess") + 
-+     xlab("Maximal transcript length") + theme(legend.position = "none") + 
-+     scale_color_manual(values = method_colors)
-+       
++   if ("max_transcript_length" %in% colnames(scores)) {
++     g6 <- ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount),
++                  aes(x = max_transcript_length, y = score, color = method)) +
++       geom_point(alpha = 0.5, size = 0.5) + theme_bw() + ylab("JCC score") + 
++       facet_wrap(~ method, nrow = 1, scales = "free_x") +
++       geom_smooth(color = "black", method = "loess") + 
++       xlab("Maximal transcript length") + theme(legend.position = "none") + 
++       scale_color_manual(values = method_colors)
++   } else {
++     g6 <- NULL
++   }
++   
 +   ## Scores vs intron/exon count ratio
 +   if ("intron_exon_ratio" %in% colnames(scores)) {
 +     g7 <- ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount) %>% 
@@ -214,35 +230,47 @@ null device
 +   }
 +       
 +   ## Scores vs total gene count
-+   g8 <- ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount),
-+                aes(x = count, y = score, color = method)) + 
-+     geom_point(alpha = 0.5, size = 0.5) + theme_bw() + 
-+     facet_wrap(~ method, nrow = 1, scales = "free_x") + ylab("JCC score") + 
-+     geom_smooth(color = "black", method = "loess") + 
-+     xlab("Gene count") + scale_x_sqrt() + theme(legend.position = "none") + 
-+     scale_color_manual(values = method_colors)
++   if ("count" %in% colnames(scores)) {
++     g8 <- ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount),
++                  aes(x = count, y = score, color = method)) + 
++       geom_point(alpha = 0.5, size = 0.5) + theme_bw() + 
++       facet_wrap(~ method, nrow = 1, scales = "free_x") + ylab("JCC score") + 
++       geom_smooth(color = "black", method = "loess") + 
++       xlab("Gene count") + scale_x_sqrt() + theme(legend.position = "none") + 
++       scale_color_manual(values = method_colors)
++   } else {
++     g8 <- NULL
++   }
 +     
 +   ## Scores vs number of transcripts
-+   g9 <- ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount) %>%
-+                  dplyr::mutate(nbr_transcripts = replace(nbr_transcripts,
-+                                                          nbr_transcripts > 60, 60)), 
-+                aes(x = nbr_transcripts, y = score, color = method)) + 
-+     geom_point(alpha = 0.5, size = 0.5) + theme_bw() + ylab("JCC score") + 
-+     facet_wrap(~ method, nrow = 1, scales = "free_x") + 
-+     geom_smooth(color = "black", method = "loess") + 
-+     xlab("Number of transcripts") + theme(legend.position = "none") + 
-+     scale_color_manual(values = method_colors)
-+       
++   if ("nbr_transcripts" %in% colnames(scores)) {
++     g9 <- ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount) %>%
++                    dplyr::mutate(nbr_transcripts = replace(nbr_transcripts,
++                                                            nbr_transcripts > 60, 60)), 
++                  aes(x = nbr_transcripts, y = score, color = method)) + 
++       geom_point(alpha = 0.5, size = 0.5) + theme_bw() + ylab("JCC score") + 
++       facet_wrap(~ method, nrow = 1, scales = "free_x") + 
++       geom_smooth(color = "black", method = "loess") + 
++       xlab("Number of transcripts") + theme(legend.position = "none") + 
++       scale_color_manual(values = method_colors)
++   } else {
++     g9 <- NULL
++   }
++   
 +   ## Scores vs number of junctions in gene
-+   g10 <- ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount) %>%
-+                   dplyr::mutate(nbr_junctions_in_gene = replace(nbr_junctions_in_gene,
-+                                                                 nbr_junctions_in_gene > 700, 700)),
-+                 aes(x = nbr_junctions_in_gene, y = score, color = method)) + 
-+     geom_point(alpha = 0.5, size = 0.5) + theme_bw() + ylab("JCC score") + 
-+     facet_wrap(~ method, nrow = 1, scales = "free_x") + 
-+     geom_smooth(color = "black", method = "loess") + 
-+     xlab("Number of junctions") + theme(legend.position = "none") + 
-+     scale_color_manual(values = method_colors)
++   if ("nbr_junctions_in_gene" %in% colnames(scores)) {
++     g10 <- ggplot(scores %>% dplyr::filter(!is.na(score) & uniqjuncreads >= mincount) %>%
++                     dplyr::mutate(nbr_junctions_in_gene = replace(nbr_junctions_in_gene,
++                                                                   nbr_junctions_in_gene > 700, 700)),
++                   aes(x = nbr_junctions_in_gene, y = score, color = method)) + 
++       geom_point(alpha = 0.5, size = 0.5) + theme_bw() + ylab("JCC score") + 
++       facet_wrap(~ method, nrow = 1, scales = "free_x") + 
++       geom_smooth(color = "black", method = "loess") + 
++       xlab("Number of junctions") + theme(legend.position = "none") + 
++       scale_color_manual(values = method_colors)
++   } else {
++     g10 <- NULL
++   }
 +       
 +   ## Scores vs length difference between 3'UTRs starting in the same place
 +   if ("length_diff_3putrs_samestart" %in% colnames(scores)) {
@@ -265,11 +293,16 @@ null device
 +   )   
 +   dev.off()
 +   
-+   subplots[[paste0("_min", mincount, "uniqjuncreads")]] <- 
-+     cowplot::plot_grid(g1 + facet_wrap(~ method, ncol = 1), 
-+                        g8 + facet_wrap(~ method, ncol = 1), 
-+                        g5 + facet_wrap(~ method, ncol = 1), 
-+                        nrow = 1, align = "h", axis = "tb")
++   if (!is.null(g1) && !is.null(g5) && !is.null(g8)) {
++     sp <- cowplot::plot_grid(g1 + facet_wrap(~ method, ncol = 1), 
++                              g8 + facet_wrap(~ method, ncol = 1), 
++                              g5 + facet_wrap(~ method, ncol = 1), 
++                              nrow = 1, align = "h", axis = "tb")
++   } else {
++     sp <- NULL
++   }
++   subplots[[paste0("_min", mincount, "uniqjuncreads")]] <- sp
++     
 + }
 There were 50 or more warnings (use warnings() to see the first 50)
 > 
@@ -303,8 +336,8 @@ loaded via a namespace (and not attached):
 [17] munsell_0.4.3    compiler_3.5.0   colorspace_1.3-2 pkgconfig_2.0.1 
 [21] tidyselect_0.2.4 bindr_0.1.1      tibble_1.4.2    
 > date()
-[1] "Sun Jul 22 14:37:48 2018"
+[1] "Tue Jul 24 18:26:59 2018"
 > 
 > proc.time()
     user   system  elapsed 
-1534.088 1261.168 2797.658 
+1446.676  352.316 1800.567 

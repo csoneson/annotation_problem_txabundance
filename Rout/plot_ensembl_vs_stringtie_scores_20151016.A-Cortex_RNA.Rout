@@ -207,3 +207,86 @@ null device
 +   dplyr::group_by(gene, method) %>%
 +   dplyr::summarize(fracExprRemoved = sum(TPM[!(transcript %in% stringtieconversiontx$symbol)])/sum(TPM)) %>%
 +   dplyr::mutate(fracExprRemoved = replace(fracExprRemoved, is.na(fracExprRemoved), 0))
+> 
+> b <- a %>% 
++   dplyr::left_join(strexpr %>% dplyr::ungroup() %>%
++                      dplyr::select(-gene) %>% dplyr::rename(gene = symbol), 
++                    by = c("gene", "method")) %>%
++   dplyr::left_join(ensexpr, by = c("gene", "method")) %>%
++   dplyr::mutate(str_vs_ens = NA_character_) %>%
++   dplyr::mutate(str_vs_ens = replace(str_vs_ens, stringtie - ensembl > 0.1, 
++                                      "StringTie score-Ensembl score > 0.1"),
++                 str_vs_ens = replace(str_vs_ens, stringtie - ensembl > 0 & 
++                                        stringtie - ensembl <= 0.1, 
++                                      "0 < StringTie score-Ensembl score <= 0.1"),
++                 str_vs_ens = replace(str_vs_ens, stringtie - ensembl < -0.1, 
++                                      "StringTie score-Ensembl score < -0.1"),
++                 str_vs_ens = replace(str_vs_ens, stringtie - ensembl >= -0.1 & 
++                                        stringtie - ensembl < 0,
++                                      "-0.1 <= StringTie score-Ensembl score < 0"),
++                 str_vs_ens = replace(str_vs_ens, stringtie == ensembl, 
++                                      "StringTie score = Ensembl score")) %>%
++   dplyr::mutate(str_vs_ens = factor(str_vs_ens, 
++                                     levels = c("StringTie score-Ensembl score > 0.1",
++                                                "0 < StringTie score-Ensembl score <= 0.1",
++                                                "StringTie score = Ensembl score",
++                                                "-0.1 <= StringTie score-Ensembl score < 0",
++                                                "StringTie score-Ensembl score < -0.1"))) %>%
++   dplyr::filter(method %in% quantmethods) %>%
++   dplyr::left_join(stringtie$transcripts %>% dplyr::select(gene, symbol) %>% 
++                      dplyr::distinct() %>% 
++                      dplyr::rename(strid = gene), by = c("gene" = "symbol"))
+Warning message:
+Column `method` joining factor and character vector, coercing into character vector 
+> bb <- tidyr::gather(b, fractype, fracexpr, fracExprSTR, fracExprRemoved)
+> 
+> png(gsub("\\.rds$", "_new_missing_tx.png", outrds), width = 15, height = 7,
++     unit = "in", res = 400)
+> ggplot(bb %>% dplyr::mutate(fractype = replace(fractype, fractype == "fracExprRemoved", 
++                                                "Removed Ensembl transcripts"), 
++                             fractype = replace(fractype, fractype == "fracExprSTR",
++                                                "New StringTie transcripts")), 
++        aes(x = str_vs_ens, y = fracexpr, color = method)) + 
++   geom_boxplot() + 
++   facet_wrap(~ fractype) + theme_bw() + xlab("") + 
++   theme(axis.text.x = element_text(angle = 70, hjust = 1, vjust = 1)) + 
++   ylab("Fraction of gene TPM") + scale_color_manual(values = method_colors, name = "")
+> dev.off()
+null device 
+          1 
+> 
+> saveRDS(NULL, file = outrds)
+> date()
+[1] "Tue Jul 24 18:45:54 2018"
+> sessionInfo()
+R Under development (unstable) (2017-12-14 r73916)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 16.04.4 LTS
+
+Matrix products: default
+BLAS: /usr/local/R/R-devel/lib/libRblas.so
+LAPACK: /usr/local/R/R-devel/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
+ [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   
+ [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          
+[10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] bindrcpp_0.2.2 cowplot_0.9.2  ggplot2_2.2.1  tidyr_0.8.0    dplyr_0.7.4   
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_0.12.16     digest_0.6.15    assertthat_0.2.0 plyr_1.8.4      
+ [5] grid_3.5.0       R6_2.2.2         gtable_0.2.0     magrittr_1.5    
+ [9] scales_0.5.0     pillar_1.2.1     rlang_0.2.0      lazyeval_0.2.1  
+[13] labeling_0.3     glue_1.2.0       munsell_0.4.3    purrr_0.2.4     
+[17] compiler_3.5.0   colorspace_1.3-2 pkgconfig_2.0.1  tidyselect_0.2.4
+[21] bindr_0.1.1      tibble_1.4.2    
+> 
+> proc.time()
+    user   system  elapsed 
+1835.508   16.604 1856.624 

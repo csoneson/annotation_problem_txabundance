@@ -2,7 +2,7 @@ salmon := /home/charlotte/software/salmon-0.11.0-linux_x86_64/bin/salmon
 
 salmoncdnancrnaindex := $(refdir)/cDNA/Homo_sapiens.GRCh38.cdna.ncrna_sidx_v0.11.0
 salmoncdsindex := $(refdir)/cds/Homo_sapiens.GRCh38.cds.all_sidx_v0.11.0
-salmonkeepdupindex := reference/salmon/Homo_sapiens.TRCh38.cdna.ncrna.keepdup_sidx_v0.11.0
+salmonkeepdupindex := reference/salmon/Homo_sapiens.GRCh38.cdna.ncrna.keepdup_sidx_v0.11.0
 
 ## Build Salmon index
 define salmonindexrule

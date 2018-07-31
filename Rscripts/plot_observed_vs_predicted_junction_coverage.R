@@ -201,6 +201,23 @@ png(gsub("\\.rds$", "_sqrt.png", outrds), width = 7, height = 15, unit = "in", r
 print(gg + scale_x_sqrt() + scale_y_sqrt())
 dev.off()
 
+## MA-style
+png(gsub("\\.rds$", "_sqrt_ma.png", outrds), width = 7, height = 15, unit = "in", res = 300)
+print(ggplot(y, aes(x = (sqrt(uniqreads) + (sqrt(coverage)))/2, 
+                    y = sqrt(coverage) - sqrt(uniqreads))) + 
+        geom_abline(intercept = 0, slope = 0, color = "black") + 
+        geom_point(alpha = 0.3, size = 0.3, 
+                   aes(color = (fracunique < fracuniqjuncreadsthreshold))) + 
+        facet_grid(method ~ covtype) + 
+        xlab("(sqrt(Observed)+sqrt(Predicted))/2") + 
+        ylab("sqrt(Predicted)-sqrt(Observed)") + 
+        scale_color_manual(name = paste0("Fraction\nuniquely mapping\nreads < ", 
+                                         fracuniqjuncreadsthreshold), 
+                           values = c(`TRUE` = "red", `FALSE` = "black")) + 
+        guides(color = guide_legend(override.aes = list(size = 3, alpha = 1))) + 
+        theme_bw())
+dev.off()
+
 
 saveRDS(list(junctionscatter = gg), outrds)
 

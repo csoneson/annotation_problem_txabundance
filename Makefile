@@ -16,7 +16,7 @@ quantmethods20170918.A-WT_4 := Salmon SalmonSTAR kallisto RSEM StringTie hera Sa
 quantmethodssim_misannotated_utr_1 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup 
 quantmethodsstringtie := Salmon SalmonSTAR kallisto RSEM StringTie hera 
 
-nthreads := 24
+nthreads := 10
 
 ## Define the multimapping fraction threshold. Junctions with MM/(UM+MM)>mmfracthreshold will not be 
 ## included when calculating the "MM-aware" score
@@ -99,7 +99,10 @@ $(foreach F,$(fastqfiles),alpine/$(notdir $(F))/alpine_predicted_coverage.rds)
 ## Scale coverage and calculate scores
 scalecov: $(foreach F,$(fastqfiles),$(foreach M,$(quantmethods$(notdir $(F))),alpine/$(notdir $(F))/scaled_junction_coverage_$(M).rds)) \
 $(foreach F,$(fastqfiles),output/$(notdir $(F))_combined_coverages.rds) \
-$(foreach F,$(fastqfiles),output/$(notdir $(F))_combined_coverages_with_scores.rds)
+$(foreach F,$(fastqfiles),output/$(notdir $(F))_combined_coverages_with_scores.rds) \
+$(foreach F,20170918.A-WT_4,$(foreach M,Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup,alpine/$(notdir $(F))/scaled_junction_coverage_$(M)Permuted.rds)) \
+output/20170918.A-WT_4_combined_coverages_permuted.rds \
+output/20170918.A-WT_4_combined_coverages_permuted_with_scores.rds
 
 ########################################################################################################
 ## CHESS annotation
@@ -156,6 +159,27 @@ $(foreach F,$(fastqfiles),output/$(notdir $(F))_stringtie_tx_combined_coverages.
 $(foreach F,$(fastqfiles),output/$(notdir $(F))_stringtie_tx_combined_coverages_with_scores.rds)
 
 ########################################################################################################
+## Annotation extended with long 3'UTRs
+########################################################################################################
+## Prepare reference files and indexes
+prepreflongutradded: $(gtf_longutr_added) $(txome_longutr_added) $(tx2gene_longutr_added) \
+reference/salmon/Homo_sapiens.GRCh38.cdna.ncrna_longUTR_added_sidx_v0.11.0/hash.bin \
+reference/salmon/Homo_sapiens.GRCh38.cdna.ncrna_longUTR_added_keepdup_sidx_v0.11.0/hash.bin \
+reference/kallisto/Homo_sapiens.GRCh38.cdna.ncrna_longUTR_added_kidx_v0.44.0
+
+alpinepreplongutradded: $(foreach F,$(fastqfilesreal),alpine/$(notdir $(F))_longUTR_added/alpine_fitbiasmodel.rds) \
+$(foreach F,$(fastqfilesreal),alpine/$(notdir $(F))_longUTR_added/alpine_predicted_coverage.rds)
+
+quantlongutradded: $(foreach F,$(fastqfilesreal),salmon_longUTR_added/$(notdir $(F))/quant.sf) \
+$(foreach F,$(fastqfilesreal),salmon_longUTR_addedkeepdup/$(notdir $(F))/quant.sf) \
+$(foreach F,$(fastqfilesreal),kallisto_longUTR_added/$(notdir $(F))/abundance.tsv)
+
+scalecovlongutradded: $(foreach F,$(fastqfilesreal),$(foreach M,Salmon kallisto SalmonKeepDup,alpine/$(notdir $(F))_longUTR_added/scaled_junction_coverage_$(M).rds)) \
+$(foreach F,$(fastqfilesreal),output/$(notdir $(F))_longUTR_added_combined_coverages.rds) \
+$(foreach F,$(fastqfilesreal),output/$(notdir $(F))_longUTR_added_combined_coverages_with_scores.rds)
+
+
+########################################################################################################
 ## Simulated data
 ########################################################################################################
 simulation: simulation/misannotated_utr/sim_misannotated_utr_1_R1.fastq.gz \
@@ -179,7 +203,8 @@ $(foreach F,$(fastqfiles),figures/correlation_with_inferential_variance/correlat
 $(foreach F,$(fastqfiles),figures/correlation_between_methods/correlation_between_methods_$(notdir $(F)).rds) \
 figures/correlation_between_nanopore_and_illumina_scores/correlation_between_nanopore_and_illumina_scores_20170918.A-WT_4.rds \
 $(foreach F,$(fastqfiles),figures/correlation_with_true_abundances/correlation_with_true_abundances_$(notdir $(F)).rds) \
-$(foreach F,$(fastqfiles),figures/association_exoncdscorrelation_score/association_exoncdscorrelation_score_$(notdir $(F)).rds)
+$(foreach F,$(fastqfiles),figures/association_exoncdscorrelation_score/association_exoncdscorrelation_score_$(notdir $(F)).rds) \
+figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_20170918.A-WT_4_permuted.rds
 
 plotssim: $(foreach F,$(fastqfilessim),figures/performance_simulated_data/performance_simulated_data_$(notdir $(F)).rds)
 

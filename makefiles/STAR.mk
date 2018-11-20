@@ -49,6 +49,15 @@ endef
 $(foreach F,$(fastqfiles),$(eval $(call featurecountsrule,$(F),$(notdir $(F)),,exons,2)))
 $(foreach F,$(fastqfiles),$(eval $(call featurecountsrule,$(F),$(notdir $(F)),,introns,2)))
 
+## Count junction reads with featureCounts
+define starjunccountrule
+featureCounts$(3)/$(2)/$(2)_STAR.txt.jcounts: STAR$(3)/$(2)/$(2)_Aligned.sortedByCoord.out.bam
+	mkdir -p $$(@D)
+	$(featurecounts) -F GTF -t exon -g gene_id -f --minOverlap 1 --primary -O --splitOnly -s 2 -J -G $(genome) \
+	-p -T $(nthreads) -a $(gtf) -o featureCounts$(3)/$(2)/$(2)_STAR.txt $$(word 1,$$^)
+endef
+$(foreach F,$(fastqfiles),$(eval $(call starjunccountrule,$(F),$(notdir $(F)),)))
+
 ## Convert BAM files to bigWig
 define bwrule
 STARbigwig$(2)/$(1)_Aligned.sortedByCoord.out.bw: $(STARindexnogtf)/chrNameLength.txt \

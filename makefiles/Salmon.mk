@@ -15,6 +15,8 @@ $(eval $(call salmonindexrule,$(salmonkeepdupindex),$(salmon),$(txome),--keepDup
 $(foreach F,$(fastqfiles),$(eval $(call salmonindexrule,reference/salmon/$(notdir $(F))_stringtie_tx_sidx_v0.11.0,$(salmon),stringtie/$(notdir $(F))/$(notdir $(F))_stringtie_tx.fa,)))
 $(eval $(call salmonindexrule,reference/salmon/chess2.0_assembly_fixed_sidx_v0.11.0,$(salmon),$(txome_chess),))
 $(eval $(call salmonindexrule,reference/salmon/chess2.0_assembly_fixed_keepdup_sidx_v0.11.0,$(salmon),$(txome_chess),--keepDuplicates))
+$(eval $(call salmonindexrule,reference/salmon/Homo_sapiens.GRCh38.cdna.ncrna_longUTR_added_sidx_v0.11.0,$(salmon),$(txome_longutr_added),))
+$(eval $(call salmonindexrule,reference/salmon/Homo_sapiens.GRCh38.cdna.ncrna_longUTR_added_keepdup_sidx_v0.11.0,$(salmon),$(txome_longutr_added),--keepDuplicates))
 
 ## Count number of removed transcripts
 stats/nbr_duplicate_transcripts_Salmon_Homo_sapiens.GRCh38.cdna.ncrna_sidx_v0.11.0.txt: $(salmoncdnancrnaindex)/hash.bin Rscripts/count_salmon_duplicate_tx.R
@@ -32,3 +34,5 @@ $(foreach F,$(fastqfiles),$(eval $(call salmonrule,$(F),$(notdir $(F)),$(salmonk
 $(foreach F,$(fastqfiles),$(eval $(call salmonrule,$(F),$(notdir $(F)),reference/salmon/$(notdir $(F))_stringtie_tx_sidx_v0.11.0,$(salmon),salmon_stringtie_tx,)))
 $(foreach F,$(fastqfilesreal),$(eval $(call salmonrule,$(F),$(notdir $(F)),reference/salmon/chess2.0_assembly_fixed_sidx_v0.11.0,$(salmon),salmon_chess,--numBootstraps 100)))
 $(foreach F,$(fastqfilesreal),$(eval $(call salmonrule,$(F),$(notdir $(F)),reference/salmon/chess2.0_assembly_fixed_keepdup_sidx_v0.11.0,$(salmon),salmon_chesskeepdup,)))
+$(foreach F,$(fastqfilesreal),$(eval $(call salmonrule,$(F),$(notdir $(F)),reference/salmon/Homo_sapiens.GRCh38.cdna.ncrna_longUTR_added_sidx_v0.11.0,$(salmon),salmon_longUTR_added,)))
+$(foreach F,$(fastqfilesreal),$(eval $(call salmonrule,$(F),$(notdir $(F)),reference/salmon/Homo_sapiens.GRCh38.cdna.ncrna_longUTR_added_keepdup_sidx_v0.11.0,$(salmon),salmon_longUTR_addedkeepdup,)))

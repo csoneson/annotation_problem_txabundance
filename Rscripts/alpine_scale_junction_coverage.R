@@ -10,6 +10,7 @@
 ## * quantreadscript: script to read the transcript quantifications. Should   ##
 ##                    contain a function named read_quant()                   ##
 ## * strandspec: yes or no, is the data strand-specific                       ##
+## * permutecounts: TRUE or FALSE, whether to permute counts within gene      ##
 ## * tx2gene: data frame with transcript-to-gene conversion info              ##
 ## * method: method name to add to the quantification table                   ##
 ## * outrds: output file                                                      ##
@@ -29,6 +30,7 @@ print(predcovrds)
 print(txquants)
 print(quantreadscript)
 print(strandspec)
+print(permutecounts)
 print(tx2gene)
 print(method)
 print(outrds)
@@ -53,6 +55,16 @@ tx2gene$gene[idxgene] <- gsub("\\.[0-9]+$", "", tx2gene$gene[idxgene])
 
 transcripts <- names(predcovs)
 names(transcripts) <- transcripts
+
+## Permute counts within each gene, if applicable
+if (permutecounts) {
+  set.seed(1234)
+  quants <- quants %>% dplyr::left_join(tx2gene %>% dplyr::select(tx, gene), 
+                                        by = c("transcript"="tx")) %>% 
+    dplyr::group_by(gene) %>% 
+    dplyr::mutate(count = sample(count, size = length(count), replace = FALSE)) %>% 
+    dplyr::ungroup() %>% dplyr::select(-gene) %>% as.data.frame()
+}
 
 ## Go through all transcripts and scale predicted junction coverage by the
 ## estimated abundance

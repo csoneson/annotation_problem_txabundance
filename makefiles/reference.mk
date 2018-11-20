@@ -111,4 +111,19 @@ output/gene_characteristics_chess.rds: $(gtf_chess) Rscripts/calculate_gene_char
 	$(R) "--args gtf='$(gtf_chess)' outrds='$@'" Rscripts/calculate_gene_characteristics_chess.R Rout/calculate_gene_characteristics_chess.Rout
 
 
+## ==================================================================================== ##
+##                    Replace shorter 3'UTRs with longer ones                           ##
+## ==================================================================================== ##
+gtf_longutr_added := reference_longUTR_added/Homo_sapiens.GRCh38.90_longUTR_added.gtf
+txome_longutr_added := reference_longUTR_added/Homo_sapiens.GRCh38.90_longUTR_added.fasta
+tx2gene_longutr_added := reference_longUTR_added/Homo_sapiens.GRCh38.90_longUTR_added_tx2gene.rds
 
+$(txome_longutr_added): $(gtf) $(txome) Rscripts/extend_annotation_longest_3putr.R
+	mkdir -p $(@D)
+	$(R) "--args gtffile='$(gtf)' txfastafile='$(txome)' outbase='reference_longUTR_added/Homo_sapiens.GRCh38.90_longUTR_added'" Rscripts/extend_annotation_longest_3putr.R Rout/extend_annotation_longest_3putr.Rout
+
+$(gtf_longutr_added): $(txome_longutr_added)
+	touch $@
+
+$(tx2gene_longutr_added): $(txome_longutr_added)
+	touch $@

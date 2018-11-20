@@ -182,7 +182,12 @@ if (exoncountstxt != "" && introncountstxt != "") {
 }
 
 ## Add total unique and multimapping junction reads per gene
-totjunctionreads <- jcovscaled %>% dplyr::filter(method == "Salmon") %>%
+if ("Salmon" %in% jcovscaled$method) {
+  selmethod <- "Salmon"
+} else {
+  selmethod <- "SalmonPermuted"
+} 
+totjunctionreads <- jcovscaled %>% dplyr::filter(method == selmethod) %>%
   dplyr::select(gene, uniqreads, mmreads) %>%
   dplyr::group_by(gene) %>% dplyr::summarize(uniqjuncreads = sum(uniqreads),
                                              mmjuncreads = sum(mmreads))

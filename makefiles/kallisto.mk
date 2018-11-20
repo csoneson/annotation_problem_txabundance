@@ -11,6 +11,7 @@ endef
 $(eval $(call kallistoindexrule,$(kallistocdnancrnaindex),$(txome)))
 $(foreach F,$(fastqfiles),$(eval $(call kallistoindexrule,reference/kallisto/$(notdir $(F))_stringtie_tx_kidx_v0.44.0,stringtie/$(notdir $(F))/$(notdir $(F))_stringtie_tx.fa)))
 $(eval $(call kallistoindexrule,reference/kallisto/chess2.0_assembly_fixed_kidx_v0.44.0,$(txome_chess)))
+$(eval $(call kallistoindexrule,reference/kallisto/Homo_sapiens.GRCh38.cdna.ncrna_longUTR_added_kidx_v0.44.0,$(txome_longutr_added)))
 
 ## ==================================================================================== ##
 ##                                   kallisto                                           ##
@@ -24,3 +25,4 @@ endef
 $(foreach F,$(fastqfiles),$(eval $(call kallistorule,$(F),$(notdir $(F)),$(kallistocdnancrnaindex),kallisto/cDNAncRNA,--rf-stranded)))
 $(foreach F,$(fastqfiles),$(eval $(call kallistorule,$(F),$(notdir $(F)),reference/kallisto/$(notdir $(F))_stringtie_tx_kidx_v0.44.0,kallisto_stringtie_tx,--rf-stranded)))
 $(foreach F,$(fastqfilesreal),$(eval $(call kallistorule,$(F),$(notdir $(F)),reference/kallisto/chess2.0_assembly_fixed_kidx_v0.44.0,kallisto_chess,--rf-stranded)))
+$(foreach F,$(fastqfilesreal),$(eval $(call kallistorule,$(F),$(notdir $(F)),reference/kallisto/Homo_sapiens.GRCh38.cdna.ncrna_longUTR_added_kidx_v0.44.0,kallisto_longUTR_added,--rf-stranded)))

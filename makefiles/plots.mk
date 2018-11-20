@@ -11,6 +11,14 @@ $(foreach F,$(fastqfiles),$(eval $(call obsvspredrule,$(notdir $(F)),)))
 $(foreach F,$(fastqfiles),$(eval $(call obsvspredrule,$(notdir $(F)),_stringtie_tx)))
 $(foreach F,$(fastqfilesreal),$(eval $(call obsvspredrule,$(notdir $(F)),_chess)))
 
+define obsvspredpermrule
+figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_$(1)$(2)_permuted.rds: output/$(1)$(2)_combined_coverages_permuted_with_scores.rds \
+Rscripts/plot_observed_vs_predicted_junction_coverage.R
+	mkdir -p $$(@D)
+	$(R) "--args scorerds='$$<' quantmethods='heraPermuted,kallistoPermuted,RSEMPermuted,SalmonPermuted,SalmonSTARPermuted,SalmonCDSPermuted,SalmonKeepDupPermuted,StringTiePermuted' uniqjuncreadsthreshold=$(uniqjuncreadsthreshold) fracuniqjuncreadsthreshold=$(fracuniqjuncreadsthreshold) outrds='$$@'" Rscripts/plot_observed_vs_predicted_junction_coverage.R Rout/plot_observed_vs_predicted_junction_coverage_$(1)$(2)_permuted.Rout
+endef
+$(eval $(call obsvspredpermrule,20170918.A-WT_4,))
+
 ## ==================================================================================== ##
 ##           compare predicted coverage patterns between samples                        ##
 ## ==================================================================================== ##

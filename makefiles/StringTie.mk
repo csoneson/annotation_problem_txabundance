@@ -1,6 +1,7 @@
 hisat2 := /home/charlotte/software/hisat2-2.1.0
 stringtie := /home/charlotte/software/stringtie-1.3.3b.Linux_x86_64/stringtie
 gffread := /home/charlotte/software/gffread-0.9.12.Linux_x86_64/gffread
+featurecounts := /home/charlotte/software/subread-1.6.0-Linux-x86_64/bin/featureCounts
 
 hisat2index := $(refdir)/genome/hisat2idx/Homo_sapiens.GRCh38.dna.primary_assembly
 hisat2ss := reference/hisat2splicesites.txt
@@ -30,6 +31,12 @@ HISAT2$(3)/$(2)/$(2).bam: $(hisat2index).1.ht2 $(4) $(1)_R1.fastq.gz $(1)_R2.fas
 endef
 $(foreach F,$(fastqfiles),$(eval $(call hisat2rule,$(F),$(notdir $(F)),,$(hisat2ss))))
 $(foreach F,$(fastqfilesreal),$(eval $(call hisat2rule,$(F),$(notdir $(F)),_chess,reference/hisat2splicesites_chess2.0_assembly_fixed.txt)))
+
+## Get junction counts from HiSAT2 alignment
+#define hisatjunccountrule
+#HISAT2$(3)/$(2)/$(2).jcounts: HISAT2$(3)/$(2)/$(2).bam
+#	$(featurecounts) 
+
 
 ## Run StringTie without assembly of new transcripts
 define stringtierefrule

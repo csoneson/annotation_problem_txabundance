@@ -16,7 +16,7 @@ quantmethods20170918.A-WT_4 := Salmon SalmonSTAR kallisto RSEM StringTie hera Sa
 quantmethodssim_misannotated_utr_1 := Salmon SalmonSTAR kallisto RSEM StringTie hera SalmonCDS SalmonKeepDup 
 quantmethodsstringtie := Salmon SalmonSTAR kallisto RSEM StringTie hera 
 
-nthreads := 10
+nthreads := 16
 
 ## Define the multimapping fraction threshold. Junctions with MM/(UM+MM)>mmfracthreshold will not be 
 ## included when calculating the "MM-aware" score
@@ -165,7 +165,8 @@ $(foreach F,$(fastqfiles),output/$(notdir $(F))_stringtie_tx_combined_coverages_
 prepreflongutradded: $(gtf_longutr_added) $(txome_longutr_added) $(tx2gene_longutr_added) \
 reference/salmon/Homo_sapiens.GRCh38.cdna.ncrna_longUTR_added_sidx_v0.11.0/hash.bin \
 reference/salmon/Homo_sapiens.GRCh38.cdna.ncrna_longUTR_added_keepdup_sidx_v0.11.0/hash.bin \
-reference/kallisto/Homo_sapiens.GRCh38.cdna.ncrna_longUTR_added_kidx_v0.44.0
+reference/kallisto/Homo_sapiens.GRCh38.cdna.ncrna_longUTR_added_kidx_v0.44.0 \
+$(gvizgenemodels_longutr_added)
 
 alpinepreplongutradded: $(foreach F,$(fastqfilesreal),alpine/$(notdir $(F))_longUTR_added/alpine_fitbiasmodel.rds) \
 $(foreach F,$(fastqfilesreal),alpine/$(notdir $(F))_longUTR_added/alpine_predicted_coverage.rds)
@@ -177,6 +178,7 @@ $(foreach F,$(fastqfilesreal),kallisto_longUTR_added/$(notdir $(F))/abundance.ts
 scalecovlongutradded: $(foreach F,$(fastqfilesreal),$(foreach M,Salmon kallisto SalmonKeepDup,alpine/$(notdir $(F))_longUTR_added/scaled_junction_coverage_$(M).rds)) \
 $(foreach F,$(fastqfilesreal),output/$(notdir $(F))_longUTR_added_combined_coverages.rds) \
 $(foreach F,$(fastqfilesreal),output/$(notdir $(F))_longUTR_added_combined_coverages_with_scores.rds)
+
 
 
 ########################################################################################################
@@ -224,6 +226,8 @@ $(foreach G,$(genes_to_plot_summary),$(foreach F,$(fastqfilesreal),figures/compa
 plotscomparison: $(foreach F,$(fastqfilesreal),figures/comparison_scores_chess_ensembl/comparison_scores_chess_ensembl_$(notdir $(F)).rds) \
 $(foreach F,$(fastqfilesreal),figures/comparison_scores_stringtie_tx_ensembl/comparison_scores_stringtie_tx_ensembl_$(notdir $(F)).rds) \
 figures/ensembl_vs_chess_annotation_characteristics/ensembl_vs_chess_annotation_characteristics.rds
+
+plotssummarylongutradded: $(foreach G,$(genes_to_plot_summary_longutr_added),$(foreach F,20170918.A-WT_4,figures/genewise_summary_longUTR_added/$(notdir $(F))_longUTR_added_$(G).png))
 
 ########################################################################################################
 ## Stats

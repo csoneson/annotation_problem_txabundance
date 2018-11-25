@@ -116,10 +116,10 @@ $(eval $(call juncscalerule,20170918.A-WT_4,_chess,StringTie,stringtie_chess/201
 
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_longUTR_added,Salmon,salmon_longUTR_added/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_longutr_added),yes,FALSE))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_longUTR_added,SalmonKeepDup,salmon_longUTR_addedkeepdup/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_longutr_added),yes,FALSE))
-$(eval $(call juncscalerule,20151016.A-Cortex_RNA,_longUTR_added,kallisto,kallisto_longUTR_added/20151016.A-Cortex_RNA/abundance.tsv, Rscripts/read_quant_kallisto.R,$(tx2gene_longutr_added),yes,FALSE))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,_longUTR_added,kallisto,kallisto_longUTR_added/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_kallisto.R,$(tx2gene_longutr_added),yes,FALSE))
 $(eval $(call juncscalerule,20170918.A-WT_4,_longUTR_added,Salmon,salmon_longUTR_added/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_longutr_added),yes,FALSE))
 $(eval $(call juncscalerule,20170918.A-WT_4,_longUTR_added,SalmonKeepDup,salmon_longUTR_addedkeepdup/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_longutr_added),yes,FALSE))
-$(eval $(call juncscalerule,20170918.A-WT_4,_longUTR_added,kallisto,kallisto_longUTR_added/20170918.A-WT_4/abundance.tsv, Rscripts/read_quant_kallisto.R,$(tx2gene_longutr_added),yes,FALSE))
+$(eval $(call juncscalerule,20170918.A-WT_4,_longUTR_added,kallisto,kallisto_longUTR_added/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_kallisto.R,$(tx2gene_longutr_added),yes,FALSE))
 
 ## Combine coverages for all methods
 define combcovrule

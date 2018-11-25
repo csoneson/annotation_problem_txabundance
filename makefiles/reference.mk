@@ -117,6 +117,7 @@ output/gene_characteristics_chess.rds: $(gtf_chess) Rscripts/calculate_gene_char
 gtf_longutr_added := reference_longUTR_added/Homo_sapiens.GRCh38.90_longUTR_added.gtf
 txome_longutr_added := reference_longUTR_added/Homo_sapiens.GRCh38.90_longUTR_added.fasta
 tx2gene_longutr_added := reference_longUTR_added/Homo_sapiens.GRCh38.90_longUTR_added_tx2gene.rds
+gvizgenemodels_longutr_added := reference_longUTR_added/Homo_sapiens.GRCh38.90_longUTR_added_gviz_genemodels.rds
 
 $(txome_longutr_added): $(gtf) $(txome) Rscripts/extend_annotation_longest_3putr.R
 	mkdir -p $(@D)
@@ -127,3 +128,8 @@ $(gtf_longutr_added): $(txome_longutr_added)
 
 $(tx2gene_longutr_added): $(txome_longutr_added)
 	touch $@
+
+$(gvizgenemodels_longutr_added): $(gtf_longutr_added) Rscripts/generate_genemodels.R Rscripts/helper_plot_tracks.R
+	mkdir -p $(@D)
+	$(R) "--args gtf='$(gtf_longutr_added)' outrds='$@'" Rscripts/generate_genemodels.R Rout/generate_genemodels_longUTR_added.Rout
+

@@ -218,6 +218,20 @@ print(ggplot(y, aes(x = (sqrt(uniqreads) + (sqrt(coverage)))/2,
         theme_bw())
 dev.off()
 
+## hexbin
+png(gsub("\\.rds$", "_sqrt_hex.png", outrds), width = 7, height = 15, unit = "in", res = 300)
+print(ggplot(y, aes(x = uniqreads, y = coverage)) + 
+        geom_abline(intercept = 0, slope = 1, color = "black") + 
+        geom_hex(bins = 75) + 
+        scale_fill_gradient(name = "", low = "blue", high = "red", trans = "log") + 
+        geom_label(data = corrs, x = -Inf, y = Inf, hjust = -0.05, vjust = 1.1, 
+                   aes(label = paste0("Pearson: ", pearson, "\nSpearman: ", spearman))) + 
+        facet_grid(method ~ covtype) + 
+        xlab("Number of uniquely mapped reads spanning junction") + 
+        ylab("Predicted number of reads spanning junction") + 
+        theme_bw() + scale_x_sqrt() + scale_y_sqrt() + 
+        theme(legend.position = "none"))
+dev.off()
 
 saveRDS(list(junctionscatter = gg), outrds)
 

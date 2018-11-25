@@ -71,14 +71,15 @@ $(foreach F,$(fastqfilesreal),$(eval $(call scorecompannotstringtierule,$(notdir
 ##                            genewise results/plots                                    ##
 ## ==================================================================================== ##
 define geneplotrule2
-figures/genewise_summary$(2)/$(1)$(2)_$(3).png: STARbigwig$(2)/$(1)_Aligned.sortedByCoord.out.bw output/$(1)$(2)_combined_coverages_with_scores.rds \
+figures/genewise_summary$(2)/$(1)$(2)_$(3).png: STARbigwig$(5)/$(1)_Aligned.sortedByCoord.out.bw output/$(1)$(2)_combined_coverages_with_scores.rds \
 $(4) Rscripts/plot_genewise_summary.R
 	mkdir -p $$(@D)
 	$(R) "--args usegene='$(3)' bigwig='$$(word 1,$$^)' genemodels='$(4)' quantmethods='hera,kallisto,RSEM,Salmon,SalmonSTAR,SalmonCDS,SalmonKeepDup,StringTie' scorerds='$$(word 2,$$^)' outpng='$$@'" Rscripts/plot_genewise_summary.R Rout/plot_genewise_summary_$(1)$(2)_$(3).Rout
 endef
-$(foreach G,$(genes_to_plot_summary),$(foreach F,$(fastqfilesreal),$(eval $(call geneplotrule2,$(notdir $(F)),,$(G),$(gvizgenemodels)))))
-$(foreach G,$(genes_to_plot_summary_chess),$(foreach F,$(fastqfilesreal),$(eval $(call geneplotrule2,$(notdir $(F)),_chess,$(G),$(gvizgenemodels_chess)))))
-$(foreach F,$(fastqfilesreal),$(foreach G,$(genes_to_plot_summary_stringtie$(notdir $(F))),$(eval $(call geneplotrule2,$(notdir $(F)),_stringtie_tx,$(G),stringtie/$(notdir $(F))/$(notdir $(F))_gviz_genemodels.rds))))
+$(foreach G,$(genes_to_plot_summary),$(foreach F,$(fastqfilesreal),$(eval $(call geneplotrule2,$(notdir $(F)),,$(G),$(gvizgenemodels),))))
+$(foreach G,$(genes_to_plot_summary_chess),$(foreach F,$(fastqfilesreal),$(eval $(call geneplotrule2,$(notdir $(F)),_chess,$(G),$(gvizgenemodels_chess),_chess))))
+$(foreach F,$(fastqfilesreal),$(foreach G,$(genes_to_plot_summary_stringtie$(notdir $(F))),$(eval $(call geneplotrule2,$(notdir $(F)),_stringtie_tx,$(G),stringtie/$(notdir $(F))/$(notdir $(F))_gviz_genemodels.rds,_stringtie_tx))))
+$(foreach G,$(genes_to_plot_summary_longutr_added),$(foreach F,$(fastqfilesreal),$(eval $(call geneplotrule2,$(notdir $(F)),_longUTR_added,$(G),$(gvizgenemodels_longutr_added),))))
 
 ## ==================================================================================== ##
 ##                    correlation with inferential variance                             ##

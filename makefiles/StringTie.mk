@@ -32,12 +32,6 @@ endef
 $(foreach F,$(fastqfiles),$(eval $(call hisat2rule,$(F),$(notdir $(F)),,$(hisat2ss))))
 $(foreach F,$(fastqfilesreal),$(eval $(call hisat2rule,$(F),$(notdir $(F)),_chess,reference/hisat2splicesites_chess2.0_assembly_fixed.txt)))
 
-## Get junction counts from HiSAT2 alignment
-#define hisatjunccountrule
-#HISAT2$(3)/$(2)/$(2).jcounts: HISAT2$(3)/$(2)/$(2).bam
-#	$(featurecounts) 
-
-
 ## Run StringTie without assembly of new transcripts
 define stringtierefrule
 stringtie_onlyref$(3)/$(1)/$(1).gtf: HISAT2$(3)/$(1)/$(1).bam $(4)

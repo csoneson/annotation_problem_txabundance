@@ -158,7 +158,16 @@ reference_chess/chess2.0_assembly_fixed_tx2gene_withsymbol.rds Rscripts/plot_ens
 	mkdir -p $(@D)
 	$(R) "--args genecharensembl='output/gene_characteristics.rds' genecharchess='output/gene_characteristics_chess.rds' convtablechess='reference_chess/chess2.0_assembly_fixed_tx2gene_withsymbol.rds' outrds='$@'" Rscripts/plot_ensembl_vs_chess_annotation_characteristics.R Rout/plot_ensembl_vs_chess_annotation_characteristics.Rout
 
-
+## ==================================================================================== ##
+##                compare scores with different weight functions                        ##
+## ==================================================================================== ##
+define compareweightrule
+figures/comparison_scores_diff_weights/comparison_score_diff_weights_$(1)$(2).rds: output/$(1)$(2)_combined_coverages.rds \
+Rscripts/compare_score_definitions.R
+	mkdir -p $$(@D)
+	$(R) "--args combcovrds='output/$(1)$(2)_combined_coverages.rds' outrds='$$@'" Rscripts/compare_score_definitions.R Rout/compare_score_definitions_$(1)$(2).Rout
+endef
+$(foreach F,$(fastqfilesreal),$(eval $(call compareweightrule,$(notdir $(F)),)))
 
 
 

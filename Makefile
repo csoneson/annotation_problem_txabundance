@@ -206,7 +206,8 @@ $(foreach F,$(fastqfiles),figures/correlation_between_methods/correlation_betwee
 figures/correlation_between_nanopore_and_illumina_scores/correlation_between_nanopore_and_illumina_scores_20170918.A-WT_4.rds \
 $(foreach F,$(fastqfiles),figures/correlation_with_true_abundances/correlation_with_true_abundances_$(notdir $(F)).rds) \
 $(foreach F,$(fastqfiles),figures/association_exoncdscorrelation_score/association_exoncdscorrelation_score_$(notdir $(F)).rds) \
-figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_20170918.A-WT_4_permuted.rds
+figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_20170918.A-WT_4_permuted.rds \
+$(foreach F,$(fastqfilesreal),figures/comparison_scores_diff_weights/comparison_score_diff_weights_$(notdir $(F)).rds)
 
 plotssim: $(foreach F,$(fastqfilessim),figures/performance_simulated_data/performance_simulated_data_$(notdir $(F)).rds)
 

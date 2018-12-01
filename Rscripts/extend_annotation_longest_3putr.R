@@ -220,7 +220,9 @@ gtf_expanded <- gtfout
 ## ========================================================================== ##
 tx2gene <- as.data.frame(mcols(subset(gtf_expanded, 
                                       type == "transcript")))[, c("transcript_id", "gene_id")] %>%
-  dplyr::distinct()
+  dplyr::distinct() %>%
+  dplyr::rename(tx = transcript_id, gene = gene_id) %>%
+  dplyr::mutate(symbol = gene)
 
 rtracklayer::export(gtf_expanded, con = paste0(outbase, ".gtf"), format = "gtf")
 saveRDS(tx2gene, file = paste0(outbase, "_tx2gene.rds"))

@@ -1,5 +1,6 @@
 ## Software paths
-R := R_LIBS=/home/Shared/Rlib/devel-lib/ /usr/local/R/R-devel/bin/R CMD BATCH --no-restore --no-save
+#R := R_LIBS=/home/Shared/Rlib/devel-lib/ /usr/local/R/R-devel/bin/R CMD BATCH --no-restore --no-save
+R := R_LIBS=devel-lib/ RdevCopy CMD BATCH --no-restore --no-save
 samtools := /usr/local/bin/samtools
 bedtools := /usr/local/bin/bedtools
 
@@ -39,7 +40,9 @@ all: prepref quant alpineprep scalecov \
 plots nanopore simulation stats plotscomparison \
 preprefstringtie quantstringtie alpineprepstringtie scalecovstringtie plotsstringtie \
 preprefchess alpineprepchess quantchess scalecovchess plotschess plotssummarychess \
-plotssummary plotssummarystringtie plotssim
+plotssummary plotssummarystringtie plotssim \
+prepreflongutradded alpinepreplongutradded quantlongutradded scalecovlongutradded \
+plotssummarylongutradded
 
 ## Include makefiles. These need to be included after the definition of the "all" rule, 
 ## otherwise the default rule will be the first one from these makefiles
@@ -166,14 +169,17 @@ prepreflongutradded: $(gtf_longutr_added) $(txome_longutr_added) $(tx2gene_longu
 reference/salmon/Homo_sapiens.GRCh38.cdna.ncrna_longUTR_added_sidx_v0.11.0/hash.bin \
 reference/salmon/Homo_sapiens.GRCh38.cdna.ncrna_longUTR_added_keepdup_sidx_v0.11.0/hash.bin \
 reference/kallisto/Homo_sapiens.GRCh38.cdna.ncrna_longUTR_added_kidx_v0.44.0 \
-$(gvizgenemodels_longutr_added)
+$(gvizgenemodels_longutr_added) \
+reference/hera/Homo_sapiens.GRCh38.longUTR_added/index \
+reference_longUTR_added/hisat2splicesites_longUTR_added.txt
 
 alpinepreplongutradded: $(foreach F,$(fastqfilesreal),alpine/$(notdir $(F))_longUTR_added/alpine_fitbiasmodel.rds) \
 $(foreach F,$(fastqfilesreal),alpine/$(notdir $(F))_longUTR_added/alpine_predicted_coverage.rds)
 
 quantlongutradded: $(foreach F,$(fastqfilesreal),salmon_longUTR_added/$(notdir $(F))/quant.sf) \
 $(foreach F,$(fastqfilesreal),salmon_longUTR_addedkeepdup/$(notdir $(F))/quant.sf) \
-$(foreach F,$(fastqfilesreal),kallisto_longUTR_added/$(notdir $(F))/abundance.tsv)
+$(foreach F,$(fastqfilesreal),kallisto_longUTR_added/$(notdir $(F))/abundance.tsv) \
+$(foreach F,$(fastqfilesreal),hera_longUTR_added/$(notdir $(F))/abundance.tsv)
 
 scalecovlongutradded: $(foreach F,$(fastqfilesreal),$(foreach M,Salmon kallisto SalmonKeepDup,alpine/$(notdir $(F))_longUTR_added/scaled_junction_coverage_$(M).rds)) \
 $(foreach F,$(fastqfilesreal),output/$(notdir $(F))_longUTR_added_combined_coverages.rds) \
@@ -207,7 +213,9 @@ figures/correlation_between_nanopore_and_illumina_scores/correlation_between_nan
 $(foreach F,$(fastqfiles),figures/correlation_with_true_abundances/correlation_with_true_abundances_$(notdir $(F)).rds) \
 $(foreach F,$(fastqfiles),figures/association_exoncdscorrelation_score/association_exoncdscorrelation_score_$(notdir $(F)).rds) \
 figures/observed_vs_predicted_junction_coverage/observed_vs_predicted_junction_coverage_20170918.A-WT_4_permuted.rds \
-$(foreach F,$(fastqfilesreal),figures/comparison_scores_diff_weights/comparison_score_diff_weights_$(notdir $(F)).rds)
+$(foreach F,$(fastqfilesreal),figures/comparison_scores_diff_weights/comparison_score_diff_weights_$(notdir $(F)).rds) \
+$(foreach F,$(fastqfilesreal),figures/comparison_junccov_star_hisat2/comparison_junccov_star_hisat2_$(notdir $(F)).rds) \
+$(foreach F,$(fastqfilesreal),figures/comparison_orig_longutr_scores/comparison_orig_longutr_scores_$(notdir $(F)).rds)
 
 plotssim: $(foreach F,$(fastqfilessim),figures/performance_simulated_data/performance_simulated_data_$(notdir $(F)).rds)
 
@@ -228,7 +236,7 @@ plotscomparison: $(foreach F,$(fastqfilesreal),figures/comparison_scores_chess_e
 $(foreach F,$(fastqfilesreal),figures/comparison_scores_stringtie_tx_ensembl/comparison_scores_stringtie_tx_ensembl_$(notdir $(F)).rds) \
 figures/ensembl_vs_chess_annotation_characteristics/ensembl_vs_chess_annotation_characteristics.rds
 
-plotssummarylongutradded: $(foreach G,$(genes_to_plot_summary_longutr_added),$(foreach F,20170918.A-WT_4,figures/genewise_summary_longUTR_added/$(notdir $(F))_longUTR_added_$(G).png))
+plotssummarylongutradded: $(foreach G,$(genes_to_plot_summary_longutr_added),$(foreach F,$(fastqfilesreal),figures/genewise_summary_longUTR_added/$(notdir $(F))_longUTR_added_$(G).png))
 
 ########################################################################################################
 ## Stats

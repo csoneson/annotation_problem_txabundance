@@ -169,9 +169,28 @@ Rscripts/compare_score_definitions.R
 endef
 $(foreach F,$(fastqfilesreal),$(eval $(call compareweightrule,$(notdir $(F)),)))
 
+## ==================================================================================== ##
+##           plot derived junction coverages from STAR and HISAT2 alignments            ##
+## ==================================================================================== ##
+define starhisatjuncrule
+figures/comparison_junccov_star_hisat2/comparison_junccov_star_hisat2_$(1).rds: \
+STAR/$(1)/$(1)_Aligned.sortedByCoord.out.bam HISAT2/$(1)/$(1).bam Rscripts/plot_junc_cov_star_hisat2.R
+	mkdir -p $$(@D)
+	$(R) "--args junctioncovSTAR='STAR/$(1)/$(1)_SJ.out.tab' bamFileSTAR='STAR/$(1)/$(1)_Aligned.sortedByCoord.out.bam' bamFileHISAT2='HISAT2/$(1)/$(1).bam' outrds='$$@'" Rscripts/plot_junc_cov_star_hisat2.R Rout/plot_junc_cov_star_hisat2_$(1).Rout
+endef
+$(foreach F,$(fastqfilesreal),$(eval $(call starhisatjuncrule,$(notdir $(F)))))
 
-
-
+## ==================================================================================== ##
+##         compare scores between Ensembl annotation and Ensembl + long 3'UTRs          ##
+## ==================================================================================== ##
+define ensembllongutrscorerule
+figures/comparison_orig_longutr_scores/comparison_orig_longutr_scores_$(1).rds: \
+output/$(1)_combined_coverages_with_scores.rds output/$(1)_longUTR_added_combined_coverages_with_scores.rds \
+Rscripts/compare_ensembl_orig_longutr.R
+	mkdir -p $$(@D)
+	$(R) "--args combcovrdsorig='$$(word 1,$$^)' combcovrdslongutr='$$(word 2,$$^)' uniqjuncreadsthr=$(uniqjuncreadsthreshold) uniqjuncfractionthr=$(fracuniqjuncreadsthreshold) outrds='$$@'" Rscripts/compare_ensembl_orig_longutr.R Rout/compare_ensembl_orig_longutr_$(1).Rout
+endef
+$(foreach F,$(fastqfilesreal), $(eval $(call ensembllongutrscorerule,$(notdir $(F)))))
 
 
 

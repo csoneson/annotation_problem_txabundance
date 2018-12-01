@@ -176,5 +176,6 @@ cowplot::plot_grid(gg, ggmatrix_gtable(gp), nrow = 1,
                    labels = c("A", "B"), rel_widths = c(0.3, 1))
 dev.off()
 
+saveRDS(NULL, file = outrds)
 date()
 sessionInfo()

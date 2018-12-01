@@ -18,6 +18,9 @@ $(hisat2ss): $(gtf)
 reference/hisat2splicesites_chess2.0_assembly_fixed.txt: $(gtf_chess)
 	python $(hisat2)/hisat2_extract_splice_sites.py $(gtf_chess) > $@
 
+reference_longUTR_added/hisat2splicesites_longUTR_added.txt: $(gtf_longutr_added)
+	python $(hisat2)/hisat2_extract_splice_sites.py $(gtf_longutr_added) > $@
+
 ## ==================================================================================== ##
 ##                              HISAT2 + StringTie                                      ##
 ## ==================================================================================== ##
@@ -31,6 +34,7 @@ HISAT2$(3)/$(2)/$(2).bam: $(hisat2index).1.ht2 $(4) $(1)_R1.fastq.gz $(1)_R2.fas
 endef
 $(foreach F,$(fastqfiles),$(eval $(call hisat2rule,$(F),$(notdir $(F)),,$(hisat2ss))))
 $(foreach F,$(fastqfilesreal),$(eval $(call hisat2rule,$(F),$(notdir $(F)),_chess,reference/hisat2splicesites_chess2.0_assembly_fixed.txt)))
+$(foreach F,$(fastqfilesreal),$(eval $(call hisat2rule,$(F),$(notdir $(F)),_longUTR_added,reference_longUTR_added/hisat2splicesites_longUTR_added.txt)))
 
 ## Run StringTie without assembly of new transcripts
 define stringtierefrule
@@ -40,6 +44,7 @@ stringtie_onlyref$(3)/$(1)/$(1).gtf: HISAT2$(3)/$(1)/$(1).bam $(4)
 endef
 $(foreach F,$(fastqfiles),$(eval $(call stringtierefrule,$(notdir $(F)),--rf,,$(gtf))))
 $(foreach F,$(fastqfilesreal),$(eval $(call stringtierefrule,$(notdir $(F)),--rf,_chess,$(gtf_chess))))
+$(foreach F,$(fastqfilesreal),$(eval $(call stringtierefrule,$(notdir $(F)),--rf,_longUTR_added,$(gtf_longutr_added))))
 
 ## Run StringTie with assembly of new transcripts
 define stringtierule

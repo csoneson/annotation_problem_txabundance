@@ -117,9 +117,12 @@ $(eval $(call juncscalerule,20170918.A-WT_4,_chess,StringTie,stringtie_chess/201
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_longUTR_added,Salmon,salmon_longUTR_added/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_longutr_added),yes,FALSE))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_longUTR_added,SalmonKeepDup,salmon_longUTR_addedkeepdup/20151016.A-Cortex_RNA/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_longutr_added),yes,FALSE))
 $(eval $(call juncscalerule,20151016.A-Cortex_RNA,_longUTR_added,kallisto,kallisto_longUTR_added/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_kallisto.R,$(tx2gene_longutr_added),yes,FALSE))
+$(eval $(call juncscalerule,20151016.A-Cortex_RNA,_longUTR_added,hera,hera_longUTR_added/20151016.A-Cortex_RNA/abundance.tsv,Rscripts/read_quant_hera.R,$(tx2gene_longutr_added),yes,FALSE))
+
 $(eval $(call juncscalerule,20170918.A-WT_4,_longUTR_added,Salmon,salmon_longUTR_added/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_longutr_added),yes,FALSE))
 $(eval $(call juncscalerule,20170918.A-WT_4,_longUTR_added,SalmonKeepDup,salmon_longUTR_addedkeepdup/20170918.A-WT_4/quant.sf,Rscripts/read_quant_salmon.R,$(tx2gene_longutr_added),yes,FALSE))
 $(eval $(call juncscalerule,20170918.A-WT_4,_longUTR_added,kallisto,kallisto_longUTR_added/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_kallisto.R,$(tx2gene_longutr_added),yes,FALSE))
+$(eval $(call juncscalerule,20170918.A-WT_4,_longUTR_added,hera,hera_longUTR_added/20170918.A-WT_4/abundance.tsv,Rscripts/read_quant_hera.R,$(tx2gene_longutr_added),yes,FALSE))
 
 ## Combine coverages for all methods
 define combcovrule
@@ -165,9 +168,10 @@ define combcovlongutraddedrule
 output/$(1)$(2)_combined_coverages.rds: STAR$(3)/$(1)/$(1)_Aligned.sortedByCoord.out.bam \
 alpine/$(1)$(2)/scaled_junction_coverage_Salmon.rds alpine/$(1)$(2)/scaled_junction_coverage_kallisto.rds \
 alpine/$(1)$(2)/scaled_junction_coverage_SalmonKeepDup.rds \
+alpine/$(1)$(2)/scaled_junction_coverage_hera.rds \
 output/gene_characteristics.rds Rscripts/combine_scaled_coverages.R
 	mkdir -p $$(@D)
-	$(R) "--args junctioncovSTAR='STAR$(3)/$(1)/$(1)_SJ.out.tab' junctioncovSalmon='$$(word 2,$$^)' junctioncovSalmonSTAR='' junctioncovSalmonKeepDup='$$(word 4,$$^)' junctioncovSalmonCDS='' junctioncovNanopore='' junctioncovhera='' junctioncovkallisto='$$(word 3,$$^)' junctioncovRSEM='' junctioncovStringTie='' genecharacteristics='$$(word 5,$$^)' exoncountstxt='' introncountstxt='' outrds='$$@'" Rscripts/combine_scaled_coverages.R Rout/combine_scaled_coverages_$(1)$(2).Rout
+	$(R) "--args junctioncovSTAR='STAR$(3)/$(1)/$(1)_SJ.out.tab' junctioncovSalmon='$$(word 2,$$^)' junctioncovSalmonSTAR='' junctioncovSalmonKeepDup='$$(word 4,$$^)' junctioncovSalmonCDS='' junctioncovNanopore='' junctioncovhera='$$(word 5,$$^)' junctioncovkallisto='$$(word 3,$$^)' junctioncovRSEM='' junctioncovStringTie='' genecharacteristics='$$(word 6,$$^)' exoncountstxt='' introncountstxt='' outrds='$$@'" Rscripts/combine_scaled_coverages.R Rout/combine_scaled_coverages_$(1)$(2).Rout
 endef
 $(eval $(call combcovlongutraddedrule,20151016.A-Cortex_RNA,_longUTR_added,))
 $(eval $(call combcovlongutraddedrule,20170918.A-WT_4,_longUTR_added,))

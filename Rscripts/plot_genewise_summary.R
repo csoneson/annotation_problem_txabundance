@@ -133,8 +133,17 @@ for (tt in txs) {
 }
 jl[, txs] <- sweep(jl[, txs], 1, rowSums(jl[, txs]), "/")
 
+## Note that scatterpie will combine the proportions of completely overlapping
+## points. This may mean for example that if there are four junctions with no
+## coverage, three of which are only present in tx1 and one only in tx2, the pie
+## at (0,0) will be 3/4 colored by tx1 and 1/4 by tx2. This can be mitigated
+## e.g. by adding a small number like rnorm(nrow(jl), mean = 0, sd = 0.005) to
+## the coordinates, to avoid them being combined. In this case, instead, they
+## will overlap and only one will be visible.
 jcov <- ggplot() + geom_abline(intercept = 0, slope = 1) + 
-  geom_scatterpie(aes(x = uniqreads, y = scaled.cov, r = max(scaled.cov)/13), 
+  geom_scatterpie(aes(x = uniqreads, 
+                      y = scaled.cov, 
+                      r = max(scaled.cov)/13), 
                   cols = txs, data = jl, color = NA) + 
   facet_wrap(~ methodscore, nrow = 2) + 
   coord_equal(ratio = 1) + 
